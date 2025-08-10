@@ -1,0 +1,98 @@
+# Docker Compose file to set up a local Kafka environment for development.
+# This setup includes Zookeeper, a single Kafka broker, and a web UI.
+#
+# To use this file:
+# 1. Make sure you have Docker and Docker Compose installed.
+# 2. Save this content as 'docker-compose.yml' in your project directory.
+# 3. Run 'docker-compose up -d' in your terminal from the same directory.
+# 4. To stop the services, run 'docker-compose down'.
+
+version: '3.8'
+
+services:
+  # Zookeeper is required by Kafka to manage the cluster state.
+  zookeeper-whiteboard:
+    image: confluentinc/cp-zookeeper:7.6.1
+    container_name: zookeeper-whiteboard
+    hostname: zookeeper-whiteboard
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  # The Kafka message broker.
+  kafka-whiteboard:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka-whiteboard
+    hostname: kafka-whiteboard
+    ports:
+      # Exposes Kafka to the host machine for your Kotlin apps to connect.
+      - "9092:9092"
+    depends_on:
+      - zookeeper-whiteboard
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-whiteboard:2181'
+      # Listeners for communication inside and outside the Docker network.
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-whiteboard:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+
+  # NEW: The Schema Registry for managing and validating message schemas.
+  schema-registry-whiteboard:
+    image: confluentinc/cp-schema-registry:7.6.1
+    container_name: schema-registry-whiteboard
+    hostname: schema-registry-whiteboard
+    ports:
+      # Exposes the Schema Registry to the host machine. Your app will connect to this port.
+      - "8081:8081"
+    depends_on:
+      - kafka-whiteboard
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry-whiteboard
+      # Tells the Schema Registry how to connect to Kafka to store its schemas.
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'kafka-whiteboard:29092'
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+
+  # A web-based UI for managing and monitoring Kafka.
+  kafka-ui-whiteboard:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui-whiteboard
+    ports:
+      # Access the UI by navigating to http://localhost:8090 in your browser.
+      - "8090:8080"
+    depends_on:
+      - kafka-whiteboard
+      - schema-registry-whiteboard
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local-kafka
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: 'kafka-whiteboard:29092' # Connects to Kafka within the Docker network
+      KAFKA_CLUSTERS_0_ZOOKEEPER: 'zookeeper-whiteboard:2181'
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: 'http://schema-registry-whiteboard:8081'
+      DYNAMIC_CONFIG_ENABLED: 'true'
+
+  postgres-idea-space:
+    image: postgres:16
+    container_name: postgres-idea-space
+    hostname: postgres-idea-space
+    ports:
+      - "5439:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: idea_space_db
+    volumes:
+      - postgres-data-idea-space:/var/lib/postgresql/data
+
+
+volumes:
+  postgres-data-idea-space:
+    driver: local

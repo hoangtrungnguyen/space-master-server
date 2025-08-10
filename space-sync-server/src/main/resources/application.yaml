@@ -1,0 +1,26 @@
+ktor:
+  application:
+    modules:
+      - com.space.ApplicationKt.module
+
+  deployment:
+    port: 9099
+postgres:
+  url: "jdbc:postgresql://localhost:5439/whiteboard"
+  user: postgres
+  password: postgres
+
+kafka:
+  # Use environment variables with sensible defaults for local development.
+  # Ktor will use the value of KAFKA_BOOTSTRAP_SERVERS if it's set,
+  # otherwise it will fall back to "localhost:9092".
+  bootstrapServers:
+    - ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  schemaRegistryUrl: ${KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8081}
+  clientId: "sync-server"
+  topic: "server-operation-topic"
+  consumerGroupId: "sync-server-group"
+
+  topicDefaults:
+    partitions: ${KAFKA_TOPIC_PARTITIONS:3}
+    replicas: ${KAFKA_TOPIC_REPLICAS:1}
