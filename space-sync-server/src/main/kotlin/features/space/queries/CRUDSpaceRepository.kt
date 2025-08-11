@@ -1,7 +1,7 @@
 package com.space.features.space.queries
 
 import com.space.features.space.SpaceRepository
-import com.space.features.space.commands.model.SpaceModel
+import com.space.features.space.models.SpaceModel
 import java.util.UUID
 import kotlin.random.Random
 import kotlinx.datetime.*

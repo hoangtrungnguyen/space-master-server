@@ -12,7 +12,7 @@ import java.sql.Connection
 fun Application.configureDatabases() {
 
 
-    val dbConnection: Connection = connectToPostgres(embedded = true)
+    val dbConnection: Connection = connectToPostgres(embedded = false)
     val cityService = CityService(dbConnection)
 
     routing {

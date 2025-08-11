@@ -1,4 +1,4 @@
-package com.space.features.space.commands.model
+package com.space.features.space.models
 
 import kotlinx.serialization.Serializable
 
