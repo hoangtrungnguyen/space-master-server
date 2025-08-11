@@ -43,10 +43,10 @@ import org.koin.logger.slf4jLogger
 fun Application.configureSockets() {
     val customJson = Json {
         serializersModule = SerializersModule {
-            polymorphic(Operation::class) {
+//            polymorphic(Operation::class) {
                 // Use @SerialName in your data classes for stable names.
-                subclass(Operation.DocumentOperation::class)
-            }
+//                subclass(Operation.DocumentOperation::class)
+//            }
         }
         // Other useful settings for a robust server
         ignoreUnknownKeys = true

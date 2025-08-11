@@ -33,6 +33,16 @@ fun Route.spaceRoutes() {
             val models = application.dependencies.resolve<CRUDSpaceRepository>().findAll()
             call.respond(HttpStatusCode.OK, models)
         }
+
+        get("/{id}"){
+            val id = call.parameters["id"]!!
+            val model = application.dependencies.resolve<CRUDSpaceRepository>().findById(id)
+            if(model == null){
+                call.respond(HttpStatusCode.NotFound)
+                return@get
+            }
+            call.respond(HttpStatusCode.OK, model )
+        }
     }
 
 

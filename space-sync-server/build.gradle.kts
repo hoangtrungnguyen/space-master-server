@@ -7,16 +7,14 @@ val ktor_version: String by project
 val confluent_version: String by project
 
 plugins {
-    kotlin("jvm") version "2.1.10"
-    id("io.ktor.plugin") version "3.2.2"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.10"
+    kotlin("jvm")
+    id("application")
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.10" apply true
 }
 
-group = "com.space"
-version = "0.0.1"
 
 application {
-    mainClass = "com.space.ApplicationKt"
+    mainClass = "io.ktor.server.netty.EngineMain"
 }
 
 repositories {
@@ -26,6 +24,9 @@ repositories {
 }
 
 dependencies {
+    implementation(platform ("io.ktor:ktor-bom:${ktor_version}"))
+    implementation(project(":space-core"))
+
     //---- KTOR client ----
     implementation("io.ktor:ktor-client-core")
     implementation("io.ktor:ktor-client-content-negotiation")
