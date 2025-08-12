@@ -18,10 +18,13 @@ import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.plugins.di.dependencies
+import org.apache.avro.generic.GenericRecord
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.slf4j.LoggerFactory
 
 fun Application.configureKafka(
-    consumerConfig: KafkaConsumerConfig.() -> Unit = { }
+    onServerOperationMessage: suspend (record: ConsumerRecord<String, GenericRecord
+            >) -> Unit
 ) {
 
     //logger
@@ -68,9 +71,10 @@ fun Application.configureKafka(
             groupId = consumerGroupId
         }
         consumerConfig {
-            consumerRecordHandler(operationTopic){
-
+            consumerRecordHandler(operationTopic){ record ->
+                onServerOperationMessage(record)
             }
+
         }
         registerSchemas {
             using {

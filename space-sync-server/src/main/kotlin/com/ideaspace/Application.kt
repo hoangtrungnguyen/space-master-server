@@ -8,6 +8,7 @@ import com.ideaspace.config.configureHTTP
 import com.ideaspace.config.configureMonitoring
 import com.ideaspace.config.configureRouting
 import com.ideaspace.config.configureSerialization
+import com.ideaspace.config.configureServerKafka
 import com.ideaspace.workers.KafkaPartitionProcessor
 import io.ktor.server.application.*
 import io.ktor.server.netty.EngineMain
@@ -18,7 +19,6 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-
     configureErrorHandling()
     configureHTTP()
     configureMonitoring()
@@ -26,6 +26,5 @@ fun Application.module() {
     configureDatabases()
     configureFrameworks()
     configureRouting()
-//    configureKafka()
-
+    configureServerKafka()
 }

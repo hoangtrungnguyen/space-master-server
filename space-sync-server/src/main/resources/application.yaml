@@ -19,7 +19,7 @@ kafka:
     - ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
   schemaRegistryUrl: ${KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8081}
   clientId: "sync-server"
-  topic: "server-operation-topic"
+  topic: "server-operation"
   consumerGroupId: "sync-server-group"
 
   topicDefaults:

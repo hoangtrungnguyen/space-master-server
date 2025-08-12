@@ -4,5 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ServerOperation(
-    val id: String
+    val id: String,
+    val payload: String
 )
