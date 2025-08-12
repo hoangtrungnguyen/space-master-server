@@ -26,11 +26,11 @@ class CrudDocumentRepositoryImpl(
     }
     override suspend fun create(request: CreateDocumentRequest): DocumentDAO = transaction {
         DocumentDAO.new {
-            name = request.name
+            title = request.name
         }
     }
 
-    override suspend fun findByIdUuid(uuid: String): DocumentDAO = withContext(Dispatchers.IO){
+    override suspend fun findByIdUuid(uuid: String): DocumentDAO = transaction {
         DocumentDAO.find { DocumentTable.uuid eq UUID.fromString(uuid) }.first()
     }
 

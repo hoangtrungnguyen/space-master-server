@@ -1,3 +1,4 @@
+developmentMode: true
 ktor:
   application:
     modules:

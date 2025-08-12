@@ -12,6 +12,8 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.dto.CreateDocumentRequest
+import com.ideaspace.core.repository.dto.toDTO
+import io.ktor.server.routing.get
 
 
 fun Route.documentManagementRoutes() {
@@ -23,11 +25,14 @@ fun Route.documentManagementRoutes() {
                         name = "test"
                     )
                 )
-                call.respond(HttpStatusCode.OK, response.toString())
+                call.respond(HttpStatusCode.OK, response.toDTO())
             }
 
-            delete("/{id}") {
-
+            get("/{uuid}") {
+                val uuid = call.parameters["uuid"]!!
+                val response = application.dependencies.resolve<CrudDocumentRepository>().findByIdUuid(uuid)
+                val dto = response.toDTO()
+                call.respond(dto)
             }
         }
     }

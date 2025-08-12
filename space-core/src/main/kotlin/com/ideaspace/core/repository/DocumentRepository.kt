@@ -10,7 +10,7 @@ interface DocumentRepository {
 interface CrudDocumentRepository : DocumentRepository{
     suspend fun create(request: CreateDocumentRequest): DocumentDAO
 
-    suspend fun findByIdUuid(uuid: String): Any
+    suspend fun findByIdUuid(uuid: String): DocumentDAO
 
     suspend fun update(id: String, space: Any): Any?
 
