@@ -1,21 +1,16 @@
 package com.space.com.ideaspace.space
 
-import org.example.com.ideaspace.core.models.Subscription
-import org.example.com.ideaspace.core.models.User
 import com.space.com.ideaspace.services.KafkaProducerService
 import com.space.com.ideaspace.services.dto.ServerOperation
-import io.ktor.server.response.respond
-import io.ktor.server.routing.Route
-import io.ktor.server.routing.route
-import io.ktor.server.websocket.webSocket
-import io.ktor.websocket.CloseReason
-import io.ktor.websocket.close
-import io.ktor.server.plugins.di.dependencies
+import io.ktor.http.*
+import io.ktor.server.plugins.di.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import io.ktor.server.routing.application
-import io.ktor.server.routing.get
-import io.ktor.server.routing.post
+import io.ktor.server.websocket.webSocket
+import io.ktor.websocket.*
+import org.example.com.ideaspace.core.models.User
 import kotlin.random.Random
-import io.ktor.http.HttpStatusCode
 
 
 fun Route.whiteBoardRoutes(
@@ -87,8 +82,9 @@ fun Route.whiteBoardSocketRoutes() {
             // You would now delegate handling the session to your WhiteboardSocketHandler.
             // You would also need to get user details, likely from an authentication context.
             val user = User(
-                userId = Random.nextInt().toString(),
-                subscription = Subscription("Normal")
+                id = Random.nextLong(),
+                loginName = "",
+                fullName = ""
             )
 
             socketHandler.handle(this, boardId, user)
