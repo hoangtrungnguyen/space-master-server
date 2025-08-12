@@ -1,4 +1,10 @@
 package com.ideaspace.document
 
-class UpdateElement {
+class UpdateElement(
+   update: Any
+) {
+
+    suspend fun execute(){
+
+    }
 }

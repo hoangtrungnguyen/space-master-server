@@ -49,6 +49,7 @@ fun Application.configureKafka(
             json()
         }
     }
+
     install(Kafka) {
 
         this.schemaRegistryUrl = schemaRegistryUrl
@@ -66,12 +67,12 @@ fun Application.configureKafka(
             }
         }
 
-//        producer { }
         consumer { // <-- Creates a consumer
             groupId = consumerGroupId
         }
         consumerConfig {
             consumerRecordHandler(operationTopic){ record ->
+                println("consumerRecordHandler - ${record}")
                 onServerOperationMessage(record)
             }
 

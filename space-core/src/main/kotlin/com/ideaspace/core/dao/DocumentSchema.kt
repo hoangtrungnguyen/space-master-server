@@ -39,6 +39,8 @@ object DocumentTable: LongIdTable("document") {
     val title = varchar("title", 50)
     val uuid = uuid("uuid").defaultExpression(DatabaseUUID()).uniqueIndex()
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp())
+    val updatedAt = timestamp("updated_at").nullable()
+    val kafkaOffset = integer("kafka_offset").default(0)
 }
 
 class DocumentDAO(id: EntityID<Long>) : LongEntity(id) {
@@ -47,5 +49,7 @@ class DocumentDAO(id: EntityID<Long>) : LongEntity(id) {
     var title by DocumentTable.title
     var uuid by DocumentTable.uuid
     var createdAt by DocumentTable.createdAt
+    var kafkaOffset by DocumentTable.kafkaOffset
+    var updatedAt by DocumentTable.updatedAt
 
 }

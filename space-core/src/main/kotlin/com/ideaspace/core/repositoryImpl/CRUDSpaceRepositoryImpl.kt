@@ -5,14 +5,11 @@ import com.ideaspace.core.datasources.postgres.entities.DocumentDAO
 import com.ideaspace.core.datasources.postgres.entities.DocumentTable
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.dto.CreateDocumentRequest
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.withContext
-import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.util.UUID
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 class CrudDocumentRepositoryImpl(
 ) : CrudDocumentRepository {
@@ -35,10 +32,28 @@ class CrudDocumentRepositoryImpl(
     }
 
     override suspend fun update(id: String, space: Any): Any? {
-        TODO("Not yet implemented")
+        TODO()
     }
 
     override suspend fun findAll(): List<DocumentDAO> = transaction{
         DocumentDAO.all().toList()
+    }
+
+    override suspend fun existByUuid(uuid: String): Boolean {
+        val parsedUuid = runCatching { UUID.fromString(uuid) }.getOrNull() ?: return false
+        return transaction {
+            !DocumentDAO.find { DocumentTable.uuid eq parsedUuid }.empty()
+        }
+    }
+
+    @OptIn(ExperimentalTime::class)
+    override suspend fun updateOffset(uuid: String, offset: Int) {
+        val parsedUuid = runCatching { UUID.fromString(uuid) }.getOrNull() ?: return
+        transaction {
+            DocumentDAO.find { DocumentTable.uuid eq parsedUuid }.firstOrNull()?.also {
+                it.kafkaOffset = offset
+                it.updatedAt = Clock.System.now()
+            }
+        }
     }
 }

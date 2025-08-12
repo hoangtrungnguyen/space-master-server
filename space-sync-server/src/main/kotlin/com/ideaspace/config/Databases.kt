@@ -6,7 +6,6 @@ import io.ktor.server.application.*
 import io.ktor.server.plugins.di.dependencies
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repositoryImpl.CrudDocumentRepositoryImpl
-import org.apache.kafka.common.protocol.types.Field
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
