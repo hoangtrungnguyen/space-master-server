@@ -1,4 +1,4 @@
-package com.space.com.ideaspace.space.models
+package com.ideaspace.space.models
 
 import kotlinx.serialization.Serializable
 

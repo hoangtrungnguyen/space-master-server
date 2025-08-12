@@ -1,7 +1,7 @@
-package com.space.com.ideaspace.space.client
+package com.ideaspace.space.client
 
-import com.space.com.ideaspace.space.client.dto.SpaceDashboardItem
-import com.space.com.ideaspace.space.client.dto.SpaceDto
+import com.ideaspace.space.client.dto.SpaceDashboardItem
+import com.ideaspace.space.client.dto.SpaceDto
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*

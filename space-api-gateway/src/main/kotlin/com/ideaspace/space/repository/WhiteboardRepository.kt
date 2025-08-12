@@ -1,8 +1,8 @@
-package com.space.com.ideaspace.space.repository
+package com.ideaspace.space.repository
 
-import com.space.com.ideaspace.space.client.IdeaSpaceServerClient
-import com.space.com.ideaspace.space.client.dto.SpaceDashboardItem
-import com.space.com.ideaspace.space.models.BoardState
+import com.ideaspace.space.client.IdeaSpaceServerClient
+import com.ideaspace.space.client.dto.SpaceDashboardItem
+import com.ideaspace.space.models.BoardState
 import java.util.concurrent.ConcurrentHashMap
 
 class WhiteboardRepository(

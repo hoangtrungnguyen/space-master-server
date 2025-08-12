@@ -1,12 +1,12 @@
-package com.space.com.ideaspace.space
+package com.ideaspace.space
 
-import com.space.com.ideaspace.session.SessionManager
-import com.space.com.ideaspace.session.WhiteboardConnection
-import com.space.com.ideaspace.space.handlers.OperationHandler
-import com.space.com.ideaspace.space.models.Operation
-import com.space.com.ideaspace.space.models.OperationDto
-import com.space.com.ideaspace.space.models.OperationType
-import com.space.com.ideaspace.space.service.IdeaSpaceSessionService
+import com.ideaspace.session.SessionManager
+import com.ideaspace.session.WhiteboardConnection
+import com.ideaspace.space.handlers.OperationHandler
+import com.ideaspace.space.models.Operation
+import com.ideaspace.space.models.OperationDto
+import com.ideaspace.space.models.OperationType
+import com.ideaspace.space.service.IdeaSpaceSessionService
 import io.ktor.websocket.*
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.receiveAsFlow

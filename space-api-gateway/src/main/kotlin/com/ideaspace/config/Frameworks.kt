@@ -1,11 +1,11 @@
-package com.space.com.ideaspace.config
+package com.ideaspace.config
 
-import com.space.com.ideaspace.services.KafkaProducerService
-import com.space.com.ideaspace.session.SessionManager
-import com.space.com.ideaspace.space.IdeaSpaceSocketHandler
-import com.space.com.ideaspace.space.client.IdeaSpaceServerClient
-import com.space.com.ideaspace.space.repository.WhiteboardRepository
-import com.space.com.ideaspace.space.service.IdeaSpaceSessionService
+import com.ideaspace.services.KafkaProducerService
+import com.ideaspace.session.SessionManager
+import com.ideaspace.space.IdeaSpaceSocketHandler
+import com.ideaspace.space.client.IdeaSpaceServerClient
+import com.ideaspace.space.repository.WhiteboardRepository
+import com.ideaspace.space.service.IdeaSpaceSessionService
 import io.github.flaxoos.ktor.server.plugins.kafka.kafkaProducer
 import io.ktor.client.*
 import io.ktor.server.application.*

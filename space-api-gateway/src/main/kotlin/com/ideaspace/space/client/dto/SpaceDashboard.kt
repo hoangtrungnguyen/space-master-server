@@ -1,4 +1,4 @@
-package com.space.com.ideaspace.space.client.dto
+package com.ideaspace.space.client.dto
 
 import kotlinx.serialization.Serializable
 

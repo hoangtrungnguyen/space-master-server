@@ -1,4 +1,4 @@
-package com.space.com.ideaspace.config
+package com.ideaspace.config
 
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*

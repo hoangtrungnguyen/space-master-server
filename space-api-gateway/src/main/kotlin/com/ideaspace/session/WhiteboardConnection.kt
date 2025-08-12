@@ -1,4 +1,4 @@
-package com.space.com.ideaspace.session
+package com.ideaspace.session
 
 import io.ktor.websocket.*
 import kotlinx.coroutines.isActive

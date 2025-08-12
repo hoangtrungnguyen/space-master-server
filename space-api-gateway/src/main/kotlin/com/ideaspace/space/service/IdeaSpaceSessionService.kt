@@ -1,8 +1,8 @@
-package com.space.com.ideaspace.space.service
+package com.ideaspace.space.service
 
-import com.space.com.ideaspace.space.client.IdeaSpaceServerClient
-import com.space.com.ideaspace.space.models.BoardState
-import com.space.com.ideaspace.space.repository.WhiteboardRepository
+import com.ideaspace.space.client.IdeaSpaceServerClient
+import com.ideaspace.space.models.BoardState
+import com.ideaspace.space.repository.WhiteboardRepository
 import kotlinx.coroutines.delay
 
 class IdeaSpaceSessionService(

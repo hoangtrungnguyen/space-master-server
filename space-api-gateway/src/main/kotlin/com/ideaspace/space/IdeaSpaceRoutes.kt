@@ -1,9 +1,9 @@
-package com.space.com.ideaspace.space
+package com.ideaspace.space
 
-import com.space.com.ideaspace.services.KafkaProducerService
-import com.space.com.ideaspace.services.dto.ServerOperation
-import com.space.com.ideaspace.space.client.IdeaSpaceServerClient
-import com.space.com.ideaspace.space.repository.WhiteboardRepository
+import com.ideaspace.services.KafkaProducerService
+import com.ideaspace.services.dto.ServerOperation
+import com.ideaspace.space.client.IdeaSpaceServerClient
+import com.ideaspace.space.repository.WhiteboardRepository
 import io.ktor.http.*
 import io.ktor.server.plugins.di.*
 import io.ktor.server.response.*
