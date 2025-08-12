@@ -1,4 +1,4 @@
-package com.space.com.ideaspace.space.repository
+package com.ideaspace.space.repository
 
 class WhiteboardViewRepository {
 }

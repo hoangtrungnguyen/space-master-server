@@ -29,6 +29,7 @@ dependencies {
     implementation("io.ktor:ktor-server-core")
     implementation("io.ktor:ktor-server-swagger")
     implementation("io.ktor:ktor-server-auth")
+    implementation("io.ktor:ktor-server-status-pages")
     implementation("dev.hayden:khealth:3.0.2")
     implementation("io.ktor:ktor-server-content-negotiation")
     implementation("io.ktor:ktor-serialization-kotlinx-json")

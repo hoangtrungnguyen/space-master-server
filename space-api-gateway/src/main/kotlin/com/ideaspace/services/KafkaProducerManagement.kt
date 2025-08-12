@@ -1,4 +1,4 @@
-package com.space.com.ideaspace.services
+package com.ideaspace.services
 
 import io.github.flaxoos.ktor.server.plugins.kafka.TopicName
 import io.ktor.server.application.Application

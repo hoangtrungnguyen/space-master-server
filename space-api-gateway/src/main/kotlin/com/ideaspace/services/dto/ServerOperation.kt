@@ -1,4 +1,4 @@
-package com.space.com.ideaspace.services.dto
+package com.ideaspace.services.dto
 
 import kotlinx.serialization.Serializable
 import org.apache.avro.Schema

@@ -1,4 +1,4 @@
-package com.space.com.ideaspace.present
+package com.ideaspace.present
 
 import io.github.flaxoos.ktor.server.plugins.ratelimiter.*
 import io.github.flaxoos.ktor.server.plugins.ratelimiter.implementations.*

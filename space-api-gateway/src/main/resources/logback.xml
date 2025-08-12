@@ -9,4 +9,7 @@
     </root>
     <logger name="org.eclipse.jetty" level="INFO"/>
     <logger name="io.netty" level="INFO"/>
+    <logger name="io.ktor.serialization" level="DEBUG"/>
+    <logger name="io.ktor.routing" level="DEBUG"/>
+    <logger name="com.ideaspace" level="DEBUG"/>
 </configuration>

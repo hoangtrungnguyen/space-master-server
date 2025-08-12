@@ -1,4 +1,4 @@
-package com.space.com.ideaspace.config
+package com.ideaspace.config
 
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.server.application.*

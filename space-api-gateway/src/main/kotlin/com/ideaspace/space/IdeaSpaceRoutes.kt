@@ -1,7 +1,9 @@
-package com.space.com.ideaspace.space
+package com.ideaspace.space
 
-import com.space.com.ideaspace.services.KafkaProducerService
-import com.space.com.ideaspace.services.dto.ServerOperation
+import com.ideaspace.services.KafkaProducerService
+import com.ideaspace.services.dto.ServerOperation
+import com.ideaspace.space.client.IdeaSpaceServerClient
+import com.ideaspace.space.repository.WhiteboardRepository
 import io.ktor.http.*
 import io.ktor.server.plugins.di.*
 import io.ktor.server.response.*
@@ -23,13 +25,13 @@ fun Route.whiteBoardRoutes(
 //                    application.dependencies.resolve<WhiteboardRepository>()
 //                println("Create whiteboard")
 
-                val response = application.dependencies.resolve<com.space.com.ideaspace.space.client.IdeaSpaceServerClient>().createSpace()
+                val response = application.dependencies.resolve<IdeaSpaceServerClient>().createSpace()
                 call.respond(status = HttpStatusCode.OK, response)
             }
 
             get("/all") {
-                val whiteboardRepository: com.space.com.ideaspace.space.repository.WhiteboardRepository =
-                    application.dependencies.resolve<com.space.com.ideaspace.space.repository.WhiteboardRepository>()
+                val whiteboardRepository: WhiteboardRepository =
+                    application.dependencies.resolve<WhiteboardRepository>()
                 val items = whiteboardRepository.findAll()
                 call.respond(HttpStatusCode.OK, items)
             }
@@ -51,7 +53,7 @@ fun Route.whiteBoardRoutes(
             }
             get("/{id}") {
                 val id = call.parameters["id"]!!
-                val response = application.dependencies.resolve<com.space.com.ideaspace.space.client.IdeaSpaceServerClient>().getById(id)
+                val response = application.dependencies.resolve<IdeaSpaceServerClient>().getById(id)
                 if (response == null) {
                     call.respond(HttpStatusCode.NotFound)
                     return@get

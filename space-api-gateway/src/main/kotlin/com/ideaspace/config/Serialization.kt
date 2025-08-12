@@ -1,4 +1,4 @@
-package com.space.com.ideaspace.config
+package com.ideaspace.config
 
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*

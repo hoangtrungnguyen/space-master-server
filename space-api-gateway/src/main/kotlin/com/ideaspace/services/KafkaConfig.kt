@@ -1,6 +1,6 @@
-package com.space.com.ideaspace.services
+package com.ideaspace.services
 
-import com.space.com.ideaspace.services.dto.ServerOperation
+import com.ideaspace.services.dto.ServerOperation
 import io.github.flaxoos.ktor.server.plugins.kafka.Kafka
 import io.github.flaxoos.ktor.server.plugins.kafka.TopicName
 import io.github.flaxoos.ktor.server.plugins.kafka.common

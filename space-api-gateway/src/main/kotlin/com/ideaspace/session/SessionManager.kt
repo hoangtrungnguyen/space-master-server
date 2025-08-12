@@ -1,4 +1,4 @@
-package com.space.com.ideaspace.session
+package com.ideaspace.session
 
 
 import java.util.Collections

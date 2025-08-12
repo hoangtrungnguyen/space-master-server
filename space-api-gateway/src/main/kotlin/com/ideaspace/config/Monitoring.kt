@@ -1,4 +1,4 @@
-package com.space.com.ideaspace.config
+package com.ideaspace.config
 
 import dev.hayden.KHealth
 import io.ktor.server.application.*

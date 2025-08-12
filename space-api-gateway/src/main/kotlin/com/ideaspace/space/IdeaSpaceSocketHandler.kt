@@ -1,12 +1,12 @@
-package com.space.com.ideaspace.space
+package com.ideaspace.space
 
-import com.space.com.ideaspace.session.SessionManager
-import com.space.com.ideaspace.session.WhiteboardConnection
-import com.space.com.ideaspace.space.handlers.OperationHandler
-import com.space.com.ideaspace.space.models.Operation
-import com.space.com.ideaspace.space.models.OperationDto
-import com.space.com.ideaspace.space.models.OperationType
-import com.space.com.ideaspace.space.service.IdeaSpaceSessionService
+import com.ideaspace.session.SessionManager
+import com.ideaspace.session.WhiteboardConnection
+import com.ideaspace.space.handlers.OperationHandler
+import com.ideaspace.space.models.Operation
+import com.ideaspace.space.models.OperationDto
+import com.ideaspace.space.models.OperationType
+import com.ideaspace.space.service.IdeaSpaceSessionService
 import io.ktor.websocket.*
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -51,7 +51,7 @@ class IdeaSpaceSocketHandler(
 //        }
 
         // Create the connection object early to use in logging and registration.
-        val connection = WhiteboardConnection(userId = user.userId, session = session)
+        val connection = WhiteboardConnection(userId = user.id, session = session)
 
         // The main logic is wrapped in a try/finally block to guarantee cleanup.
         try {
@@ -79,7 +79,7 @@ class IdeaSpaceSocketHandler(
                             println("Data: ${frame.readText()}")
                             Json.decodeFromString<OperationDto>(frame.readText())
                         } catch (e: Exception) {
-                            println("Failed to deserialize operation for user ${user.userId}: ${e.message}")
+                            println("Failed to deserialize operation for user ${user.id}: ${e.message}")
                             e.printStackTrace()
                             session.outgoing.send(Frame.Text("FAILURE"))
                             null // Ignore malformed frames.
@@ -101,14 +101,14 @@ class IdeaSpaceSocketHandler(
                 }
 
         } catch (e: Exception) {
-            println("An error occurred in the session for user ${user.userId} on board $boardId: ${e.message}")
+            println("An error occurred in the session for user ${user.id} on board $boardId: ${e.message}")
         } finally {
             // 6. Guaranteed Cleanup on Disconnection
             // This block executes whether the connection closes normally, with an error, or on timeout.
             sessionManager.unregister(connection, boardId)
 //            val finalCount = userCountRepository.decrementAndGet(boardId)
 //            kafkaProducer.publish("user-count-changed", mapOf("boardId" to boardId, "count" to finalCount))
-            println("Cleanup complete for user ${user.userId} on board $boardId.")
+            println("Cleanup complete for user ${user.id} on board $boardId.")
         }
     }
 }

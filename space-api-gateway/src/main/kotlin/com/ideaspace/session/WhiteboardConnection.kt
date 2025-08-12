@@ -1,4 +1,4 @@
-package com.space.com.ideaspace.session
+package com.ideaspace.session
 
 import io.ktor.websocket.*
 import kotlinx.coroutines.isActive
@@ -22,7 +22,7 @@ import java.util.*
  */
 data class WhiteboardConnection(
     val sessionId: String = UUID.randomUUID().toString(),
-    val userId: String,
+    val userId: Long,
     val session: DefaultWebSocketSession
 ) {
 

@@ -1,7 +1,8 @@
-package com.space.com.ideaspace.config
+package com.ideaspace.config
 
 
-import com.space.com.ideaspace.space.whiteBoardRoutes
+import com.ideaspace.document.documentManagementRoutes
+import com.ideaspace.space.whiteBoardRoutes
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.calllogging.*
@@ -24,6 +25,7 @@ fun Application.configureRouting() {
     install(CallLogging)
     routing {
         whiteBoardRoutes()
+        documentManagementRoutes()
         get("/") {
             call.respondText("Hello World!")
         }
