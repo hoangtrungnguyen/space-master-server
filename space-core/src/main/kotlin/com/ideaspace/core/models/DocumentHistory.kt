@@ -19,9 +19,6 @@ data class DocumentRevision(
     val status: RevisionStatus
 )
 
-/**
- * Enum representing the possible statuses for a document revision.
- */
 enum class RevisionStatus {
     ACTIVE,
     SUPERSEDED,
