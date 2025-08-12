@@ -14,5 +14,5 @@ interface CrudDocumentRepository : DocumentRepository{
 
     suspend fun update(id: String, space: Any): Any?
 
-    suspend fun findAll(): List<Any>
+    suspend fun findAll(): List<DocumentDAO>
 }

@@ -34,6 +34,12 @@ fun Route.documentManagementRoutes() {
                 val dto = response.toDTO()
                 call.respond(dto)
             }
+
+            get("/all"){
+                val response = application.dependencies.resolve<CrudDocumentRepository>().findAll()
+                val dtos = response.map{ it.toDTO() }.toList()
+                call.respond(dtos)
+            }
         }
     }
 }
