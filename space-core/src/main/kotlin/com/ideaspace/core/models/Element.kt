@@ -15,12 +15,8 @@ class Element @OptIn(ExperimentalUuidApi::class) constructor(
     val deletedAt: ZonedDateTime?
 ){
     init {
-        // This check ensures the 'value' string is not empty or just whitespace.
         require(value.isNotBlank()) { "Element 'value' cannot be blank." }
 
-        // You can add more complex validation here to ensure the 'value'
-        // structure is consistent with the 'type'.
-        // For example (this is just a conceptual illustration):
         when (type) {
             ElementType.LINK -> require(value.startsWith("http")) {
                 "Link element value must be a valid URL."
@@ -29,7 +25,6 @@ class Element @OptIn(ExperimentalUuidApi::class) constructor(
                 // Here you might parse the JSON in 'value' and check for
                 // required fields like 'x', 'y', 'width', 'height'.
             }
-            // ... add checks for other types
             else -> {
                 // No specific validation for other types
             }
