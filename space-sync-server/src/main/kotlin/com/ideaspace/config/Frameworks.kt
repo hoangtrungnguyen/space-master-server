@@ -1,7 +1,6 @@
 package com.ideaspace.config
 
 
-import com.ideaspace.document.provideDocumentDependencies
 import com.ideaspace.workers.KafkaPartitionProcessor
 import io.ktor.server.application.*
 import io.ktor.server.plugins.di.DependencyRegistry
@@ -12,7 +11,6 @@ fun Application.configureFrameworks() {
     val kafkaPartitionProcessor = KafkaPartitionProcessor()
     dependencies {
         provide<KafkaPartitionProcessor> { kafkaPartitionProcessor }
-        provideDocumentDependencies()
     }
 }
 

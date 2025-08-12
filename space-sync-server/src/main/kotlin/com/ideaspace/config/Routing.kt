@@ -1,5 +1,6 @@
 package com.ideaspace.config
 
+import com.ideaspace.document.documentManagementRoutes
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.calllogging.CallLogging
@@ -13,14 +14,8 @@ fun Application.configureRouting() {
 
     }
 
-    install(StatusPages) {
-        exception<Throwable> { call, cause ->
-            call.respondText(text = "500: $cause", status = HttpStatusCode.InternalServerError)
-        }
-    }
     routing{
-        route("/api"){
-        }
+        documentManagementRoutes()
     }
     routing {
         get("/") {

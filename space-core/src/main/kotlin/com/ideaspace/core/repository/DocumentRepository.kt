@@ -1,29 +1,18 @@
-package org.example.com.ideaspace.core.repository
+package com.ideaspace.core.repository
+
+import com.ideaspace.core.datasources.postgres.entities.DocumentDAO
+import com.ideaspace.core.repository.dto.CreateDocumentRequest
 
 interface DocumentRepository {
 }
 
 
 interface CrudDocumentRepository : DocumentRepository{
-    /**
-     * Creates a new space and persists it.
-     */
-    suspend fun create()
+    suspend fun create(request: CreateDocumentRequest): DocumentDAO
 
-    /**
-     * Finds a space by its unique identifier.
-     * @param id The unique ID of the space.
-     * @return The found SpaceModel, or null if no space with the given ID exists.
-     */
-    suspend fun findById(id: String): Any
+    suspend fun findByIdUuid(uuid: String): DocumentDAO
 
-    /**
-     * Updates an existing space.
-     * @param id The unique ID of the space to update.
-     * @param space The new data for the space.
-     * @return The updated SpaceModel, or null if no space with the given ID exists.
-     */
     suspend fun update(id: String, space: Any): Any?
 
-    suspend fun findAll(): List<Any>
+    suspend fun findAll(): List<DocumentDAO>
 }

@@ -45,6 +45,7 @@ dependencies {
     implementation("io.ktor:ktor-server-di")
 
     //---- UTILS ----
+
     //datetime
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2") // Use the latest version
 
@@ -61,12 +62,17 @@ dependencies {
 
 
     //---- DATABASE ----
-    implementation("com.h2database:h2:$h2_version")
-    implementation("org.postgresql:postgresql:$postgres_version")
+    implementation("org.jetbrains.exposed:exposed-r2dbc:1.0.0-beta-5")
+    implementation("org.jetbrains.exposed:exposed-jdbc:1.0.0-beta-5")
+    implementation("org.jetbrains.exposed:exposed-dao:1.0.0-beta-5")
+
 
     //LOGGING
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-serialization-jackson:3.2.2")
+
+
+    implementation("io.ktor:ktor-serialization-kotlinx-json")
 
     //TESTING
     testImplementation("io.ktor:ktor-server-test-host")

@@ -12,17 +12,24 @@ import io.github.flaxoos.ktor.server.plugins.kafka.common
 import io.github.flaxoos.ktor.server.plugins.kafka.consumer
 import io.github.flaxoos.ktor.server.plugins.kafka.consumerConfig
 import io.github.flaxoos.ktor.server.plugins.kafka.consumerRecordHandler
-import io.github.flaxoos.ktor.server.plugins.kafka.kafkaProducer
-import io.github.flaxoos.ktor.server.plugins.kafka.producer
 import io.github.flaxoos.ktor.server.plugins.kafka.registerSchemas
 import io.github.flaxoos.ktor.server.plugins.kafka.topic
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.plugins.di.dependencies
+import org.apache.avro.generic.GenericRecord
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.slf4j.LoggerFactory
 
-fun Application.configureKafka() {
+fun Application.configureKafka(
+    onServerOperationMessage: suspend (record: ConsumerRecord<String, GenericRecord
+            >) -> Unit
+) {
+
+    //logger
+    val kafkaLogger = LoggerFactory.getLogger("kafka-consumer")
+
     // Load configuration from application.yaml to avoid hardcoding
     val kafkaConfig = environment.config.config("kafka")
     val schemaRegistryUrl = kafkaConfig.property("schemaRegistryUrl").getString() // Load the missing URL
@@ -45,7 +52,7 @@ fun Application.configureKafka() {
     install(Kafka) {
 
         this.schemaRegistryUrl = schemaRegistryUrl
-        common {
+        common { // <-- Define common properties
             this.bootstrapServers = bootstrapServers
             this.retries = 3
             this.clientId = clientId
@@ -64,9 +71,10 @@ fun Application.configureKafka() {
             groupId = consumerGroupId
         }
         consumerConfig {
-            consumerRecordHandler(operationTopic) {
-
+            consumerRecordHandler(operationTopic){ record ->
+                onServerOperationMessage(record)
             }
+
         }
         registerSchemas {
             using {
@@ -75,4 +83,6 @@ fun Application.configureKafka() {
             ServerOperation::class at operationTopic
         }
     }
+
+
 }
