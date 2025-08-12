@@ -22,7 +22,7 @@ import java.util.*
  */
 data class WhiteboardConnection(
     val sessionId: String = UUID.randomUUID().toString(),
-    val userId: String,
+    val userId: Long,
     val session: DefaultWebSocketSession
 ) {
 
