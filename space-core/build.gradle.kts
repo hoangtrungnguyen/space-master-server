@@ -1,5 +1,3 @@
-val ktor_version: String by project
-
 plugins {
     kotlin("jvm") version "2.1.10"
 }
@@ -12,8 +10,6 @@ repositories {
 }
 
 dependencies {
-    implementation("io.ktor:ktor-server-core:$ktor_version")
-
     testImplementation(kotlin("test"))
 }
 
