@@ -5,7 +5,7 @@ import io.ktor.server.application.Application
 import org.slf4j.LoggerFactory
 
 
-fun Application.connectKafka(){
+fun Application.connectKafka() {
 
     //logger
     val kafkaLogger = LoggerFactory.getLogger("kafka-consumer")

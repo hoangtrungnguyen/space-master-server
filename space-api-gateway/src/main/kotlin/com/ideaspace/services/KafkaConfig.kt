@@ -1,47 +1,37 @@
 package com.ideaspace.services
 
-import com.ideaspace.services.dto.ServerOperation
-import io.github.flaxoos.ktor.server.plugins.kafka.Kafka
-import io.github.flaxoos.ktor.server.plugins.kafka.TopicName
-import io.github.flaxoos.ktor.server.plugins.kafka.common
-import io.github.flaxoos.ktor.server.plugins.kafka.producer
-import io.github.flaxoos.ktor.server.plugins.kafka.registerSchemas
-import io.ktor.client.HttpClient
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.serialization.kotlinx.json.json
-import io.ktor.server.application.Application
-import io.ktor.server.application.install
+import com.ideaspace.document.DocumentEvent
+import com.ideaspace.document.DocumentEventProducer
+import com.ideaspace.document.DocumentEventSerializer
+import io.ktor.server.application.*
+import io.ktor.server.plugins.di.*
+import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.ProducerConfig
+import org.apache.kafka.common.serialization.LongSerializer
+import java.util.Properties
 
-fun Application.configKafka(){
-
-    val schemaRegistryClient = HttpClient {
-        install(ContentNegotiation) {
-            json()
-        }
-    }
-
-//    val topicName = environment.config.property("ktor.kafka.topics.0.name").getString()
+fun Application.configureDocumentEventProducer() {
 
     val kafkaConfig = environment.config.config("kafka")
-    val topicName = "server-operation-topic"
-    val operationTopic = TopicName.named(topicName)
-    val bootstrapServers = kafkaConfig.property("common.bootstrap.servers").getList()
-    val clientId = kafkaConfig.property("clientId").getString()
+    val servers = kafkaConfig.property("common.bootstrap_servers").getList()
+    val clientId = kafkaConfig.property("common.client_id").getString()
+    val topicName = kafkaConfig.property("document_event_topic").getString()
 
-    install(Kafka) {
-        schemaRegistryUrl = environment.config.property("kafka.schema.registry.url").getList().first()
-        common { // <-- Define common properties
-            this.bootstrapServers = bootstrapServers
-            this.retries = 3
-            this.clientId = clientId
-        }
-        producer {
+    val properties = Properties()
+    properties[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = servers.joinToString(",")
+    properties[ProducerConfig.CLIENT_ID_CONFIG] = clientId
 
-        }
-
-        registerSchemas {
-            schemaRegistryClient
-            ServerOperation::class to operationTopic
+    dependencies {
+        provide<DocumentEventProducer> {
+            val kafkaProducer = KafkaProducer(
+                properties,
+                LongSerializer(),
+                DocumentEventSerializer()
+            )
+            return@provide DocumentEventProducer(
+                topic = topicName,
+                kafkaProducer = kafkaProducer
+            )
         }
     }
 }

@@ -16,19 +16,10 @@ kafka:
       url:
         - ${KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8081}
   common:
-    bootstrap:
-      servers:
-        - ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-  producer:
-    client:
-      id: "api-gateway-server"
-    # Additional attributes
-  topics:
-    - name: server-operation-topic
-      configs:
-        message.timestamp.type: CreateTime
-        # Additional attributes
-  clientId: "api-gateway-client"
+    bootstrap_servers:
+      - ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    client_id: "api-gateway-client"
+  document_event_topic: "ideaspace.document.event"
 
 services:
   sync_server_url: "http://localhost:9099"

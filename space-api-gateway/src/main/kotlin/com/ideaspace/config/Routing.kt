@@ -26,9 +26,6 @@ fun Application.configureRouting() {
     routing {
         whiteBoardRoutes()
         documentManagementRoutes()
-        get("/") {
-            call.respondText("Hello World!")
-        }
     }
 
 }

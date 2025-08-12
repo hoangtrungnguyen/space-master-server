@@ -2,16 +2,25 @@ package com.ideaspace.document
 
 import io.ktor.server.plugins.di.DependencyRegistry
 import kotlinx.serialization.Serializable
+import kotlin.random.Random
 
 class CreateDocumentCommand(
     val document: CreateDocumentRequest
 ) {
 
-    fun execute(dependencies: DependencyRegistry): CreateDocumentResponse {
-        println("received: $document")
+    suspend fun execute(dependencies: DependencyRegistry): CreateDocumentResponse {
+        
+        val producer = dependencies.resolve<DocumentEventProducer>()
+
+        val documentId = Random.nextLong()
+        val documentEvent = DocumentEvent(
+            op = "CREATE",
+        )
+        
+        producer.sendEvent(key = documentId, event = documentEvent)
+        
         return CreateDocumentResponse(
-            message = "OK",
-            received = document
+            documentId = documentId
         )
     }
 
@@ -24,6 +33,5 @@ data class CreateDocumentRequest(
 
 @Serializable
 data class CreateDocumentResponse(
-    val message: String,
-    val received: CreateDocumentRequest
+    val documentId: Long,
 )
