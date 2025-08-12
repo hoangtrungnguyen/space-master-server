@@ -1,4 +1,4 @@
-package org.example.com.ideaspace.core.models
+package com.ideaspace.core.models
 
 class User(
     var id: Long,

@@ -1,10 +1,20 @@
 package com.ideaspace.config
 
 
+import com.ideaspace.core.datasources.postgres.connectToPostgresJDBC
 import io.ktor.server.application.*
-import org.example.com.ideaspace.core.datasources.postgres.connectToPostgres
-import java.sql.Connection
+import io.ktor.server.plugins.di.dependencies
+import com.ideaspace.core.repository.CrudDocumentRepository
+import com.ideaspace.core.repositoryImpl.CrudDocumentRepositoryImpl
 
 fun Application.configureDatabases() {
-    val dbConnection: Connection = connectToPostgres(embedded = true)
+
+    val db = connectToPostgresJDBC(embedded = false)
+    val repository =  CrudDocumentRepositoryImpl()
+    dependencies {
+        provide<CrudDocumentRepository>{
+        repository
+        }
+    }
+
 }

@@ -1,1 +1,1 @@
-package org.example.com.ideaspace.core.repository
+package com.ideaspace.core.repository

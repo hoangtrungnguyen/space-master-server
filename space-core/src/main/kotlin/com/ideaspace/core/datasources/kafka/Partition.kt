@@ -1,4 +1,4 @@
-package com.space.com.ideaspace.infra.datasources.kafka
+package com.spacecom.ideaspace.infra.datasources.kafka
 
 import io.ktor.server.application.Application
 import org.apache.kafka.clients.admin.AdminClient

@@ -2,6 +2,7 @@ package com.ideaspace
 
 import com.ideaspace.core.datasources.kafka.configureKafka
 import com.ideaspace.config.configureDatabases
+import com.ideaspace.config.configureErrorHandling
 import com.ideaspace.config.configureFrameworks
 import com.ideaspace.config.configureHTTP
 import com.ideaspace.config.configureMonitoring
@@ -18,12 +19,13 @@ fun main(args: Array<String>) {
 
 fun Application.module() {
 
+    configureErrorHandling()
     configureHTTP()
     configureMonitoring()
     configureSerialization()
     configureDatabases()
     configureFrameworks()
     configureRouting()
-    configureKafka()
+//    configureKafka()
 
 }
