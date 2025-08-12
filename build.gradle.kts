@@ -56,3 +56,8 @@ subprojects{
 
 }
 
+project(":space-api-gateway") {
+    dependencies {
+        project(":space-core")
+    }
+}

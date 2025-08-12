@@ -1,7 +1,7 @@
 ktor:
   application:
     modules:
-      - com.space.ApplicationKt.module
+      - com.space.com.ideaspace.ApplicationKt.module
   deployment:
     port: 8080
 
