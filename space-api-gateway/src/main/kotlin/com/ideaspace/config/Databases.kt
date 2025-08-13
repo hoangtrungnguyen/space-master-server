@@ -6,7 +6,9 @@ import com.ideaspace.core.datasources.postgres.connectToPostgresJDBC
 import io.ktor.server.application.*
 import io.ktor.server.plugins.di.dependencies
 import com.ideaspace.core.repository.CrudDocumentRepository
+import com.ideaspace.core.repository.UserRepo
 import com.ideaspace.core.repositoryImpl.CrudDocumentRepositoryImpl
+import com.ideaspace.core.repositoryImpl.UserRepoImpl
 
 fun Application.configureDatabases() {
     val db = connectToPostgresJDBC(embedded = false)
@@ -16,6 +18,9 @@ fun Application.configureDatabases() {
         }
         provide<ElementRepo> {
             ElementRepoImpl(db)
+        }
+        provide<UserRepo>{
+            UserRepoImpl(db)
         }
     }
 }

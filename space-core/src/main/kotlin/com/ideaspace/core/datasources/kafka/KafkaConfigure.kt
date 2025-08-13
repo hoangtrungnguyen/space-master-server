@@ -11,8 +11,6 @@ import org.slf4j.LoggerFactory
 import java.util.LinkedHashMap
 
 fun Application.configureKafka(
-    onServerOperationMessage: suspend (record: ConsumerRecord<String, GenericRecord
-            >) -> Unit,
     onDocumentSyncEvent: suspend (record: ConsumerRecord<String, GenericRecord>) -> Unit
 ) {
 
@@ -68,13 +66,8 @@ fun Application.configureKafka(
         }
 
         consumerConfig {
-            consumerRecordHandler(operationTopic){ record ->
-                println("consumerRecordHandler - ${record}")
-                onServerOperationMessage(record)
-            }
             consumerRecordHandler(documentEventTopic){ record ->
                 println("consumerRecordHandler - ${record}")
-                println((record.value() as LinkedHashMap<*, *>)["sync_op"])
                 onDocumentSyncEvent(record)
             }
 

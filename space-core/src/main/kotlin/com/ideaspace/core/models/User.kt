@@ -1,6 +1,9 @@
 package com.ideaspace.core.models
 
-class User(
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class User(
     var id: Long,
     var loginName: String,
     var fullName: String,

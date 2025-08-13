@@ -16,28 +16,19 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.slf4j.LoggerFactory
 
 fun Application.configureServerKafka() {
-    val messageHandler: suspend (ConsumerRecord<String, GenericRecord>) -> Unit = { record ->
-        val logger = LoggerFactory.getLogger("MessageHandler")
-        val key = record.key()
-        println("Kafka message handler")
-        if(dependencies.resolve<CrudDocumentRepository>().existByUuid(key)) {
-            dependencies.resolve<KafkaPartitionProcessor>().submit(record)
-        } else {
-            logger.error("$key not found in db")
-        }
-    }
 
     val messageDocumentEventHandler : suspend (ConsumerRecord<String, GenericRecord>) -> Unit = { record ->
         val logger = LoggerFactory.getLogger("MessageHandler Document event")
         val key = record.key()
-        if(dependencies.resolve<CrudDocumentRepository>().existByUuid(key)) {
+        val id = key.toLong()
+        if(dependencies.resolve<CrudDocumentRepository>().existById(id)) {
             dependencies.resolve<KafkaPartitionProcessor>().submit(record)
         } else {
             logger.error("$key not found in db")
         }
     }
 
-    configureKafka(messageHandler, messageDocumentEventHandler)
+    configureKafka( messageDocumentEventHandler)
 
     environment.monitor.subscribe(ApplicationStopping) {
         runBlocking {

@@ -55,6 +55,12 @@ class CrudDocumentRepositoryImpl(val db: Database) : CrudDocumentRepository {
         }
     }
 
+    override suspend fun existById(id: Long): Boolean {
+        return transaction(db) {
+            DocumentDAO.findById(id) != null
+        }
+    }
+
     @OptIn(ExperimentalTime::class)
     override suspend fun updateOffset(uuid: String, offset: Long) {
         val parsedUuid = runCatching { UUID.fromString(uuid) }.getOrNull() ?: return

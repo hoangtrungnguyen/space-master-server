@@ -7,14 +7,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 
 class KafkaPartitionProcessor(
-    val documentRepository: CrudDocumentRepository
+    val documentRepository: CrudDocumentRepository,
 ) {
     companion object {
         var count = 0
@@ -46,6 +45,7 @@ class KafkaPartitionProcessor(
         println("KEY ${key} - MESSAGE COUNTER: ${messageCounter[key]}")
         partitionScope.launch {
             println("process record: ${record.value()}")
+
             if(messageCounter[key] == BATCH_LIMIT){
                     println("IO CONTEXT - Process flush kafka message to database")
                     documentRepository.updateOffset(key, record.offset())

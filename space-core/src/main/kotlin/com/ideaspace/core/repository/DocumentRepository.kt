@@ -14,5 +14,7 @@ interface CrudDocumentRepository {
 
     suspend fun existByUuid(uuid: String): Boolean
 
+    suspend fun existById(id:Long): Boolean
+
     suspend fun updateOffset(uuid: String, offset: Long)
 }
