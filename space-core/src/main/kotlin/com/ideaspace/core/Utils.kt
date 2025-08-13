@@ -1,10 +1,8 @@
 @file:OptIn(ExperimentalTime::class)
 
-package com.ideaspace.core.repository.dto
+package com.ideaspace.core
 
-import com.ideaspace.core.dao.DocumentDAO
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -13,11 +11,6 @@ import kotlinx.serialization.encoding.Encoder
 import java.util.UUID
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
-
-@Serializable
-data class CreateDocumentRequest(
-    val name: String
-)
 
 object UUIDSerializer : KSerializer<UUID> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("UUID", PrimitiveKind.STRING)
@@ -43,20 +36,3 @@ object InstantAsEpochMilliSerializer : KSerializer<Instant> {
         return Instant.fromEpochMilliseconds(decoder.decodeLong())
     }
 }
-
-@Serializable
-data class DocumentDTO(
-    val id: Long,
-    val title: String,
-    @Serializable(with = UUIDSerializer::class)
-    val uuid: UUID,
-    @Serializable(with = InstantAsEpochMilliSerializer::class)
-    val createdAt: Instant
-)
-
-fun DocumentDAO.toDTO(): DocumentDTO = DocumentDTO(
-    id = this.id.value,
-    title = this.title,
-    uuid = this.uuid,
-    createdAt = this.createdAt
-)

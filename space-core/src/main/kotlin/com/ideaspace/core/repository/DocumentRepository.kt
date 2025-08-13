@@ -1,7 +1,7 @@
 package com.ideaspace.core.repository
 
 import com.ideaspace.core.dao.DocumentDAO
-import com.ideaspace.core.repository.dto.CreateDocumentRequest
+import com.ideaspace.core.dto.CreateDocumentRequest
 
 interface DocumentRepository {
 }

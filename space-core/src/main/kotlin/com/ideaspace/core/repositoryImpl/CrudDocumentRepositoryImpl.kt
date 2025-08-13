@@ -4,7 +4,7 @@ import kotlinx.coroutines.runBlocking
 import com.ideaspace.core.dao.DocumentDAO
 import com.ideaspace.core.dao.DocumentTable
 import com.ideaspace.core.repository.CrudDocumentRepository
-import com.ideaspace.core.repository.dto.CreateDocumentRequest
+import com.ideaspace.core.dto.CreateDocumentRequest
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.util.UUID

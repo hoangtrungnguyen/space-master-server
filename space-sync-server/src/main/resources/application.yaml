@@ -3,7 +3,6 @@ ktor:
   application:
     modules:
       - com.ideaspace.ApplicationKt.module
-
   deployment:
     port: 9099
 postgres:
@@ -21,6 +20,7 @@ kafka:
   clientId: "sync-server"
   topic: "server-operation"
   consumerGroupId: "sync-server-group"
+  topicDocumentEvent: "document-event"
 
   topicDefaults:
     partitions: ${KAFKA_TOPIC_PARTITIONS:3}
