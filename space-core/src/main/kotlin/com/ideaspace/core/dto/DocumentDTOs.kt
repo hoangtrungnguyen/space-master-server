@@ -2,9 +2,11 @@
 
 package com.ideaspace.core.dto
 
-import com.ideaspace.core.InstantAsEpochMilliSerializer
-import com.ideaspace.core.UUIDSerializer
+//import com.ideaspace.core.InstantAsEpochMilliSerializer
+//import com.ideaspace.core.UUIDSerializer
 import com.ideaspace.core.dao.DocumentDAO
+import com.ideaspace.core.repository.dto.InstantToISODateTime
+import com.ideaspace.core.repository.dto.UUIDToString
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -26,9 +28,9 @@ data class CreateDocumentRequest(
 data class DocumentDTO(
     val id: Long,
     val title: String,
-    @Serializable(with = UUIDSerializer::class)
+    @Serializable(with = UUIDToString::class)
     val uuid: UUID,
-    @Serializable(with = InstantAsEpochMilliSerializer::class)
+    @Serializable(with = InstantToISODateTime::class)
     val createdAt: Instant
 )
 
