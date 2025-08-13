@@ -1,16 +1,10 @@
 package com.ideaspace.document
 
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.plugins.di.dependencies
-import io.ktor.server.response.respond
-import io.ktor.server.routing.Route
-import io.ktor.server.routing.application
-import io.ktor.server.routing.post
-import io.ktor.server.routing.route
 import com.ideaspace.core.repository.CrudDocumentRepository
-import com.ideaspace.core.repository.dto.CreateDocumentRequest
 import com.ideaspace.core.repository.dto.toDTO
-import io.ktor.server.routing.get
+import io.ktor.server.plugins.di.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 
 
 fun Route.documentManagementRoutes() {
