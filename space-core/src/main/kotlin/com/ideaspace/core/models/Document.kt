@@ -2,15 +2,14 @@ package com.ideaspace.core.models
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
+import java.util.*
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
+@OptIn(ExperimentalTime::class)
 class BusinessDocument(
     val id: Long,
-    val uuid: Uuid,
+    val uuid: UUID,
     val revId: Long,
     val title: String,
     val creatorId: Long,

@@ -3,12 +3,7 @@ package com.ideaspace.core.repository
 import com.ideaspace.core.dao.DocumentDAO
 import com.ideaspace.core.models.BusinessDocument
 
-interface DocumentRepository {
-    
-}
-
-
-interface CrudDocumentRepository : DocumentRepository{
+interface CrudDocumentRepository {
     suspend fun create(request: BusinessDocument): DocumentDAO
 
     suspend fun findByIdUuid(uuid: String): DocumentDAO
