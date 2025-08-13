@@ -1,14 +1,15 @@
 package com.ideaspace.core.repository
 
 import com.ideaspace.core.dao.DocumentDAO
-import com.ideaspace.core.dto.CreateDocumentRequest
+import com.ideaspace.core.models.BusinessDocument
 
 interface DocumentRepository {
+    
 }
 
 
 interface CrudDocumentRepository : DocumentRepository{
-    suspend fun create(request: CreateDocumentRequest): DocumentDAO
+    suspend fun create(request: BusinessDocument): DocumentDAO
 
     suspend fun findByIdUuid(uuid: String): DocumentDAO
 
@@ -18,5 +19,5 @@ interface CrudDocumentRepository : DocumentRepository{
 
     suspend fun existByUuid(uuid: String): Boolean
 
-    suspend fun updateOffset(uuid: String, offset: Int)
+    suspend fun updateOffset(uuid: String, offset: Long)
 }

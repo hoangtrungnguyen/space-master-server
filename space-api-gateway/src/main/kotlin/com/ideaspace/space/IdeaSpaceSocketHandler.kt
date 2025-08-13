@@ -1,5 +1,6 @@
 package com.ideaspace.space
 
+import com.ideaspace.core.models.User
 import com.ideaspace.session.SessionManager
 import com.ideaspace.session.WhiteboardConnection
 import com.ideaspace.space.handlers.OperationHandler
@@ -11,7 +12,6 @@ import io.ktor.websocket.*
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.serialization.json.Json
-import org.example.com.ideaspace.core.models.User
 
 
 /**

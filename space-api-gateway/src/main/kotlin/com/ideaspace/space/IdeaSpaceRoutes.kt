@@ -1,5 +1,6 @@
 package com.ideaspace.space
 
+import com.ideaspace.core.models.User
 import com.ideaspace.services.KafkaProducerService
 import com.ideaspace.services.dto.ServerOperation
 import com.ideaspace.space.client.IdeaSpaceServerClient
@@ -11,7 +12,6 @@ import io.ktor.server.routing.*
 import io.ktor.server.routing.application
 import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.*
-import org.example.com.ideaspace.core.models.User
 import kotlin.random.Random
 
 

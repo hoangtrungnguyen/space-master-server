@@ -48,7 +48,7 @@ class KafkaPartitionProcessor(
             println("process record: ${record.value()}")
             if(messageCounter[key] == BATCH_LIMIT){
                     println("IO CONTEXT - Process flush kafka message to database")
-                    documentRepository.updateOffset(key, record.offset().toInt())
+                    documentRepository.updateOffset(key, record.offset())
                 messageCounter[key] = 0
             }
         }

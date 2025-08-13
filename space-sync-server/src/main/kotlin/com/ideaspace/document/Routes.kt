@@ -1,29 +1,15 @@
 package com.ideaspace.document
 
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.plugins.di.dependencies
-import io.ktor.server.response.respond
-import io.ktor.server.routing.Route
-import io.ktor.server.routing.application
-import io.ktor.server.routing.post
-import io.ktor.server.routing.route
 import com.ideaspace.core.repository.CrudDocumentRepository
-import com.ideaspace.core.dto.CreateDocumentRequest
-import com.ideaspace.core.dto.toDTO
-import io.ktor.server.routing.get
+import com.ideaspace.core.repository.dto.toDTO
+import io.ktor.server.plugins.di.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+
 
 fun Route.documentManagementRoutes() {
     route("/api") {
         route("/documents") {
-            post("/create") {
-                val response = application.dependencies.resolve<CrudDocumentRepository>().create(
-                    CreateDocumentRequest(
-                        name = "test"
-                    )
-                )
-                call.respond(HttpStatusCode.OK, response.toDTO())
-            }
-
             get("/{uuid}") {
                 val uuid = call.parameters["uuid"]!!
                 val response = application.dependencies.resolve<CrudDocumentRepository>().findByIdUuid(uuid)
@@ -36,11 +22,6 @@ fun Route.documentManagementRoutes() {
                 val dtos = response.map{ it.toDTO() }.toList()
                 call.respond(dtos)
             }
-        }
-    }
-
-    route("/kafka"){
-        post {
         }
     }
 }
