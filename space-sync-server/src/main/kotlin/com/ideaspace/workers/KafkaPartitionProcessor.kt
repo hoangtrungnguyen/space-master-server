@@ -41,6 +41,7 @@ class KafkaPartitionProcessor(
         val counter = messageCounter.computeIfAbsent(key){
             0
         }
+
         messageCounter[key] = counter + 1
         println("KEY ${key} - MESSAGE COUNTER: ${messageCounter[key]}")
         partitionScope.launch {

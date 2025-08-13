@@ -1,30 +1,19 @@
 package com.ideaspace.core.datasources.kafka
 
-import com.ideaspace.core.datasources.kafka.dto.ServerOperation
-import io.github.flaxoos.ktor.server.plugins.kafka.AbstractKafkaConfig
-import io.github.flaxoos.ktor.server.plugins.kafka.Kafka
-import io.github.flaxoos.ktor.server.plugins.kafka.KafkaConsumerConfig
-import io.ktor.server.application.Application
-import io.ktor.server.application.install
-import io.github.flaxoos.ktor.server.plugins.kafka.MessageTimestampType
-import io.github.flaxoos.ktor.server.plugins.kafka.TopicName
-import io.github.flaxoos.ktor.server.plugins.kafka.common
-import io.github.flaxoos.ktor.server.plugins.kafka.consumer
-import io.github.flaxoos.ktor.server.plugins.kafka.consumerConfig
-import io.github.flaxoos.ktor.server.plugins.kafka.consumerRecordHandler
-import io.github.flaxoos.ktor.server.plugins.kafka.registerSchemas
-import io.github.flaxoos.ktor.server.plugins.kafka.topic
-import io.ktor.client.HttpClient
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.serialization.kotlinx.json.json
-import io.ktor.server.plugins.di.dependencies
+import io.confluent.kafka.serializers.KafkaAvroDeserializer
+import io.confluent.kafka.serializers.KafkaJsonDeserializer
+import io.github.flaxoos.ktor.server.plugins.kafka.*
+import io.ktor.server.application.*
 import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.common.serialization.StringDeserializer
 import org.slf4j.LoggerFactory
+import java.util.LinkedHashMap
 
 fun Application.configureKafka(
     onServerOperationMessage: suspend (record: ConsumerRecord<String, GenericRecord
-            >) -> Unit
+            >) -> Unit,
+    onDocumentSyncEvent: suspend (record: ConsumerRecord<String, GenericRecord>) -> Unit
 ) {
 
     //logger
@@ -40,18 +29,15 @@ fun Application.configureKafka(
     val partitions = kafkaConfig.property("topicDefaults.partitions").getString().toInt()
     val replicas = kafkaConfig.property("topicDefaults.replicas").getString().toInt()
 
-    val operationTopic = TopicName.named(topicName)
 
-    // The Kafka plugin needs an HttpClient to talk to the Schema Registry.
-    // This client must be configured with the correct content negotiation plugin.
-    val schemaRegistryClient = HttpClient {
-        install(ContentNegotiation) {
-            json()
-        }
-    }
+    val operationTopic = TopicName.named(topicName)
+    val documentEventTopic = TopicName.named(kafkaConfig.property("topicDocumentEvent").getString())
+
 
     install(Kafka) {
+        this.admin {
 
+        }
         this.schemaRegistryUrl = schemaRegistryUrl
         common { // <-- Define common properties
             this.bootstrapServers = bootstrapServers
@@ -67,22 +53,33 @@ fun Application.configureKafka(
             }
         }
 
+        topic(documentEventTopic) {
+            this.partitions = partitions
+            this.replicas = replicas.toShort()
+            configs {
+                messageTimestampType = MessageTimestampType.CreateTime
+            }
+        }
+
         consumer { // <-- Creates a consumer
             groupId = consumerGroupId
+            keyDeserializerClass = StringDeserializer::class.java.name
+            valueDeserializerClass = KafkaJsonDeserializer::class.java.name
         }
+
         consumerConfig {
             consumerRecordHandler(operationTopic){ record ->
                 println("consumerRecordHandler - ${record}")
                 onServerOperationMessage(record)
             }
+            consumerRecordHandler(documentEventTopic){ record ->
+                println("consumerRecordHandler - ${record}")
+                println((record.value() as LinkedHashMap<*, *>)["sync_op"])
+                onDocumentSyncEvent(record)
+            }
 
         }
-        registerSchemas {
-            using {
-                schemaRegistryClient
-            }
-            ServerOperation::class at operationTopic
-        }
+
     }
 
 
