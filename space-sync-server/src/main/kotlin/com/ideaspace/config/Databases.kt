@@ -1,7 +1,7 @@
 package com.ideaspace.config
 
 import com.ideaspace.core.datasources.postgres.connectToPostgresJDBC
-import com.ideaspace.core.datasources.postgres.entities.DocumentTable
+import com.ideaspace.core.dao.DocumentTable
 import io.ktor.server.application.*
 import io.ktor.server.plugins.di.dependencies
 import com.ideaspace.core.repository.CrudDocumentRepository

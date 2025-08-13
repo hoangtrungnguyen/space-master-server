@@ -2,7 +2,7 @@
 
 package com.ideaspace.core.repository.dto
 
-import com.ideaspace.core.datasources.postgres.entities.DocumentDAO
+import com.ideaspace.core.dao.DocumentDAO
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind

@@ -1,6 +1,6 @@
 package com.ideaspace.core.repository
 
-import com.ideaspace.core.datasources.postgres.entities.DocumentDAO
+import com.ideaspace.core.dao.DocumentDAO
 import com.ideaspace.core.repository.dto.CreateDocumentRequest
 
 interface DocumentRepository {

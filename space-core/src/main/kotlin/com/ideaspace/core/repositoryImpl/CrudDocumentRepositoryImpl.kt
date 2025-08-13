@@ -1,8 +1,8 @@
 package com.ideaspace.core.repositoryImpl
 
 import kotlinx.coroutines.runBlocking
-import com.ideaspace.core.datasources.postgres.entities.DocumentDAO
-import com.ideaspace.core.datasources.postgres.entities.DocumentTable
+import com.ideaspace.core.dao.DocumentDAO
+import com.ideaspace.core.dao.DocumentTable
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.dto.CreateDocumentRequest
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
@@ -21,6 +21,7 @@ class CrudDocumentRepositoryImpl(
             }
         }
     }
+
     override suspend fun create(request: CreateDocumentRequest): DocumentDAO = transaction {
         DocumentDAO.new {
             title = request.name

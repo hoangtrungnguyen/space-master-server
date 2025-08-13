@@ -26,5 +26,5 @@ fun Application.module() {
     configureDatabases()
     configureFrameworks()
     configureRouting()
-    configureServerKafka()
+//    configureServerKafka()
 }

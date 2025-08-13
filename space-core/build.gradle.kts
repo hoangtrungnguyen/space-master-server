@@ -51,7 +51,7 @@ dependencies {
 
     implementation("org.jetbrains.exposed:exposed-jdbc:1.0.0-beta-5")
 
-
+    implementation("org.jetbrains.exposed:exposed-json:1.0.0-beta-5")
     implementation("org.postgresql:postgresql:$postgres_version")
     implementation("com.h2database:h2:2.2.224")
 
