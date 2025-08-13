@@ -2,12 +2,10 @@ package com.ideaspace.config
 
 
 import com.ideaspace.document.documentManagementRoutes
-import com.ideaspace.space.whiteBoardRoutes
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.calllogging.*
 import io.ktor.server.plugins.cors.routing.*
-import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
 fun Application.configureRouting() {
@@ -24,7 +22,6 @@ fun Application.configureRouting() {
     }
     install(CallLogging)
     routing {
-        whiteBoardRoutes()
         documentManagementRoutes()
     }
 

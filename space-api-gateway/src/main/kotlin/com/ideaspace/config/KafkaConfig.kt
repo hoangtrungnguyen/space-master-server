@@ -1,6 +1,5 @@
-package com.ideaspace.services
+package com.ideaspace.config
 
-import com.ideaspace.document.DocumentEvent
 import com.ideaspace.document.DocumentEventProducer
 import com.ideaspace.document.DocumentEventSerializer
 import io.ktor.server.application.*

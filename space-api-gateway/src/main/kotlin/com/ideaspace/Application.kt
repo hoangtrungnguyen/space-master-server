@@ -1,8 +1,7 @@
 package com.ideaspace
 
 import com.ideaspace.config.*
-import com.ideaspace.present.configureAdministration
-import com.ideaspace.services.configureDocumentEventProducer
+import com.ideaspace.config.configureDocumentEventProducer
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
 
@@ -17,8 +16,6 @@ fun Application.module() {
     configureMonitoring()
     configureSerialization()
     configureDatabases()
-    configureFrameworks()
     configureSockets()
-    configureAdministration()
     configureRouting()
 }
