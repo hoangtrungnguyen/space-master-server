@@ -1,11 +1,14 @@
 package com.ideaspace.core.datasources.kafka
 
+import io.confluent.kafka.serializers.KafkaAvroDeserializer
+import io.confluent.kafka.serializers.KafkaJsonDeserializer
 import io.github.flaxoos.ktor.server.plugins.kafka.*
 import io.ktor.server.application.*
 import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.slf4j.LoggerFactory
+import java.util.LinkedHashMap
 
 fun Application.configureKafka(
     onServerOperationMessage: suspend (record: ConsumerRecord<String, GenericRecord
@@ -61,7 +64,7 @@ fun Application.configureKafka(
         consumer { // <-- Creates a consumer
             groupId = consumerGroupId
             keyDeserializerClass = StringDeserializer::class.java.name
-            valueDeserializerClass = StringDeserializer::class.java.name
+            valueDeserializerClass = KafkaJsonDeserializer::class.java.name
         }
 
         consumerConfig {
@@ -71,6 +74,7 @@ fun Application.configureKafka(
             }
             consumerRecordHandler(documentEventTopic){ record ->
                 println("consumerRecordHandler - ${record}")
+                println((record.value() as LinkedHashMap<*, *>)["sync_op"])
                 onDocumentSyncEvent(record)
             }
 
