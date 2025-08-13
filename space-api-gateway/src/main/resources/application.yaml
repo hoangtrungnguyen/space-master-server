@@ -5,10 +5,10 @@ ktor:
   deployment:
     port: 8080
 
-#postgres:
-#  url: "jdbc:postgresql://localhost:5439/whiteboard"
-#  user: postgres
-#  password: postgres
+postgres:
+  url: "jdbc:postgresql://localhost:5439/idea_space_main"
+  user: postgres
+  password: postgres
 
 kafka:
   schema:

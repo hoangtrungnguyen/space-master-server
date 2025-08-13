@@ -1,49 +1,18 @@
 package com.ideaspace.config
 
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.logging.*
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
-import io.ktor.serialization.kotlinx.json.json
+import com.ideaspace.core.datasources.postgres.connectToPostgresJDBC
 import io.ktor.server.application.*
-import io.ktor.server.plugins.di.*
-import kotlinx.serialization.json.Json
-
+import io.ktor.server.plugins.di.dependencies
+import com.ideaspace.core.repository.CrudDocumentRepository
+import com.ideaspace.core.repositoryImpl.CrudDocumentRepositoryImpl
 
 fun Application.configureDatabases() {
-
-//    configKafka()
+    val db = connectToPostgresJDBC(embedded = false)
+    val repository =  CrudDocumentRepositoryImpl(db)
     dependencies {
-        provide<HttpClient> {
-            HttpClient(CIO) {
-
-                install(ContentNegotiation) {
-                    json(Json {
-                        prettyPrint = true
-                        isLenient = true
-                        ignoreUnknownKeys = true // Very useful for resilient clients
-                    })
-                }
-
-                install(Logging) {
-                    logger = Logger.DEFAULT
-                    level = LogLevel.HEADERS
-                }
-
-                defaultRequest {
-                    contentType(ContentType.Application.Json)
-                    url("http://127.0.0.1:9099")
-                }
-                engine {
-                    requestTimeout = 30_000
-                }
-            }
+        provide<CrudDocumentRepository>{
+            repository
         }
-
     }
-
 }
 

@@ -12,10 +12,10 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 fun Application.configureDatabases() {
 
     val db = connectToPostgresJDBC(embedded = false)
-    val repository =  CrudDocumentRepositoryImpl()
+    val repository =  CrudDocumentRepositoryImpl(db)
     dependencies {
         provide<CrudDocumentRepository>{
-        repository
+            repository
         }
     }
 

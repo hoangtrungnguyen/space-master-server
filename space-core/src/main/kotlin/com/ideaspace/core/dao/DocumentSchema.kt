@@ -2,6 +2,9 @@
 
 package com.ideaspace.core.dao
 
+import com.ideaspace.core.models.DocumentStatus
+import com.ideaspace.core.models.DocumentType
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.QueryBuilder
@@ -42,43 +45,39 @@ class CurrentTimestamp : Expression<Instant>() {
 
 object DocumentTable: LongIdTable("document") {
     val uuid = uuid("uuid").defaultExpression(DatabaseUUID()).uniqueIndex()
-    val revId = long("rev_id").default(0)
+    val revId = long("rev_id")
     val title = varchar("title", 50)
-    val creatorId = long("creator_id").nullable()
-    val ownerId = long("owner_id").nullable() // owner_id
+    val creatorId = long("creator_id")
+    val ownerId = long("owner_id")
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp())
-    val updatedAt = timestamp("updated_at").nullable()
-    val lastModifiedAt = timestamp("last_modified_at").nullable() // last_modified_at
+    val lastModifiedAt = timestamp("last_modified_at").defaultExpression(CurrentTimestamp())
     val metadata = jsonb<JsonElement>(
         "metadata",
         serialize = { Json.encodeToString(JsonElement.serializer(), it) },
         deserialize = { Json.decodeFromString(JsonElement.serializer(), it) }
     ).nullable()
-    val documentType = varchar("document_type", 50).default("WORD")
-    val status = enumerationByName<DocumentStatus>("status", 50).default(DocumentStatus.DRAFT)
-    val transformVersion = long("transform_version").default(0)
-    val kafkaOffset = integer("kafka_offset").default(0)
+    val documentType = enumerationByName<DocumentType>("document_type", 50)
+    val status = enumerationByName<DocumentStatus>("status", 50)
+    val transformVersion = long("transform_version")
+    val kafkaOffset = long("kafka_offset")
 }
 
-enum class DocumentStatus{
-    ARCHIVE, DRAFT, PUBLISH
-}
+
 
 class DocumentDAO(id: EntityID<Long>) : LongEntity(id) {
     companion object : LongEntityClass<DocumentDAO>(DocumentTable)
 
-    var title by DocumentTable.title
     var uuid by DocumentTable.uuid
+    var revId by DocumentTable.revId
+    var title by DocumentTable.title
+    var creatorId by DocumentTable.creatorId
+    var ownerId  by DocumentTable.ownerId
     var createdAt by DocumentTable.createdAt
-    var kafkaOffset by DocumentTable.kafkaOffset
-    var updatedAt by DocumentTable.updatedAt
+    var lastModifiedAt by DocumentTable.lastModifiedAt
     var metadata by DocumentTable.metadata
     var documentType by DocumentTable.documentType
     var status by DocumentTable.status
     var transformVersion by DocumentTable.transformVersion
-    var creatorId by DocumentTable.creatorId
-    var ownerId  by DocumentTable.ownerId
-    var revId by DocumentTable.revId
-    var lastModifiedAt by DocumentTable.lastModifiedAt
+    var kafkaOffset by DocumentTable.kafkaOffset
 
 }
