@@ -1,9 +1,9 @@
-package com.ideaspace.com.ideaspace.core.repositoryImpl
+package com.ideaspace.core.repositoryImpl
 
-import com.ideaspace.com.ideaspace.core.dao.ElementDAO
-import com.ideaspace.com.ideaspace.core.dao.ElementTable
-import com.ideaspace.com.ideaspace.core.dao.toEntity
-import com.ideaspace.com.ideaspace.core.repository.ElementRepo
+import com.ideaspace.core.dao.ElementDAO
+import com.ideaspace.core.dao.ElementTable
+import com.ideaspace.core.dao.toEntity
+import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.core.models.Element
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.jdbc.Database

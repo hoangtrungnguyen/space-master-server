@@ -1,4 +1,4 @@
-package com.ideaspace.com.ideaspace.core.repository
+package com.ideaspace.core.repository
 
 import com.ideaspace.core.models.Element
 import java.util.UUID

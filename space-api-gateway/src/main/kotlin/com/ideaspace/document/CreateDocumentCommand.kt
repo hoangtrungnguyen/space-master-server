@@ -1,6 +1,6 @@
 package com.ideaspace.document
 
-import com.ideaspace.com.ideaspace.core.repository.ElementRepo
+import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.core.dto.DocumentDTO
 import com.ideaspace.core.dto.toDTO
 import com.ideaspace.core.models.BusinessDocument

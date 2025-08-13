@@ -1,8 +1,7 @@
 @file:OptIn(ExperimentalTime::class)
 
-package com.ideaspace.com.ideaspace.core.dao
+package com.ideaspace.core.dao
 
-import com.ideaspace.core.dao.DocumentTable
 import com.ideaspace.core.models.Element
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
