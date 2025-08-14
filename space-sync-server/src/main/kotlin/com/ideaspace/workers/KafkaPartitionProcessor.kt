@@ -11,8 +11,11 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.encodeToJsonElement
 import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -68,12 +71,12 @@ class KafkaPartitionProcessor(
             }
 
 
-            val payload = value["payload"] as LinkedHashMap<*, *>
+            val payload = value["payload"] as LinkedHashMap<String, Any>
 
-            val element = payload["element"] as LinkedHashMap<*, *>
+            val element = payload["element"] as LinkedHashMap<String, Any>
 
-            val elementMetadata = element["metadata"] as LinkedHashMap<*, *>
-            val elementValue = element["value"] as LinkedHashMap<*, *>
+            val elementMetadata = element["metadata"] as LinkedHashMap<String, Any>
+            val elementValue = element["value"] as LinkedHashMap<String, Any>
 
             redisPublisher.saveSyncOperation(
                 RedisSyncOperation(
@@ -88,13 +91,9 @@ class KafkaPartitionProcessor(
                         element = com.ideaspace.core.redis.Element(
                             uuid = element["uuid"].toString(),
                             parentUuid = element["parent_uuid"].toString(),
-                            metadata = if (elementMetadata.isEmpty()) JsonObject(emptyMap()) else Json.encodeToJsonElement(
-                                elementMetadata
-                            ),
+                            metadata = mapToJsonObject(elementMetadata),
                             type = element["type"].toString(),
-                            value = if (elementValue.isEmpty()) JsonObject(emptyMap()) else Json.encodeToJsonElement(
-                                elementValue
-                            ),
+                            value = mapToJsonObject(elementValue),
 
                         )
                     )
@@ -106,6 +105,27 @@ class KafkaPartitionProcessor(
 
         println("MEMORY WORKER POOL LENGTH: ${partitionScopePool.values.size}")
     }
+
+
+    private fun mapToJsonObject(map: Map<String, Any?>): JsonObject {
+        val content = map.entries.associate { (key, value) ->
+            key to valueToJsonElement(value)
+        }
+        return JsonObject(content)
+    }
+
+    private fun valueToJsonElement(value: Any?): JsonElement {
+        return when (value) {
+            null -> JsonNull
+            is String -> JsonPrimitive(value)
+            is Number -> JsonPrimitive(value)
+            is Boolean -> JsonPrimitive(value)
+            is Map<*, *> -> mapToJsonObject(value as Map<String, Any?>)
+            is List<*> -> JsonArray(value.map { valueToJsonElement(it) })
+            else -> JsonPrimitive(value.toString())
+        }
+    }
+
 
     fun shutdown() {
         println("Shutting down all partition processors by cancelling the scope...")
