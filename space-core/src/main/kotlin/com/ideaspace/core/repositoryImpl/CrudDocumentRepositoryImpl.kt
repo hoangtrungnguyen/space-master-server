@@ -2,6 +2,7 @@ package com.ideaspace.core.repositoryImpl
 
 import com.ideaspace.core.dao.DocumentDAO
 import com.ideaspace.core.dao.DocumentTable
+import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.repository.CrudDocumentRepository
 import kotlinx.coroutines.runBlocking
@@ -12,7 +13,7 @@ import java.util.*
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
-class CrudDocumentRepositoryImpl(val db: Database) : CrudDocumentRepository {
+class CrudDocumentRepositoryImpl(val db: Database ) : CrudDocumentRepository {
 
     init {
         runBlocking {
@@ -48,6 +49,10 @@ class CrudDocumentRepositoryImpl(val db: Database) : CrudDocumentRepository {
         DocumentDAO.all().toList()
     }
 
+    override suspend fun findById(id: Long): DocumentDAO? = transaction(db){
+        DocumentDAO.findById(id)
+    }
+
     override suspend fun existByUuid(uuid: String): Boolean {
         val parsedUuid = runCatching { UUID.fromString(uuid) }.getOrNull() ?: return false
         return transaction(db) {
@@ -70,5 +75,9 @@ class CrudDocumentRepositoryImpl(val db: Database) : CrudDocumentRepository {
                 it.lastModifiedAt = Clock.System.now()
             }
         }
+    }
+
+    override suspend fun sendEvent(event: DocumentSyncEventValue) {
+        TODO("Not yet implemented")
     }
 }

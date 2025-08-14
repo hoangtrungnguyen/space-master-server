@@ -1,11 +1,13 @@
 package com.ideaspace
 
+import com.ideaspace.config.RedisPlugin
 import com.ideaspace.core.datasources.kafka.configureKafka
 import com.ideaspace.config.configureDatabases
 import com.ideaspace.config.configureErrorHandling
 import com.ideaspace.config.configureFrameworks
 import com.ideaspace.config.configureHTTP
 import com.ideaspace.config.configureMonitoring
+import com.ideaspace.config.configureRedisRoute
 import com.ideaspace.config.configureRouting
 import com.ideaspace.config.configureSerialization
 import com.ideaspace.config.configureServerKafka
@@ -26,5 +28,6 @@ fun Application.module() {
     configureDatabases()
     configureFrameworks()
     configureRouting()
+    configureRedisRoute()
     configureServerKafka()
 }

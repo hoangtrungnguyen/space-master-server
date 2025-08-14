@@ -20,8 +20,12 @@ kafka:
   clientId: "sync-server"
   topic: "server-operation"
   consumerGroupId: "sync-server-group"
-  topicDocumentEvent: "document-event"
+  topicDocumentEvent: "ideaspace.document.event"
 
   topicDefaults:
     partitions: ${KAFKA_TOPIC_PARTITIONS:3}
     replicas: ${KAFKA_TOPIC_REPLICAS:1}
+
+redis:
+  host: localhost
+  port: 6379

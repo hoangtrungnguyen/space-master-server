@@ -3,15 +3,19 @@ package com.ideaspace.core.datasources.kafka
 import io.confluent.kafka.serializers.KafkaAvroDeserializer
 import io.confluent.kafka.serializers.KafkaJsonDeserializer
 import io.github.flaxoos.ktor.server.plugins.kafka.*
+import io.github.flaxoos.ktor.server.plugins.kafka.Defaults.DEFAULT_CONSUMER_POLL_FREQUENCY_MS
 import io.ktor.server.application.*
 import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.common.serialization.LongDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.slf4j.LoggerFactory
 import java.util.LinkedHashMap
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 fun Application.configureKafka(
-    onDocumentSyncEvent: suspend (record: ConsumerRecord<String, GenericRecord>) -> Unit
+    onDocumentSyncEvent: suspend (record: ConsumerRecord<Long, GenericRecord>) -> Unit
 ) {
 
     //logger
@@ -67,13 +71,31 @@ fun Application.configureKafka(
 
         consumerConfig {
             consumerRecordHandler(documentEventTopic){ record ->
-                println("consumerRecordHandler - ${record}")
-                onDocumentSyncEvent(record)
+                val eventRecord = ConsumerRecord<Long, GenericRecord>(
+                    record.topic(),
+                    record.partition(),
+                    record.offset(),
+                    record.timestamp(),
+                    record.timestampType(),
+                    record.serializedKeySize(),
+                    record.serializedValueSize(),
+                    record.key().toByteArray().toLong(),
+                    record.value(),
+                    record.headers(),
+                    record.leaderEpoch()
+                )
+                onDocumentSyncEvent(eventRecord)
             }
-
         }
-
     }
+}
 
+fun ByteArray.toLong(): Long {
+    require(this.size == 8) { "Byte array must contain exactly 8 bytes for conversion to Long." }
 
+    var result: Long = 0
+    for (i in 0 until 8) {
+        result = (result shl 8) or (this[i].toLong() and 0xFF)
+    }
+    return result
 }

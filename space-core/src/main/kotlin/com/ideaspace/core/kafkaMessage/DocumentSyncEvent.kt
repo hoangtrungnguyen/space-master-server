@@ -5,6 +5,7 @@ package com.ideaspace.core.kafkaMessage
 import com.ideaspace.core.dto.UUIDToString
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import java.util.*
 import kotlin.uuid.ExperimentalUuidApi
@@ -56,9 +57,9 @@ data class Element(
     @SerialName("parent_uuid")
     @Serializable(with = UUIDToString::class)
     val parentUuid: UUID? = null,
-    val metadata: JsonObject = JsonObject(emptyMap()),
+    val metadata: JsonElement = JsonObject(emptyMap()),
     val type: String,
-    val value: JsonObject
+    val value: JsonElement
 )
 
 @Serializable

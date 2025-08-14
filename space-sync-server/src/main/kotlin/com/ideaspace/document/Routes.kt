@@ -1,7 +1,7 @@
 package com.ideaspace.document
 
+import com.ideaspace.core.dto.toDTO
 import com.ideaspace.core.repository.CrudDocumentRepository
-import com.ideaspace.core.repository.dto.toDTO
 import io.ktor.server.plugins.di.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*

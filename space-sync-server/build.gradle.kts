@@ -66,12 +66,15 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:1.0.0-beta-5")
     implementation("org.jetbrains.exposed:exposed-dao:1.0.0-beta-5")
 
+    // REDIS
+    implementation("redis.clients:jedis:5.1.3")
 
     //LOGGING
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-serialization-jackson:3.2.2")
 
 
+    // SERIALIZE
     implementation("io.ktor:ktor-serialization-kotlinx-json")
 
     //TESTING

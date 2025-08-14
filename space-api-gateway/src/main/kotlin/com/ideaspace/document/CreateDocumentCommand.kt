@@ -3,13 +3,17 @@ package com.ideaspace.document
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.core.dto.DocumentDTO
 import com.ideaspace.core.dto.toDTO
+import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.models.DocumentStatus
 import com.ideaspace.core.models.DocumentType
 import com.ideaspace.core.models.Element
 import com.ideaspace.core.repository.CrudDocumentRepository
 import io.ktor.server.plugins.di.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import java.util.*
 import kotlin.time.Clock
@@ -24,6 +28,7 @@ class CreateDocumentCommand(
     suspend fun execute(dependencies: DependencyRegistry): DocumentDTO {
         val docRepo = dependencies.resolve<CrudDocumentRepository>()
         val elementRepo = dependencies.resolve<ElementRepo>()
+        val documentEventProducer = dependencies.resolve<DocumentEventProducer>() // Resolve the producer
 
         val doc = docRepo.create(BusinessDocument(
             id = -1,
@@ -51,6 +56,29 @@ class CreateDocumentCommand(
             deletedAt = null
         ))
 
+
+        val event = DocumentSyncEventValue(
+            syncOp = com.ideaspace.core.kafkaMessage.SyncOperation.INIT_SYNC,
+            docId = doc.id.value,
+            processId = 2, // TODO: Generate process ID
+            userId = 1, // TODO: Get from context
+            sessionId = 1, // TODO: Get from context
+            clientId = 1, // TODO: Get from context
+            payload = com.ideaspace.core.kafkaMessage.ElementPayload(
+                elementOp = com.ideaspace.core.kafkaMessage.ElementOp.ADD_ELEMENT,
+                element = com.ideaspace.core.kafkaMessage.Element(
+                    uuid = root.uuid,
+                    parentUuid = root.parentUuid,
+                    metadata = (root.metadata ?: JsonObject(emptyMap())),
+                    type = root.type,
+                    value = root.value
+                )
+            )
+        )
+
+        withContext(Dispatchers.IO) {
+            documentEventProducer.sendEvent(doc.id.value, event)
+        }
         return toDTO(doc, root)
     }
 

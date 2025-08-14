@@ -1,5 +1,6 @@
 package com.ideaspace.document
 
+import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.slf4j.LoggerFactory
@@ -8,12 +9,12 @@ import java.util.concurrent.CompletableFuture
 
 class DocumentEventProducer(
     private val topic: String,
-    private val kafkaProducer: KafkaProducer<Long, DocumentEvent>
+    private val kafkaProducer: KafkaProducer<Long, DocumentSyncEventValue>
 ) {
     
     private val logger = LoggerFactory.getLogger(DocumentEventProducer::class.java)
     
-    suspend fun sendEvent(key: Long, event: DocumentEvent) {
+    suspend fun sendEvent(key: Long, event: DocumentSyncEventValue) {
         try {
             logger.info("Sending document event: $event to topic: $topic with key: $key")
             
