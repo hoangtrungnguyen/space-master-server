@@ -55,6 +55,8 @@ dependencies {
     implementation("org.postgresql:postgresql:$postgres_version")
     implementation("com.h2database:h2:2.2.224")
 
+    // REDIS
+    implementation("redis.clients:jedis:5.1.3")
 
     testImplementation(kotlin("test"))
 }

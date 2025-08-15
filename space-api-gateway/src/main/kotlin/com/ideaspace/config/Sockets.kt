@@ -1,9 +1,11 @@
 package com.ideaspace.config
 
+import com.ideaspace.core.dto.DocumentEventDTO
 import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.kafkaMessage.DocumentEventProducer
 import com.ideaspace.session.DocumentConnection
+import com.ideaspace.session.RedisSubscriber
 import com.ideaspace.session.SessionManager
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.server.application.*
@@ -64,10 +66,11 @@ fun Application.configureSockets() {
                     if (frame is Frame.Text) {
                         try {
                             println("Received frame: ${frame.readText()}")
-                            val event = Json.decodeFromString<DocumentSyncEventValue>(frame.readText())
+                            val event = Json.decodeFromString<DocumentEventDTO>(frame.readText())
                             val documentEventProducer = call.application.dependencies.resolve<DocumentEventProducer>()
                             val dao = application.dependencies.resolve<CrudDocumentRepository>().findByIdUuid(uuid = docUuid)
-                            documentEventProducer.sendEvent(dao.id.value, event)
+                            val data = event.copy(docId = dao.id.value)
+                            documentEventProducer.sendEvent(dao.id.value, Json.decodeFromString<DocumentSyncEventValue>(Json.encodeToString(data)))
                             println("Event sent successfully")
                         } catch (e: Exception) {
                             // Log the error

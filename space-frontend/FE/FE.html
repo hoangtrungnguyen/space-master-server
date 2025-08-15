@@ -17,6 +17,25 @@
             background-color: #4f46e5;
             color: white;
         }
+        /* Simple styling for the color picker */
+        #color-picker {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 40px;
+            height: 40px;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+        }
+        #color-picker::-webkit-color-swatch {
+            border-radius: 50%;
+            border: 2px solid #e2e8f0;
+        }
+        #color-picker::-moz-color-swatch {
+            border-radius: 50%;
+            border: 2px solid #e2e8f0;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -35,7 +54,7 @@
             <div class="space-y-4">
                 <div>
                     <label for="socket-url" class="block text-sm font-medium text-gray-700">WebSocket URL</label>
-                    <input type="text" id="socket-url" value="ws://localhost:8080/ws" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <input type="text" id="socket-url" value="ws://localhost:8080/ws/documents/70886c73-71cf-4e76-8787-f284ccb25dd0" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 </div>
                 <div class="flex items-center space-x-3">
                     <button id="connect-btn" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">Connect</button>
@@ -49,10 +68,6 @@
         <div class="mb-6">
             <h2 class="text-lg font-semibold mb-3 border-b pb-2">Identifiers</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="doc-id" class="block text-sm font-medium text-gray-700">Document ID</label>
-                    <input type="number" id="doc-id" value="1" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                </div>
                 <div>
                     <label for="user-id" class="block text-sm font-medium text-gray-700">User ID</label>
                     <input type="number" id="user-id" value="101" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
@@ -80,11 +95,17 @@
         <!-- Drawing Tools -->
         <div class="mb-6">
             <h2 class="text-lg font-semibold mb-3 border-b pb-2">Drawing Tools</h2>
-            <div id="tools" class="flex flex-wrap gap-2">
-                <button class="tool-btn active" data-tool="path">Path</button>
-                <button class="tool-btn" data-tool="line">Line</button>
-                <button class="tool-btn" data-tool="rectangle">Rectangle</button>
-                <button class="tool-btn" data-tool="circle">Circle</button>
+            <div class="flex items-center gap-4">
+                <div id="tools" class="flex flex-wrap gap-2">
+                    <button class="tool-btn active" data-tool="path">Path</button>
+                    <button class="tool-btn" data-tool="line">Line</button>
+                    <button class="tool-btn" data-tool="rectangle">Rectangle</button>
+                    <button class="tool-btn" data-tool="circle">Circle</button>
+                </div>
+                <div>
+                    <label for="color-picker" class="block text-sm font-medium text-gray-700 mb-1">Color</label>
+                    <input type="color" id="color-picker" value="#000000">
+                </div>
             </div>
         </div>
 
@@ -106,12 +127,14 @@
     const logDiv = document.getElementById('log');
     const clearLogBtn = document.getElementById('clear-log-btn');
     const toolsDiv = document.getElementById('tools');
+    const colorPicker = document.getElementById('color-picker');
 
     let socket;
     let isDrawing = false;
     let startX = 0, startY = 0;
     let currentPath = [];
     let currentTool = 'path';
+    let currentColor = '#000000';
     let processId = null;
 
     // --- Canvas Setup ---
@@ -119,7 +142,7 @@
         const container = canvas.parentElement;
         canvas.width = container.clientWidth;
         canvas.height = container.clientHeight;
-        ctx.strokeStyle = '#000';
+        ctx.strokeStyle = currentColor; // Use the selected color
         ctx.lineWidth = 2;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
@@ -131,10 +154,11 @@
     // --- Drawing Logic ---
     canvas.addEventListener('mousedown', (e) => {
         if (!socket || socket.readyState !== WebSocket.OPEN) {
-            alert('Please connect to the WebSocket server first.');
+            logMessage('Please connect to the WebSocket server first.', 'text-red-600 font-bold');
             return;
         }
         isDrawing = true;
+        ctx.strokeStyle = currentColor; // Ensure current color is used
         [startX, startY] = [e.offsetX, e.offsetY];
         if (currentTool === 'path') {
             currentPath = [{ x: startX, y: startY }];
@@ -159,27 +183,27 @@
         let operationPayload;
         switch(currentTool) {
             case 'path':
-                operationPayload = { type: 'PATH', value: { points: currentPath, color: ctx.strokeStyle, lineWidth: ctx.lineWidth } };
+                operationPayload = { type: 'PATH', value: { points: currentPath, color: currentColor, lineWidth: ctx.lineWidth } };
                 break;
             case 'line':
                 ctx.beginPath();
                 ctx.moveTo(startX, startY);
                 ctx.lineTo(e.offsetX, e.offsetY);
                 ctx.stroke();
-                operationPayload = { type: 'LINE', value: { start: {x: startX, y: startY}, end: {x: e.offsetX, y: e.offsetY}, color: ctx.strokeStyle, lineWidth: ctx.lineWidth } };
+                operationPayload = { type: 'LINE', value: { start: {x: startX, y: startY}, end: {x: e.offsetX, y: e.offsetY}, color: currentColor, lineWidth: ctx.lineWidth } };
                 break;
             case 'rectangle':
                 const width = e.offsetX - startX;
                 const height = e.offsetY - startY;
                 ctx.strokeRect(startX, startY, width, height);
-                operationPayload = { type: 'RECTANGLE', value: { x: startX, y: startY, width, height, color: ctx.strokeStyle, lineWidth: ctx.lineWidth } };
+                operationPayload = { type: 'RECTANGLE', value: { x: startX, y: startY, width, height, color: currentColor, lineWidth: ctx.lineWidth } };
                 break;
             case 'circle':
                 const radius = Math.sqrt(Math.pow(e.offsetX - startX, 2) + Math.pow(e.offsetY - startY, 2));
                 ctx.beginPath();
                 ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
                 ctx.stroke();
-                operationPayload = { type: 'CIRCLE', value: { cx: startX, cy: startY, radius, color: ctx.strokeStyle, lineWidth: ctx.lineWidth } };
+                operationPayload = { type: 'CIRCLE', value: { cx: startX, cy: startY, radius, color: currentColor, lineWidth: ctx.lineWidth } };
                 break;
         }
 
@@ -193,7 +217,7 @@
     function connect() {
         const url = document.getElementById('socket-url').value;
         if (!url) {
-            alert('WebSocket URL cannot be empty.');
+            logMessage('WebSocket URL cannot be empty.', 'text-red-600 font-bold');
             return;
         }
 
@@ -209,10 +233,11 @@
 
         socket.onmessage = (event) => {
             logMessage(`⬇️ RECV: ${event.data}`, 'text-blue-600');
+            // Add logic here to draw incoming operations from other users
         };
 
         socket.onclose = () => {
-            processId = null; // Reset process_id on disconnection
+            processId = null; // Reset process_id
             updateStatus('Disconnected', 'bg-gray-200', 'text-gray-700');
             logMessage('Socket closed.', 'text-red-600');
             connectBtn.disabled = false;
@@ -233,16 +258,18 @@
     }
 
     function sendOperation(payload) {
-        if (!socket || socket.readyState !== WebSocket.OPEN || !processId) return;
+        if (!socket || socket.readyState !== WebSocket.OPEN || !processId) {
+            logMessage('Cannot send operation: No active connection or process ID missing.', 'text-yellow-600');
+            return;
+        }
 
-        const docId = parseInt(document.getElementById('doc-id').value);
         const userId = parseInt(document.getElementById('user-id').value);
         const sessionId = parseInt(document.getElementById('session-id').value);
         const clientId = parseInt(document.getElementById('client-id').value);
 
         const operation = {
+            // doc_id is no longer sent from the client
             sync_op: "EDIT_DOC",
-            doc_id: docId,
             process_id: processId,
             user_id: userId,
             session_id: sessionId,
@@ -286,12 +313,15 @@
 
     function selectTool(e) {
         if (e.target.tagName === 'BUTTON') {
-            // Remove active class from all buttons
             toolsDiv.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
-            // Add active class to the clicked button
             e.target.classList.add('active');
             currentTool = e.target.dataset.tool;
         }
+    }
+
+    function changeColor(e) {
+        currentColor = e.target.value;
+        ctx.strokeStyle = currentColor;
     }
 
     // --- Event Listeners ---
@@ -299,6 +329,8 @@
     disconnectBtn.addEventListener('click', disconnect);
     clearLogBtn.addEventListener('click', clearLog);
     toolsDiv.addEventListener('click', selectTool);
+    colorPicker.addEventListener('input', changeColor);
+
 
     // Style tool buttons
     toolsDiv.querySelectorAll('.tool-btn').forEach(btn => {

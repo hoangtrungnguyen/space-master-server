@@ -6,6 +6,7 @@ import java.util.UUID
 interface ElementRepo {
 
     suspend fun create(element: Element): Element
+    suspend fun insert(element: Element): Element
     suspend fun findByUuid(uuid: UUID): Element?
     suspend fun listByDocId(docId: Long): List<Element>
 

@@ -6,7 +6,6 @@ import io.ktor.server.plugins.di.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-
 fun Route.documentManagementRoutes() {
     route("/api") {
         route("/documents") {
@@ -24,4 +23,5 @@ fun Route.documentManagementRoutes() {
             }
         }
     }
+
 }

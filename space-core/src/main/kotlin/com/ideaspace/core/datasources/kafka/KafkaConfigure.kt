@@ -1,5 +1,6 @@
 package com.ideaspace.core.datasources.kafka
 
+import com.ideaspace.core.kafkaMessage.DocumentEventDeserializer
 import io.confluent.kafka.serializers.KafkaAvroDeserializer
 import io.confluent.kafka.serializers.KafkaJsonDeserializer
 import io.github.flaxoos.ktor.server.plugins.kafka.*
@@ -65,8 +66,8 @@ fun Application.configureKafka(
 
         consumer { // <-- Creates a consumer
             groupId = consumerGroupId
-            keyDeserializerClass = StringDeserializer::class.java.name
-            valueDeserializerClass = KafkaJsonDeserializer::class.java.name
+            keyDeserializerClass = LongDeserializer::class.java.name
+            valueDeserializerClass = DocumentEventDeserializer::class.java.name
         }
 
         consumerConfig {

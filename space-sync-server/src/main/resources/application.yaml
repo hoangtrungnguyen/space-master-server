@@ -14,15 +14,14 @@ kafka:
   # Use environment variables with sensible defaults for local development.
   # Ktor will use the value of KAFKA_BOOTSTRAP_SERVERS if it's set,
   # otherwise it will fall back to "localhost:9092".
-  bootstrapServers:
+  bootstrap_servers:
     - ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-  schemaRegistryUrl: ${KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8081}
-  clientId: "sync-server"
+  schema_registry_url: ${KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8081}
+  client_id: "sync-server"
   topic: "server-operation"
-  consumerGroupId: "sync-server-group"
-  topicDocumentEvent: "ideaspace.document.event"
-
-  topicDefaults:
+  consumer_group_id: "sync-server-group"
+  document_event_topic: "ideaspace.document.event"
+  topic_defaults:
     partitions: ${KAFKA_TOPIC_PARTITIONS:3}
     replicas: ${KAFKA_TOPIC_REPLICAS:1}
 

@@ -6,6 +6,7 @@ import com.ideaspace.core.dao.toEntity
 import com.ideaspace.core.models.Element
 import com.ideaspace.core.repository.ElementRepo
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.exposed.v1.dao.Entity
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -35,6 +36,18 @@ class ElementRepoImpl(val db: Database) : ElementRepo {
         }
 
         element.uuid = generated.uuid.value
+        return@transaction element
+    }
+
+    override suspend fun insert(element: Element): Element = transaction(db){
+        val generated = ElementDAO.new(element.uuid) {
+            docId = element.docId
+            parentUuid = element.parentUuid
+            metadata = element.metadata
+            type = element.type
+            value = element.value
+            deletedAt = element.deletedAt
+        }
         return@transaction element
     }
 

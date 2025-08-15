@@ -5,9 +5,10 @@ package com.ideaspace.core.redis
 
 import kotlinx.serialization.*
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 
 @Serializable
-data class RedisSyncOperation(
+data class RedisDocumentEvent(
     @SerialName("sync_op")
     val syncOp: String,
 
@@ -43,7 +44,20 @@ data class Element(
     val parentUuid: String?,
     val metadata: JsonElement,
     val type: String, // e.g., "HEADING", "TEXT_BLOCK", "SHAPE"
-    val value:  JsonElement // Or a more generic type if needed, see note below
+    val value: JsonElement // Or a more generic type if needed, see note below
 )
 
 
+fun redisKey(docId: Long, processId: Long): String {
+    return "document:${docId}process:${processId}"
+}
+
+fun com.ideaspace.core.kafkaMessage.Element.toRedis(): Element {
+    return Element(
+        uuid = this.uuid.toString(),
+        parentUuid = this.parentUuid.toString(),
+        metadata = this.metadata,
+        type = this.type,
+        value = this.value
+    )
+}

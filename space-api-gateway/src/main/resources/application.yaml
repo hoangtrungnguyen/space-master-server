@@ -21,5 +21,10 @@ kafka:
     client_id: "api-gateway-client"
   document_event_topic: "ideaspace.document.event"
 
+
+redis:
+  host: localhost
+  port: 6379
+
 services:
   sync_server_url: "http://localhost:9099"
