@@ -29,6 +29,7 @@ dependencies {
     implementation("io.ktor:ktor-server-core")
     implementation("io.ktor:ktor-server-swagger")
     implementation("io.ktor:ktor-server-auth")
+    implementation("io.ktor:ktor-server-auth-jwt")
     implementation("io.ktor:ktor-server-status-pages")
     implementation("dev.hayden:khealth:3.0.2")
     implementation("io.ktor:ktor-server-content-negotiation")
@@ -58,6 +59,9 @@ dependencies {
 
     implementation("io.insert-koin:koin-ktor:${koin_version}")
     implementation("io.insert-koin:koin-logger-slf4j:${koin_version}")
+    
+    // JWT Authentication
+    implementation("com.auth0:java-jwt:4.4.0")
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }

@@ -2,6 +2,7 @@ package com.ideaspace.core.repositoryImpl
 
 import com.ideaspace.core.dao.DocumentDAO
 import com.ideaspace.core.dao.DocumentTable
+import com.ideaspace.core.dao.toModel
 import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.repository.CrudDocumentRepository
@@ -37,8 +38,8 @@ class CrudDocumentRepositoryImpl(val db: Database ) : CrudDocumentRepository {
         }
     }
 
-    override suspend fun findByIdUuid(uuid: String): DocumentDAO = transaction(db) {
-        DocumentDAO.find { DocumentTable.uuid eq UUID.fromString(uuid) }.first()
+    override suspend fun findByUuid(uuid: String): BusinessDocument? = transaction(db) {
+        DocumentDAO.find { DocumentTable.uuid eq UUID.fromString(uuid) }.firstOrNull()?.toModel()
     }
 
     override suspend fun update(id: String, space: Any): Any? {
