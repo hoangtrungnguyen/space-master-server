@@ -5,6 +5,12 @@ ktor:
   deployment:
     port: 8080
 
+jwt:
+  secret: ${JWT_SECRET}
+  issuer: ${JWT_ISSUER:space-master}
+  audience: ${JWT_AUDIENCE:space-master-users}
+  realm: "Space Master Server"
+
 postgres:
   url: "jdbc:postgresql://localhost:5439/idea_space_main"
   user: postgres

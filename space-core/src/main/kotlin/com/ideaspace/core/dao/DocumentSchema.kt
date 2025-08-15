@@ -4,6 +4,7 @@ package com.ideaspace.core.dao
 
 import com.ideaspace.com.ideaspace.core.dao.CurrentTimestamp
 import com.ideaspace.com.ideaspace.core.dao.DatabaseUUID
+import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.models.DocumentStatus
 import com.ideaspace.core.models.DocumentType
 import kotlinx.serialization.json.Json
@@ -47,4 +48,22 @@ class DocumentDAO(id: EntityID<Long>) : LongEntity(id) {
     var transformVersion by DocumentTable.transformVersion
     var kafkaOffset by DocumentTable.kafkaOffset
 
+}
+
+fun DocumentDAO.toModel() : BusinessDocument {
+    return BusinessDocument(
+        id = this.id.value,
+        uuid = this.uuid,
+        revId = this.revId,
+        title = this.title,
+        creatorId = this.creatorId,
+        ownerId = this.ownerId,
+        createdAt = this.createdAt,
+        lastModifiedAt = this.lastModifiedAt,
+        metadata = this.metadata,
+        documentType = this.documentType,
+        status = this.status,
+        transformVersion = this.transformVersion,
+        kafkaOffset = this.kafkaOffset
+    )
 }

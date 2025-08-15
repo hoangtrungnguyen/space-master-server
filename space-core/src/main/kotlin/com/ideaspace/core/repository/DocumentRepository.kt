@@ -7,7 +7,7 @@ import com.ideaspace.core.models.BusinessDocument
 interface CrudDocumentRepository {
     suspend fun create(request: BusinessDocument): DocumentDAO
 
-    suspend fun findByIdUuid(uuid: String): DocumentDAO
+    suspend fun findByUuid(uuid: String): BusinessDocument?
 
     suspend fun update(id: String, space: Any): Any?
 

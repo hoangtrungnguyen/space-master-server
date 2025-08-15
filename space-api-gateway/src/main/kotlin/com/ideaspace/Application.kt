@@ -13,6 +13,7 @@ fun main(args: Array<String>) {
 fun Application.module() {
     configureErrorHandling()
     configureHTTP()
+    configureSecurity()
     configureDocumentEventProducer()
     configureDatabases()
     configureRouting()

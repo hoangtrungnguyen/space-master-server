@@ -6,8 +6,9 @@ import kotlinx.serialization.json.Json
 import java.util.*
 
 data class DocumentConnection(
-    val sessionId: String = UUID.randomUUID().toString(),
     val userId: Long,
+    val docId: Long,
+    val docUuid: UUID,
     val session: DefaultWebSocketSession
 ) {
     suspend inline fun <reified T> send(data: T) {
@@ -21,7 +22,7 @@ data class DocumentConnection(
             } catch (e: Exception) {
                 // Log any exceptions that occur during serialization or sending.
                 // This could be a kotlinx.serialization.SerializationException or an I/O error.
-                println("Error sending data to session $sessionId for user $userId: ${e.message}")
+                println("Error sending data to session # for user $userId: ${e.message}")
                 // Depending on the error, you might want to close the connection.
             }
         }
