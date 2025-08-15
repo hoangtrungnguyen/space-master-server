@@ -1,19 +1,19 @@
 package com.ideaspace.document
 
-import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.core.dto.DocumentDTO
 import com.ideaspace.core.dto.toDTO
+import com.ideaspace.core.kafkaMessage.DocumentEventProducer
 import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.models.DocumentStatus
 import com.ideaspace.core.models.DocumentType
 import com.ideaspace.core.models.Element
 import com.ideaspace.core.repository.CrudDocumentRepository
+import com.ideaspace.core.repository.ElementRepo
 import io.ktor.server.plugins.di.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import java.util.*
 import kotlin.time.Clock

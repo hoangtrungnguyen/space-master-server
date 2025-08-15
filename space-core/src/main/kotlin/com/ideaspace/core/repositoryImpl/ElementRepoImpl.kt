@@ -3,14 +3,13 @@ package com.ideaspace.core.repositoryImpl
 import com.ideaspace.core.dao.ElementDAO
 import com.ideaspace.core.dao.ElementTable
 import com.ideaspace.core.dao.toEntity
-import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.core.models.Element
+import com.ideaspace.core.repository.ElementRepo
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import java.util.UUID
-import kotlin.Long
+import java.util.*
 import kotlin.time.ExperimentalTime
 
 

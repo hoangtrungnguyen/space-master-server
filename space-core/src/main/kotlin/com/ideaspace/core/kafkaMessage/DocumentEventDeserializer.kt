@@ -1,24 +1,24 @@
-package com.ideaspace.document
+package com.ideaspace.core.kafkaMessage
 
-import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import kotlinx.serialization.json.Json
-import org.apache.kafka.common.serialization.Serializer
+import org.apache.kafka.common.serialization.Deserializer
 
-class DocumentEventSerializer : Serializer<DocumentSyncEventValue> {
+class DocumentEventDeserializer : Deserializer<DocumentSyncEventValue> {
     
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
     
-    override fun serialize(topic: String?, data: DocumentSyncEventValue?): ByteArray? {
+    override fun deserialize(topic: String?, data: ByteArray?): DocumentSyncEventValue? {
         return if (data == null) {
             null
         } else {
             try {
-                json.encodeToString(data).toByteArray(Charsets.UTF_8)
+                val jsonString = String(data, Charsets.UTF_8)
+                json.decodeFromString<DocumentSyncEventValue>(jsonString)
             } catch (e: Exception) {
-                throw RuntimeException("Error serializing DocumentEvent", e)
+                throw RuntimeException("Error deserializing DocumentSyncEventValue", e)
             }
         }
     }
@@ -31,3 +31,4 @@ class DocumentEventSerializer : Serializer<DocumentSyncEventValue> {
         // No configuration needed
     }
 }
+

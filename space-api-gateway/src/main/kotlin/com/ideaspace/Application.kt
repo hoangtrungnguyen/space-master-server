@@ -1,7 +1,7 @@
 package com.ideaspace
 
 import com.ideaspace.config.*
-import com.ideaspace.config.configureDocumentEventProducer
+import com.ideaspace.core.kafkaMessage.configureDocumentEventProducer
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
 

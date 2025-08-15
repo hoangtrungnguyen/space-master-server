@@ -2,7 +2,7 @@ package com.ideaspace.config
 
 import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.repository.CrudDocumentRepository
-import com.ideaspace.document.DocumentEventProducer
+import com.ideaspace.core.kafkaMessage.DocumentEventProducer
 import com.ideaspace.session.DocumentConnection
 import com.ideaspace.session.SessionManager
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
@@ -58,6 +58,7 @@ fun Application.configureSockets() {
             )
             val connection = DocumentConnection(userId = 1, session = this)
             sessionManager.register(connection, docUuid)
+
             try {
                 incoming.consumeAsFlow().mapNotNull { frame ->
                     if (frame is Frame.Text) {

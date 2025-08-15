@@ -1,13 +1,11 @@
-package com.ideaspace.config
+package com.ideaspace.core.kafkaMessage
 
-import com.ideaspace.document.DocumentEventProducer
-import com.ideaspace.document.DocumentEventSerializer
 import io.ktor.server.application.*
 import io.ktor.server.plugins.di.*
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.LongSerializer
-import java.util.Properties
+import java.util.*
 
 fun Application.configureDocumentEventProducer() {
 
