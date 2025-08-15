@@ -21,7 +21,6 @@ fun Application.configureRouting() {
 
         anyHost() // @TODO: Don't do this in production if possible. Try to limit it.
     }
-    install(CallLogging)
 
     routing {
         documentManagementRoutes()

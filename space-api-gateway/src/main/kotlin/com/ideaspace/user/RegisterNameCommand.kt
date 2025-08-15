@@ -10,12 +10,13 @@ class RegisterNameCommand(
 ){
     suspend fun execute(dependencies: DependencyRegistry): User {
         val userRepo = dependencies.resolve<UserRepo>()
-        return userRepo.create(request.loginName, request.loginName)
+        return userRepo.create(request.loginName, request.fullName)
     }
 }
 
 @Serializable
 data class RegisterNameRequest(
     val loginName: String,
+    val fullName: String,
 )
 

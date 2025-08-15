@@ -1,14 +1,12 @@
-package com.ideaspace.config
+package com.ideaspace.document
 
 import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.kafkaMessage.DocumentEventProducer
 import com.ideaspace.session.DocumentConnection
 import com.ideaspace.session.SessionManager
-import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.server.application.*
 import io.ktor.server.plugins.di.dependencies
-import io.ktor.server.plugins.di.provide
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.*
 import io.ktor.websocket.CloseReason
@@ -20,10 +18,7 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlin.time.Duration.Companion.seconds
-import io.ktor.server.websocket.*
-import io.ktor.util.reflect.typeInfo
 import io.ktor.websocket.readText
-import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.modules.polymorphic
 
 
