@@ -3,9 +3,12 @@ package com.ideaspace.core.kafkaMessage
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
+import kotlinx.serialization.json.encodeToStream
 import org.apache.kafka.common.serialization.Deserializer
 import org.apache.kafka.common.serialization.Serializer
+import java.io.ByteArrayOutputStream
 
+@OptIn(ExperimentalSerializationApi::class)
 class DocumentEventSerializer : Serializer<DocumentSyncEventValue> {
     
     private val json = Json {
@@ -18,7 +21,10 @@ class DocumentEventSerializer : Serializer<DocumentSyncEventValue> {
             null
         } else {
             try {
-                json.encodeToString(data).toByteArray(Charsets.UTF_8)
+                ByteArrayOutputStream().use { outputStream ->
+                    json.encodeToStream(data, outputStream)
+                    outputStream.toByteArray()
+                }
             } catch (e: Exception) {
                 throw RuntimeException("Error serializing DocumentEvent", e)
             }
