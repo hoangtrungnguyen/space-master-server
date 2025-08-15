@@ -1,6 +1,5 @@
 package com.ideaspace.config
 
-
 import com.ideaspace.document.documentManagementRoutes
 import com.ideaspace.user.userManagementRoutes
 import io.ktor.http.*
@@ -23,6 +22,7 @@ fun Application.configureRouting() {
     }
 
     routing {
+        authRoutes()
         documentManagementRoutes()
         userManagementRoutes()
     }
