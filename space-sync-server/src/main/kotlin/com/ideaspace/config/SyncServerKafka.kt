@@ -17,10 +17,10 @@ import org.slf4j.LoggerFactory
 
 fun Application.configureServerKafka() {
 
-    val messageDocumentEventHandler : suspend (ConsumerRecord<String, GenericRecord>) -> Unit = { record ->
+    val messageDocumentEventHandler : suspend (ConsumerRecord<Long, GenericRecord>) -> Unit = { record ->
         val logger = LoggerFactory.getLogger("MessageHandler Document event")
         val key = record.key()
-        val id = key.toLong()
+        val id = key
         if(dependencies.resolve<CrudDocumentRepository>().existById(id)) {
             dependencies.resolve<KafkaPartitionProcessor>().submit(record)
         } else {
@@ -30,7 +30,7 @@ fun Application.configureServerKafka() {
 
     configureKafka( messageDocumentEventHandler)
 
-    environment.monitor.subscribe(ApplicationStopping) {
+    monitor.subscribe(ApplicationStopping) {
         runBlocking {
             dependencies.resolve<KafkaPartitionProcessor>().shutdown()
         }

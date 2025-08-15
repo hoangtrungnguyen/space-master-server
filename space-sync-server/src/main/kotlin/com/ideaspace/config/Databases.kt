@@ -12,6 +12,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 fun Application.configureDatabases() {
 
     val db = connectToPostgresJDBC(embedded = false)
+
     val repository =  CrudDocumentRepositoryImpl(db)
     dependencies {
         provide<CrudDocumentRepository>{
@@ -22,7 +23,7 @@ fun Application.configureDatabases() {
     // In development mode, drop all tables on application stop to start with a clean slate.
     if (environment.config.property("developmentMode").getString().toBoolean()) {
         log.info("Development mode: tables will be dropped on application shutdown.")
-        environment.monitor.subscribe(ApplicationStopPreparing) {
+        monitor.subscribe(ApplicationStopPreparing) {
             transaction(db) {
                 log.info("Dropping database tables...")
                 // NOTE: Add all your Exposed Table objects here to drop them on shutdown.

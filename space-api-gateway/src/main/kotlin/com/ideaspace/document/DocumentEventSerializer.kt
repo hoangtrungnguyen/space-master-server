@@ -1,16 +1,17 @@
 package com.ideaspace.document
 
+import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import kotlinx.serialization.json.Json
 import org.apache.kafka.common.serialization.Serializer
 
-class DocumentEventSerializer : Serializer<DocumentEvent> {
+class DocumentEventSerializer : Serializer<DocumentSyncEventValue> {
     
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
     
-    override fun serialize(topic: String?, data: DocumentEvent?): ByteArray? {
+    override fun serialize(topic: String?, data: DocumentSyncEventValue?): ByteArray? {
         return if (data == null) {
             null
         } else {
