@@ -26,7 +26,7 @@ class DocumentEventSerializer : Serializer<DocumentSyncEventValue> {
                     outputStream.toByteArray()
                 }
             } catch (e: Exception) {
-                throw RuntimeException("Error serializing DocumentEvent", e)
+                throw RuntimeException("Error serializing DocumentSyncEventValue", e)
             }
         }
     }

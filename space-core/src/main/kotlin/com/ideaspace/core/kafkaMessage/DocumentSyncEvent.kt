@@ -1,10 +1,12 @@
-@file:OptIn(ExperimentalUuidApi::class, ExperimentalUuidApi::class)
+@file:OptIn(ExperimentalUuidApi::class, ExperimentalUuidApi::class, ExperimentalSerializationApi::class)
 
 package com.ideaspace.core.kafkaMessage
 
 import com.ideaspace.core.dto.UUIDToString
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import java.util.*
@@ -12,6 +14,7 @@ import kotlin.uuid.ExperimentalUuidApi
 
 @Serializable
 data class DocumentSyncEventValue(
+
     @SerialName("sync_op")
     val syncOp: SyncOperation,
 
@@ -43,29 +46,96 @@ enum class SyncOperation {
 }
 
 @Serializable
-data class ElementPayload(
-    @SerialName("element_op")
-    val elementOp: ElementOp,
-    @SerialName("element")
-    val element: Element
-)
-
-@Serializable
-data class Element(
-    @Serializable(with = UUIDToString::class)
-    val uuid: UUID,
-    @SerialName("parent_uuid")
-    @Serializable(with = UUIDToString::class)
-    val parentUuid: UUID? = null,
-    val metadata: JsonElement = JsonObject(emptyMap()),
-    val type: String,
-    val value: JsonElement
-)
-
-@Serializable
-enum class ElementOp{
+enum class ElementOp {
     ADD_ELEMENT,
     EDIT_ELEMENT,
     MOVE_ELEMENT,
     REMOVE_ELEMENT
 }
+
+// region Element Payloads
+
+@Serializable
+@JsonClassDiscriminator("element_op")
+sealed class ElementPayload {
+    abstract fun elementOp(): ElementOp
+    abstract val element: Element
+}
+
+@Serializable
+@SerialName("ADD_ELEMENT")
+data class AddElementPayload(
+    @SerialName("element")
+    override val element: AddElement
+) : ElementPayload() {
+    override fun elementOp() = ElementOp.ADD_ELEMENT
+}
+
+
+@Serializable
+@SerialName("EDIT_ELEMENT")
+data class EditElementPayload(
+    @SerialName("element")
+    override val element: EditElement
+) : ElementPayload() {
+    override fun elementOp() = ElementOp.EDIT_ELEMENT
+}
+
+@Serializable
+@SerialName("MOVE_ELEMENT")
+data class MoveElementPayload(
+    @SerialName("element")
+    override val element: MoveElement
+) : ElementPayload() {
+    override fun elementOp() = ElementOp.MOVE_ELEMENT
+}
+
+@Serializable
+@SerialName("REMOVE_ELEMENT")
+data class RemoveElementPayload(
+    @SerialName("element")
+    override val element: RemoveElement
+) : ElementPayload() {
+    override fun elementOp() = ElementOp.REMOVE_ELEMENT
+}
+
+// endregion
+
+@Serializable
+sealed class Element {
+    abstract val uuid: UUID
+}
+
+@Serializable
+data class AddElement (
+    @Serializable(with = UUIDToString::class)
+    override val uuid: UUID,
+    @SerialName("parent_uuid") @Serializable(with = UUIDToString::class)
+    val parentUuid: UUID? = null,
+    val metadata: JsonElement = JsonObject(emptyMap()),
+    val type: String,
+    val value: JsonElement
+) : Element()
+
+@Serializable
+data class EditElement (
+    @Serializable(with = UUIDToString::class)
+    override val uuid: UUID,
+    val metadata: JsonElement = JsonObject(emptyMap()),
+    val type: String,
+    val value: JsonElement
+) : Element()
+
+@Serializable
+data class MoveElement (
+    @Serializable(with = UUIDToString::class)
+    override val uuid: UUID,
+    @SerialName("parent_uuid") @Serializable(with = UUIDToString::class)
+    val parentUuid: UUID? = null,
+) : Element()
+
+@Serializable
+data class RemoveElement (
+    @Serializable(with = UUIDToString::class)
+    override val uuid: UUID,
+) : Element()

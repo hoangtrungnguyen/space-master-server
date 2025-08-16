@@ -2,8 +2,11 @@ package com.ideaspace.document
 
 import com.ideaspace.core.dto.DocumentDTO
 import com.ideaspace.core.dto.toDTO
+import com.ideaspace.core.kafkaMessage.AddElement
+import com.ideaspace.core.kafkaMessage.AddElementPayload
 import com.ideaspace.core.kafkaMessage.DocumentEventProducer
 import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
+import com.ideaspace.core.kafkaMessage.ElementOp
 import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.models.DocumentStatus
 import com.ideaspace.core.models.DocumentType
@@ -64,9 +67,8 @@ class CreateDocumentCommand(
             userId = 1, // TODO: Get from context
             sessionId = 1, // TODO: Get from context
             clientId = 1, // TODO: Get from context
-            payload = com.ideaspace.core.kafkaMessage.ElementPayload(
-                elementOp = com.ideaspace.core.kafkaMessage.ElementOp.ADD_ELEMENT,
-                element = com.ideaspace.core.kafkaMessage.Element(
+            payload = AddElementPayload(
+                element = AddElement(
                     uuid = root.uuid,
                     parentUuid = root.parentUuid,
                     metadata = (root.metadata ?: JsonObject(emptyMap())),
