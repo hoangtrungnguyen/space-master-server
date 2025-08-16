@@ -22,23 +22,12 @@ class DocumentEventConsumer(
         logger.info("Kafka consumer subscribed to topic: $topic")
 
         try {
-            // Use withContext(Dispatchers.IO) to move the blocking poll operation
-            // off the main thread pool, which is crucial for a responsive server.
             withContext(Dispatchers.IO) {
-                // The loop continues as long as the parent coroutine is active.
-                // This allows for graceful shutdown.
                 while (coroutineContext.isActive) {
-                    // Poll Kafka for new records with a 1-second timeout.
-                    val records = kafkaConsumer.poll(Duration.ofMillis(1000))
-
-                    // Process each record received from the poll.
+                    val records = kafkaConsumer.poll(Duration.ofMillis(100))
                     for (record in records) {
                         onRecordReceived(record)
                     }
-
-                    // If you have 'enable.auto.commit' set to 'false' in your consumer properties,
-                    // you would commit the offsets manually here.
-                    // For example: kafkaConsumer.commitAsync()
                 }
             }
         } catch (e: Exception) {

@@ -9,5 +9,5 @@ interface ElementRepo {
     suspend fun insert(element: Element): Element
     suspend fun findByUuid(uuid: UUID): Element?
     suspend fun listByDocId(docId: Long): List<Element>
-
+    suspend fun findAllByDocId(docId: Long): List<Element>
 }
