@@ -1,11 +1,10 @@
 package com.ideaspace.session
 
-import com.ideaspace.core.redis.redisKey
+import com.ideaspace.core.redis.redisDocProcessKey
 import io.ktor.server.application.Application
 import io.ktor.server.application.log
 import io.ktor.utils.io.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -27,7 +26,7 @@ class RedisSubscriber(
         val host = application.environment.config.property("redis.host").getString()
         val port: Int = application.environment.config.property("redis.port").getString().toInt()
         val jedisPool = JedisPool(JedisPoolConfig(), host, port)
-        val streamKey = redisKey(docId, processId)
+        val streamKey = redisDocProcessKey(docId, processId)
 
         val streamReadCount = 100
         application.launch(Dispatchers.IO) {

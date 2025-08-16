@@ -1,25 +1,26 @@
 package com.ideaspace.document
 
-import com.ideaspace.core.dao.DocumentDAO
+import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.ram.DocumentRAM
-import com.ideaspace.core.ram.ElementRAM
 import com.ideaspace.core.ram.toRAM
-import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.workers.DocumentStorage
-import kotlinx.serialization.json.JsonObject
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
 class InitSyncDocument(
-    val documentStorage: DocumentStorage,
-    val elementRepo: ElementRepo
-) {
+    val doc: BusinessDocument,
+    val processId: Long,
+    ) {
 
-    suspend fun execute(docDAO: DocumentDAO) {
+    suspend fun execute(
+        documentPublisher: DocumentRedisPublisher,
+        documentStorage: DocumentStorage,
+        elementRepo: ElementRepo
+    ) {
 
-        val elements = elementRepo.findAllByDocId(docDAO.id.value)
+        val elements = elementRepo.findAllByDocId(doc.id)
 
         val rootElements =
             ConcurrentHashMap(elements.filter { it.parentUuid == null }.map {
@@ -27,8 +28,8 @@ class InitSyncDocument(
             }.associateBy { it.uuid })
 
         val documentRAM = DocumentRAM(
-            id = docDAO.id.value,
-            title = docDAO.title,
+            id = doc.id,
+            title = doc.title,
             roots = rootElements
         )
 
@@ -39,11 +40,13 @@ class InitSyncDocument(
             )
         }
 
+        documentPublisher.publishDocProcess(doc.id, processId)
+
         documentStorage.add(
-            docDAO.id.value,
+            doc.id,
             documentRAM
         )
 
-        print("InitSyncDocument okay")
+        print("✅ InitSyncDocument okay")
     }
 }

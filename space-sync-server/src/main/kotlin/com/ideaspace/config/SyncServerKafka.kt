@@ -7,7 +7,6 @@ import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.document.DocumentEventConsumer
 import com.ideaspace.workers.DocumentStorage
 import com.ideaspace.workers.KafkaPartitionProcessor
-import com.ideaspace.workers.RedisPublisher
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStarted
 import io.ktor.server.application.ApplicationStopping
@@ -27,12 +26,7 @@ import kotlin.collections.set
 fun Application.configureServerKafka() {
 
     dependencies.provide {
-        KafkaPartitionProcessor(
-            resolve<CrudDocumentRepository>(),
-            resolve<RedisPublisher>(),
-            resolve<ElementRepo>(),
-            resolve<DocumentStorage>()
-        )
+        KafkaPartitionProcessor()
     }
 
     val kafkaConfig = environment.config.config("kafka")
@@ -56,7 +50,7 @@ fun Application.configureServerKafka() {
         kafkaConsumer
     ) { event ->
         val kafkaPartitionProcessor = dependencies.resolve<KafkaPartitionProcessor>()
-        kafkaPartitionProcessor.submit(event)
+        kafkaPartitionProcessor.submit(dependencies,event)
     }
 
     monitor.subscribe(ApplicationStarted) {

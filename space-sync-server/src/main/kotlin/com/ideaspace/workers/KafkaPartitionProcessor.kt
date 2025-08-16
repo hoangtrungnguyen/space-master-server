@@ -1,12 +1,19 @@
 package com.ideaspace.workers
 
-import com.ideaspace.core.dao.DocumentDAO
-import com.ideaspace.core.dao.UserDAO
+import com.ideaspace.core.kafkaMessage.AddElementPayload
 import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
-import com.ideaspace.core.kafkaMessage.SyncOperation
+import com.ideaspace.core.kafkaMessage.EditDocEventValue
+import com.ideaspace.core.kafkaMessage.EditElementPayload
+import com.ideaspace.core.kafkaMessage.FinishSyncEventValue
+import com.ideaspace.core.kafkaMessage.InitSyncEventValue
+import com.ideaspace.core.kafkaMessage.MoveElementPayload
+import com.ideaspace.core.kafkaMessage.RemoveElementPayload
+import com.ideaspace.core.kafkaMessage.SaveDocEventValue
+import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.document.AddElementCommand
+import com.ideaspace.document.DocumentRedisPublisher
 import com.ideaspace.document.InitSyncDocument
 import io.ktor.server.plugins.di.DependencyRegistry
 import kotlinx.coroutines.CoroutineScope
@@ -17,13 +24,10 @@ import kotlinx.coroutines.launch
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.set
+import kotlin.text.get
 
-class KafkaPartitionProcessor(
-    val documentRepository: CrudDocumentRepository,
-    val redisPublisher: RedisPublisher,
-    val elementRepo: ElementRepo,
-    val documentStorage: DocumentStorage
-) {
+class KafkaPartitionProcessor() {
     companion object {
         var count = 0
     }
@@ -39,7 +43,7 @@ class KafkaPartitionProcessor(
     private val messageCounter = ConcurrentHashMap<Long, Int>()
     private val kafkaLogger = LoggerFactory.getLogger("kafka-consumer")
 
-    suspend fun submit(record: ConsumerRecord<Long, DocumentSyncEventValue>) {
+    suspend fun submit(registry: DependencyRegistry, record: ConsumerRecord<Long, DocumentSyncEventValue>) {
 
         kafkaLogger.info("[SUBMIT TO WORKER] Received record ${record.value()} from topic ${record.topic()}")
 
@@ -55,43 +59,37 @@ class KafkaPartitionProcessor(
         println("KEY ${key} - MESSAGE COUNTER: ${messageCounter[key]}")
 
         partitionScope.launch {
-            val doc = documentRepository.findById(key)!!
+            val doc = registry.resolve<CrudDocumentRepository>().findById(key)!!
 
-            when (record.value().syncOp) {
-                SyncOperation.INIT_SYNC -> initDoc(doc)
-                SyncOperation.EDIT_DOC -> editDoc(record, doc)
-                SyncOperation.SAVE_DOC -> TODO()
-                SyncOperation.FINISH_SYNC -> TODO()
+            when (record.value()) {
+                is EditDocEventValue -> {
+                    saveOffset(registry, doc, record.offset())
+                    registry.edit(record.value() as EditDocEventValue, doc, record.value().processId)
+                }
+
+                is FinishSyncEventValue -> {
+                    println("FinishSyncEventValue")
+                }
+
+                is InitSyncEventValue -> {
+                    registry.initDoc(doc, record.value().processId)
+                }
+
+                is SaveDocEventValue -> TODO()
             }
+
+
         }
 
         println("MEMORY WORKER POOL LENGTH: ${partitionScopePool.values.size}")
     }
 
-    suspend fun initDoc(doc: DocumentDAO) {
-        InitSyncDocument(
-            documentStorage,
-            elementRepo
-        ).execute(doc)
-    }
-
-    private suspend fun editDoc(record: ConsumerRecord<Long, DocumentSyncEventValue>, docDAO: DocumentDAO) {
-        println("process record: ${record.value()}")
-        val key = record.key()
-
-        if (messageCounter[key] == BATCH_LIMIT) {
+    private suspend fun saveOffset(registry: DependencyRegistry, doc: BusinessDocument, offset: Long) {
+        if (messageCounter[doc.id] == BATCH_LIMIT) {
             println("IO CONTEXT - Process flush kafka message to database")
-            documentRepository.updateOffset(docDAO.uuid.toString(), record.offset())
-            messageCounter[key] = 0
+            registry.resolve<CrudDocumentRepository>().updateOffset(doc.uuid.toString(), offset)
+            messageCounter[doc.id] = 0
         }
-
-        AddElementCommand(
-            record, redisPublisher,
-            elementRepo,
-            documentStorage,
-            docDAO
-        ).execute()
-
     }
 
     fun shutdown() {
@@ -102,4 +100,36 @@ class KafkaPartitionProcessor(
         partitionScopePool.clear()
         println("All partition processors shut down.")
     }
+}
+
+
+private suspend fun DependencyRegistry.edit(editDocValue: EditDocEventValue, doc: BusinessDocument, processId: Long) {
+    when (editDocValue.payload) {
+        is AddElementPayload -> {
+            AddElementCommand(
+                editDocValue,
+                doc.id,
+                processId
+            ).execute(
+                documentRedisPublisher = this.resolve<DocumentRedisPublisher>(),
+                elementRepo = this.resolve<ElementRepo>(),
+                documentStorage = this.resolve<DocumentStorage>(),
+            )
+        }
+
+        is EditElementPayload -> TODO()
+        is MoveElementPayload -> TODO()
+        is RemoveElementPayload -> TODO()
+    }
+}
+
+
+private suspend fun DependencyRegistry.initDoc(doc: BusinessDocument, processId: Long) {
+    InitSyncDocument(
+        doc, processId,
+    ).execute(
+        documentPublisher = this.resolve<DocumentRedisPublisher>(),
+        elementRepo = this.resolve<ElementRepo>(),
+        documentStorage = this.resolve<DocumentStorage>(),
+    )
 }

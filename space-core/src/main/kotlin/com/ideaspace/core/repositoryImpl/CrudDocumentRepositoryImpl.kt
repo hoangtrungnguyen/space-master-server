@@ -7,6 +7,7 @@ import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.repository.CrudDocumentRepository
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -24,8 +25,8 @@ class CrudDocumentRepositoryImpl(val db: Database ) : CrudDocumentRepository {
         }
     }
 
-    override suspend fun create(request: BusinessDocument): DocumentDAO = transaction(db) {
-        DocumentDAO.new {
+    override suspend fun create(request: BusinessDocument): BusinessDocument = transaction(db) {
+        val generated = DocumentDAO.new {
             revId = 1       // TODO Generate
             title = request.title
             creatorId = request.creatorId
@@ -36,6 +37,7 @@ class CrudDocumentRepositoryImpl(val db: Database ) : CrudDocumentRepository {
             transformVersion = request.transformVersion
             kafkaOffset = request.kafkaOffset
         }
+        generated.toModel()
     }
 
     override suspend fun findByUuid(uuid: String): BusinessDocument? = transaction(db) {
@@ -46,12 +48,12 @@ class CrudDocumentRepositoryImpl(val db: Database ) : CrudDocumentRepository {
         TODO()
     }
 
-    override suspend fun findAll(): List<DocumentDAO> = transaction(db) {
-        DocumentDAO.all().toList()
+    override suspend fun findAll(): List<BusinessDocument> = transaction(db) {
+        DocumentDAO.all().map{it.toModel()}.toList()
     }
 
-    override suspend fun findById(id: Long): DocumentDAO? = transaction(db){
-        DocumentDAO.findById(id)
+    override suspend fun findById(id: Long): BusinessDocument? = transaction(db){
+        DocumentDAO.findById(id)?.toModel()
     }
 
     override suspend fun existByUuid(uuid: String): Boolean {

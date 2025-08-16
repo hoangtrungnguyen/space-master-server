@@ -12,7 +12,7 @@ import kotlin.time.Instant
 data class DocumentRAM(
     val id: Long,
     val title: String,
-    val roots: ConcurrentHashMap<UUID, ElementRAM>
+    val roots: ConcurrentHashMap<UUID, ElementRAM>,
 ){
 
     fun addRoot(uuid: UUID, element: ElementRAM){

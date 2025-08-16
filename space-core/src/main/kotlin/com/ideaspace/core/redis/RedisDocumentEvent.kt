@@ -1,63 +1,228 @@
+@file:OptIn(ExperimentalUuidApi::class, ExperimentalUuidApi::class, ExperimentalSerializationApi::class)
+
 package com.ideaspace.core.redis
 
-// Ensure you have the kotlinx.serialization dependency in build.gradle.kts
-// implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
-
-import kotlinx.serialization.*
+import com.ideaspace.core.dto.UUIDToString
+import com.ideaspace.core.kafkaMessage.*
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import java.util.*
+import kotlin.uuid.ExperimentalUuidApi
 
 @Serializable
-data class RedisDocumentEvent(
-    @SerialName("sync_op")
-    val syncOp: String,
+@JsonClassDiscriminator("sync_op")
+sealed class RedisDocumentEvent {
+    abstract val docId: Long
+}
 
-    @SerialName("doc_id")
-    val docId: Long,
-
-    @SerialName("process_id")
+@Serializable
+@SerialName("INIT_SYNC")
+data class InitSyncEvent(
+    override val docId: Long,
+    val syncOp: SyncOperation = SyncOperation.INIT_SYNC,
     val processId: Long,
-
-    @SerialName("user_id")
-    val userId: Int,
-
-    @SerialName("session_id")
+    val userId: Long,
     val sessionId: Long,
-
-    @SerialName("client_id")
-    val clientId: Int,
-
-    val payload: Payload
-)
+    val clientId: Long,
+    val payload: RedisInitSyncPayload
+) : RedisDocumentEvent()
 
 @Serializable
-data class Payload(
-    @SerialName("element_op")
-    val elementOp: String,
-    val element: Element
-)
+@SerialName("EDIT_DOC")
+data class EditDocEvent(
+    override val docId: Long,
+    val syncOp: SyncOperation = SyncOperation.EDIT_DOC,
+    val processId: Long,
+    val userId: Long,
+    val sessionId: Long,
+    val clientId: Long,
+    val payload: RedisEditDocPayload
+) : RedisDocumentEvent()
 
 @Serializable
-data class Element(
-    val uuid: String,
-    @SerialName("parent_uuid")
-    val parentUuid: String?,
-    val metadata: JsonElement,
-    val type: String, // e.g., "HEADING", "TEXT_BLOCK", "SHAPE"
-    val value: JsonElement // Or a more generic type if needed, see note below
-)
+@SerialName("SAVE_DOC")
+data class SaveDocEvent(
+    override val docId: Long,
+    val syncOp: SyncOperation = SyncOperation.SAVE_DOC,
+    val processId: Long,
+    val userId: Long,
+    val sessionId: Long,
+    val clientId: Long,
+    val payload: RedisSaveDocPayload
+) : RedisDocumentEvent()
 
+@Serializable
+@SerialName("FINISH_SYNC")
+data class FinishSyncEvent(
+    override val docId: Long,
+    val syncOp: SyncOperation = SyncOperation.FINISH_SYNC,
+    val processId: Long,
+    val userId: Long,
+    val sessionId: Long,
+    val clientId: Long,
+    val payload: RedisFinishSyncPayload
+) : RedisDocumentEvent()
 
-fun redisKey(docId: Long, processId: Long): String {
+sealed class RedisDocumentSyncPayload
+
+@Serializable
+class RedisInitSyncPayload : RedisDocumentSyncPayload()
+
+@Serializable
+@JsonClassDiscriminator("element_op")
+sealed class RedisEditDocPayload : RedisDocumentSyncPayload() {
+    abstract val elementOp: ElementOp
+    abstract val element: RedisElement
+}
+
+@Serializable
+class RedisSaveDocPayload : RedisDocumentSyncPayload()
+
+@Serializable
+class RedisFinishSyncPayload : RedisDocumentSyncPayload()
+
+@Serializable
+@SerialName("ADD_ELEMENT")
+data class RedisAddElementPayload(
+    override val elementOp: ElementOp = ElementOp.ADD_ELEMENT,
+    override val element: RedisAddElement
+) : RedisEditDocPayload()
+
+@Serializable
+@SerialName("EDIT_ELEMENT")
+data class RedisEditElementPayload(
+    override val elementOp: ElementOp = ElementOp.EDIT_ELEMENT,
+    override val element: RedisEditElement
+) : RedisEditDocPayload()
+
+@Serializable
+@SerialName("MOVE_ELEMENT")
+data class RedisMoveElementPayload(
+    override val elementOp: ElementOp = ElementOp.MOVE_ELEMENT,
+    override val element: RedisMoveElement
+) : RedisEditDocPayload()
+
+@Serializable
+@SerialName("REMOVE_ELEMENT")
+data class RedisRemoveElementPayload(
+    override val elementOp: ElementOp = ElementOp.REMOVE_ELEMENT,
+    override val element: RedisRemoveElement
+) : RedisEditDocPayload()
+
+@Serializable
+sealed class RedisElement {
+    abstract val uuid: UUID
+}
+
+@Serializable
+data class RedisAddElement(
+    @Serializable(with = UUIDToString::class)
+    override val uuid: UUID,
+    @SerialName("parent_uuid") @Serializable(with = UUIDToString::class)
+    val parentUuid: UUID? = null,
+    val metadata: JsonElement = JsonObject(emptyMap()),
+    val type: String,
+    val value: JsonElement
+) : RedisElement()
+
+@Serializable
+data class RedisEditElement(
+    @Serializable(with = UUIDToString::class)
+    override val uuid: UUID,
+    val metadata: JsonElement = JsonObject(emptyMap()),
+    val type: String,
+    val value: JsonElement
+) : RedisElement()
+
+@Serializable
+data class RedisMoveElement(
+    @Serializable(with = UUIDToString::class)
+    override val uuid: UUID,
+    @SerialName("parent_uuid") @Serializable(with = UUIDToString::class)
+    val parentUuid: UUID? = null,
+) : RedisElement()
+
+@Serializable
+data class RedisRemoveElement(
+    @Serializable(with = UUIDToString::class)
+    override val uuid: UUID,
+) : RedisElement()
+
+fun DocumentSyncEventValue.toRedisDocumentEvent(): RedisDocumentEvent {
+    return when (this) {
+        is InitSyncEventValue -> InitSyncEvent(
+            docId = this.docId,
+            processId = this.processId,
+            userId = this.userId,
+            sessionId = this.sessionId,
+            clientId = this.clientId,
+            payload = RedisInitSyncPayload()
+        )
+        is EditDocEventValue -> EditDocEvent(
+            docId = this.docId,
+            processId = this.processId,
+            userId = this.userId,
+            sessionId = this.sessionId,
+            clientId = this.clientId,
+            payload = this.payload.toRedisEditPayLoad())
+        is SaveDocEventValue -> SaveDocEvent(
+            docId = this.docId,
+            processId = this.processId,
+            userId = this.userId,
+            sessionId = this.sessionId,
+            clientId = this.clientId,
+            payload = RedisSaveDocPayload()
+        )
+        is FinishSyncEventValue -> FinishSyncEvent(
+            docId = this.docId,
+            processId = this.processId,
+            userId = this.userId,
+            sessionId = this.sessionId,
+            clientId = this.clientId,
+            payload = RedisFinishSyncPayload()
+        )
+    }
+}
+fun EditDocPayload.toRedisEditPayLoad(): RedisEditDocPayload {
+    return when (val p = this) {
+        is AddElementPayload -> RedisAddElementPayload(
+            element = RedisAddElement(
+                uuid = p.element.uuid,
+                parentUuid = p.element.parentUuid,
+                metadata = p.element.metadata,
+                type = p.element.type,
+                value = p.element.value
+            )
+        )
+        is EditElementPayload -> RedisEditElementPayload(
+            element = RedisEditElement(
+                uuid = p.element.uuid,
+                metadata = p.element.metadata,
+                type = p.element.type,
+                value = p.element.value
+            )
+        )
+        is MoveElementPayload -> RedisMoveElementPayload(
+            element = RedisMoveElement(
+                uuid = p.element.uuid,
+                parentUuid = p.element.parentUuid
+            )
+        )
+        is RemoveElementPayload -> RedisRemoveElementPayload(
+            element = RedisRemoveElement(
+                uuid = p.element.uuid
+            )
+        )
+    }
+}
+fun redisDocProcessKey(docId: Long, processId: Long): String {
     return "document:${docId}process:${processId}"
 }
 
-fun com.ideaspace.core.kafkaMessage.Element.toRedis(): Element {
-    return Element(
-        uuid = this.uuid.toString(),
-        parentUuid = this.parentUuid.toString(),
-        metadata = this.metadata,
-        type = this.type,
-        value = this.value
-    )
+fun redisDocKey(docId: Long): String {
+    return "document:$docId"
 }
