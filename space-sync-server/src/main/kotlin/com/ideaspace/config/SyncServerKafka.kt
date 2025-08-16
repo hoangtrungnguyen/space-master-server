@@ -2,12 +2,17 @@ package com.ideaspace.config
 
 import com.ideaspace.core.kafkaMessage.DocumentEventDeserializer
 import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
+import com.ideaspace.core.repository.CrudDocumentRepository
+import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.document.DocumentEventConsumer
+import com.ideaspace.workers.DocumentStorage
 import com.ideaspace.workers.KafkaPartitionProcessor
+import com.ideaspace.workers.RedisPublisher
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStarted
 import io.ktor.server.application.ApplicationStopping
 import io.ktor.server.plugins.di.dependencies
+import io.ktor.server.plugins.di.resolve
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.apache.kafka.clients.consumer.Consumer
@@ -22,7 +27,12 @@ import kotlin.collections.set
 fun Application.configureServerKafka() {
 
     dependencies.provide {
-        KafkaPartitionProcessor()
+        KafkaPartitionProcessor(
+            resolve<CrudDocumentRepository>(),
+            resolve<RedisPublisher>(),
+            resolve<ElementRepo>(),
+            resolve<DocumentStorage>()
+        )
     }
 
     val kafkaConfig = environment.config.config("kafka")
@@ -46,10 +56,10 @@ fun Application.configureServerKafka() {
         kafkaConsumer
     ) { event ->
         val kafkaPartitionProcessor = dependencies.resolve<KafkaPartitionProcessor>()
-        kafkaPartitionProcessor.submit(dependencies, event)
+        kafkaPartitionProcessor.submit(event)
     }
 
-    monitor.subscribe(ApplicationStarted){
+    monitor.subscribe(ApplicationStarted) {
         // 3. Launch the consumer in a background job
         this.launch {
             documentEventConsumer.consumeEvents()

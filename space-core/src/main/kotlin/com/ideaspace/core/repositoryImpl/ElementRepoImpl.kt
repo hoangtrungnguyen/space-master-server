@@ -39,7 +39,7 @@ class ElementRepoImpl(val db: Database) : ElementRepo {
         return@transaction element
     }
 
-    override suspend fun insert(element: Element): Element = transaction(db){
+    override suspend fun insert(element: Element): Element = transaction(db) {
         val generated = ElementDAO.new(element.uuid) {
             docId = element.docId
             parentUuid = element.parentUuid
@@ -51,15 +51,19 @@ class ElementRepoImpl(val db: Database) : ElementRepo {
         return@transaction element
     }
 
-    override suspend fun findByUuid(uuid: UUID): Element?  = transaction(db) {
+    override suspend fun findByUuid(uuid: UUID): Element? = transaction(db) {
         return@transaction ElementDAO.findById(uuid)?.toEntity()
     }
 
-    override suspend fun listByDocId(docId: Long): List<Element>  = transaction(db) {
+    override suspend fun listByDocId(docId: Long): List<Element> = transaction(db) {
         return@transaction ElementDAO
             .find { ElementTable.docId eq docId }
             .toList()
             .map(ElementDAO::toEntity)
+    }
+
+    override suspend fun findAllByDocId(docId: Long): List<Element> = transaction(db){
+        return@transaction ElementDAO.find { ElementTable.docId eq docId }.toList().map(ElementDAO::toEntity)
     }
 
 }
