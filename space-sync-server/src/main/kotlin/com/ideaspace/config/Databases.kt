@@ -8,18 +8,27 @@ import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.core.repositoryImpl.CrudDocumentRepositoryImpl
 import com.ideaspace.core.repositoryImpl.ElementRepoImpl
+import com.ideaspace.workers.DocumentStorage
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import java.util.concurrent.ConcurrentHashMap
 
 fun Application.configureDatabases() {
 
     val db = connectToPostgresJDBC(embedded = false)
 
-    val repository =  CrudDocumentRepositoryImpl(db)
+    val documentStorage = DocumentStorage(
+        ConcurrentHashMap()
+    )
+
     dependencies {
 
+        provide<DocumentStorage>(){
+            documentStorage
+        }
+
         provide<CrudDocumentRepository>{
-            repository
+            CrudDocumentRepositoryImpl(db)
         }
 
         provide<ElementRepo>(){
