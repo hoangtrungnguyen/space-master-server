@@ -96,8 +96,13 @@ fun Application.configureSockets() {
                             val event = Json.decodeFromString<DocumentSyncEventValue>(frameText)
                             docEventProducer.sendEvent(doc.id, event)
 
-                        } catch (e: Exception) {
+                            send(Frame.Text(Json.encodeToString(mapOf(
+                                "type" to "success",
+                                "message" to "Received event from process ${event.processId}"
+                            ))))
 
+                        } catch (e: Exception) {
+                            e.printStackTrace()
                             try {
                                 send(Frame.Text(Json.encodeToString(mapOf(
                                     "type" to "error",
