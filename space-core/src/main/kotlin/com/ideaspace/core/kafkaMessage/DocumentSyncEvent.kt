@@ -6,6 +6,7 @@ import com.ideaspace.core.dto.UUIDToString
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -34,7 +35,7 @@ sealed class DocumentSyncEventValue {
 @Serializable
 @SerialName("INIT_SYNC")
 data class InitSyncEventValue(
-    override val syncOp: SyncOperation = SyncOperation.INIT_SYNC,
+    @Transient override val syncOp: SyncOperation = SyncOperation.INIT_SYNC,
     @SerialName("doc_id") override val docId: Long,
     @SerialName("process_id") override val processId: Long,
     @SerialName("user_id") override val userId: Long,
@@ -46,7 +47,7 @@ data class InitSyncEventValue(
 @Serializable
 @SerialName("EDIT_DOC")
 data class EditDocEventValue(
-    override val syncOp: SyncOperation = SyncOperation.EDIT_DOC,
+    @Transient override val syncOp: SyncOperation = SyncOperation.EDIT_DOC,
     @SerialName("doc_id") override val docId: Long,
     @SerialName("process_id") override val processId: Long,
     @SerialName("user_id") override val userId: Long,
@@ -59,7 +60,7 @@ data class EditDocEventValue(
 @Serializable
 @SerialName("SAVE_DOC")
 data class SaveDocEventValue(
-    override val syncOp: SyncOperation = SyncOperation.SAVE_DOC,
+    @Transient override val syncOp: SyncOperation = SyncOperation.SAVE_DOC,
     @SerialName("doc_id") override val docId: Long,
     @SerialName("process_id") override val processId: Long,
     @SerialName("user_id") override val userId: Long,
@@ -73,7 +74,7 @@ data class SaveDocEventValue(
 @Serializable
 @SerialName("FINISH_SYNC")
 data class FinishSyncEventValue(
-    override val syncOp: SyncOperation = SyncOperation.FINISH_SYNC,
+    @Transient override val syncOp: SyncOperation = SyncOperation.FINISH_SYNC,
     @SerialName("doc_id") override val docId: Long,
     @SerialName("process_id") override val processId: Long,
     @SerialName("user_id") override val userId: Long,
@@ -118,34 +119,30 @@ enum class ElementOp {
 @Serializable
 @SerialName("ADD_ELEMENT")
 data class AddElementPayload(
-    override val elementOp: ElementOp = ElementOp.ADD_ELEMENT,
-    @SerialName("element")
-    override val element: AddElement
+    @Transient             override val elementOp: ElementOp = ElementOp.ADD_ELEMENT,
+    @SerialName("element") override val element: AddElement
 ) : EditDocPayload()
 
 
 @Serializable
 @SerialName("EDIT_ELEMENT")
 data class EditElementPayload(
-    override val elementOp: ElementOp = ElementOp.EDIT_ELEMENT,
-    @SerialName("element")
-    override val element: EditElement
+    @Transient             override val elementOp: ElementOp = ElementOp.EDIT_ELEMENT,
+    @SerialName("element") override val element: EditElement
 ) : EditDocPayload()
 
 @Serializable
 @SerialName("MOVE_ELEMENT")
 data class MoveElementPayload(
-    override val elementOp: ElementOp = ElementOp.MOVE_ELEMENT,
-    @SerialName("element")
-    override val element: MoveElement
+    @Transient             override val elementOp: ElementOp = ElementOp.MOVE_ELEMENT,
+    @SerialName("element") override val element: MoveElement
 ) : EditDocPayload()
 
 @Serializable
 @SerialName("REMOVE_ELEMENT")
 data class RemoveElementPayload(
-    override val elementOp: ElementOp = ElementOp.REMOVE_ELEMENT,
-    @SerialName("element")
-    override val element: RemoveElement
+    @Transient             override val elementOp: ElementOp = ElementOp.REMOVE_ELEMENT,
+    @SerialName("element") override val element: RemoveElement
 ) : EditDocPayload()
 
 // endregion
