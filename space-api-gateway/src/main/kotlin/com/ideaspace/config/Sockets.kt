@@ -59,7 +59,9 @@ fun Application.configureSockets() {
                     "boardId is required"
                 )
             )
-            val connection = DocumentConnection(userId = 1, session = this, docUuid = UUID.fromString(docUuid))
+            val dao = application.dependencies.resolve<CrudDocumentRepository>().findByUuid(uuid = docUuid)
+            val connection = DocumentConnection(userId = 1, session = this,
+                docId = dao!!.id, docUuid = UUID.fromString(docUuid))
             sessionManager.register(connection, docUuid)
 
             try {
@@ -69,15 +71,12 @@ fun Application.configureSockets() {
                             println("Received frame: ${frame.readText()}")
                             val event = Json.decodeFromString<DocumentEventDTO>(frame.readText())
                             val documentEventProducer = call.application.dependencies.resolve<DocumentEventProducer>()
-                            val dao = application.dependencies.resolve<CrudDocumentRepository>().findByUuid(uuid = docUuid)
-                            if (dao != null) {
-                                val data = event.copy(docId = dao.id)
-                                documentEventProducer.sendEvent(
-                                    dao.id,
-                                    Json.decodeFromString<DocumentSyncEventValue>(Json.encodeToString(data))
-                                )
-                                println("Event sent successfully")
-                            }
+                            val data = event.copy(docId = dao.id)
+                            documentEventProducer.sendEvent(
+                                dao.id,
+                                Json.decodeFromString<DocumentSyncEventValue>(Json.encodeToString(data))
+                            )
+                            println("Event sent successfully")
                         } catch (e: Exception) {
                             // Log the error
                             println("Error deserializing frame: ${e.localizedMessage}")
