@@ -7,7 +7,6 @@ import java.util.*
 
 data class DocumentConnection(
     val userId: Long,
-    val docId: Long,
     val docUuid: UUID,
     val session: DefaultWebSocketSession
 ) {

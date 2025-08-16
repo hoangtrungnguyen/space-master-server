@@ -27,6 +27,7 @@ import io.ktor.util.reflect.typeInfo
 import io.ktor.websocket.readText
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.modules.polymorphic
+import java.util.UUID
 
 
 fun Application.configureSockets() {
@@ -58,7 +59,7 @@ fun Application.configureSockets() {
                     "boardId is required"
                 )
             )
-            val connection = DocumentConnection(userId = 1, session = this)
+            val connection = DocumentConnection(userId = 1, session = this, docUuid = UUID.fromString(docUuid))
             sessionManager.register(connection, docUuid)
 
             try {
@@ -68,10 +69,15 @@ fun Application.configureSockets() {
                             println("Received frame: ${frame.readText()}")
                             val event = Json.decodeFromString<DocumentEventDTO>(frame.readText())
                             val documentEventProducer = call.application.dependencies.resolve<DocumentEventProducer>()
-                            val dao = application.dependencies.resolve<CrudDocumentRepository>().findByIdUuid(uuid = docUuid)
-                            val data = event.copy(docId = dao.id.value)
-                            documentEventProducer.sendEvent(dao.id.value, Json.decodeFromString<DocumentSyncEventValue>(Json.encodeToString(data)))
-                            println("Event sent successfully")
+                            val dao = application.dependencies.resolve<CrudDocumentRepository>().findByUuid(uuid = docUuid)
+                            if (dao != null) {
+                                val data = event.copy(docId = dao.id)
+                                documentEventProducer.sendEvent(
+                                    dao.id,
+                                    Json.decodeFromString<DocumentSyncEventValue>(Json.encodeToString(data))
+                                )
+                                println("Event sent successfully")
+                            }
                         } catch (e: Exception) {
                             // Log the error
                             println("Error deserializing frame: ${e.localizedMessage}")
