@@ -2,8 +2,14 @@ package com.ideaspace.document
 
 import com.ideaspace.core.dto.DocumentDTO
 import com.ideaspace.core.dto.toDTO
+import com.ideaspace.core.kafkaMessage.AddElement
+import com.ideaspace.core.kafkaMessage.AddElementPayload
 import com.ideaspace.core.kafkaMessage.DocumentEventProducer
 import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
+import com.ideaspace.core.kafkaMessage.ElementOp
+import com.ideaspace.core.kafkaMessage.InitSyncEventValue
+import com.ideaspace.core.kafkaMessage.InitSyncPayload
+import com.ideaspace.core.kafkaMessage.SyncOperation
 import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.models.DocumentStatus
 import com.ideaspace.core.models.DocumentType
@@ -57,23 +63,14 @@ class CreateDocumentCommand(
         ))
 
 
-        val event = DocumentSyncEventValue(
-            syncOp = com.ideaspace.core.kafkaMessage.SyncOperation.INIT_SYNC,
+        val event = InitSyncEventValue(
+            syncOp = SyncOperation.INIT_SYNC,
             docId = doc.id.value,
             processId = 2, // TODO: Generate process ID
             userId = 1, // TODO: Get from context
             sessionId = 1, // TODO: Get from context
             clientId = 1, // TODO: Get from context
-            payload = com.ideaspace.core.kafkaMessage.ElementPayload(
-                elementOp = com.ideaspace.core.kafkaMessage.ElementOp.ADD_ELEMENT,
-                element = com.ideaspace.core.kafkaMessage.Element(
-                    uuid = root.uuid,
-                    parentUuid = root.parentUuid,
-                    metadata = (root.metadata ?: JsonObject(emptyMap())),
-                    type = root.type,
-                    value = root.value
-                )
-            )
+            payload = InitSyncPayload()
         )
 
         withContext(Dispatchers.IO) {

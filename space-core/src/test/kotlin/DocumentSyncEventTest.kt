@@ -1,4 +1,6 @@
+import com.ideaspace.core.kafkaMessage.AddElementPayload
 import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
+import com.ideaspace.core.kafkaMessage.EditElementPayload
 import com.ideaspace.core.kafkaMessage.ElementOp
 import com.ideaspace.core.kafkaMessage.SyncOperation
 import kotlinx.serialization.json.Json
@@ -29,7 +31,7 @@ class DocumentSyncEventTest {
             "session_id": 123456789,
             "client_id": 9876,
             "payload": {
-                "element_op": "EDIT_ELEMENT",
+                "element_op": "ADD_ELEMENT",
                 "element": {
                     "uuid": "c3a4e5f6-1234-5678-90ab-cdef12345678",
                     "parent_uuid": "d4e5f6a7-2345-6789-01bc-def012345678",
@@ -58,8 +60,8 @@ class DocumentSyncEventTest {
         assertEquals(123456789L, event.sessionId)
         assertEquals(9876L, event.clientId)
 
-        val payload = event.payload
-        assertEquals<Enum<*>>(ElementOp.EDIT_ELEMENT, payload.elementOp)
+        val payload = event.payload as AddElementPayload
+        assertEquals<Enum<*>>(ElementOp.ADD_ELEMENT, payload.elementOp)
 
         val element = payload.element
         assertEquals(UUID.fromString("c3a4e5f6-1234-5678-90ab-cdef12345678"), element.uuid)
