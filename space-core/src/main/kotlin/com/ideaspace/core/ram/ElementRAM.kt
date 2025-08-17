@@ -12,31 +12,27 @@ import kotlin.time.Instant
 data class DocumentRAM(
     val id: Long,
     val title: String,
-    val roots: ConcurrentHashMap<UUID, ElementRAM>,
+    val roots: ConcurrentHashMap<UUID, ElementRAM> = ConcurrentHashMap(),
+    val elements: ConcurrentHashMap<UUID, ElementRAM> = ConcurrentHashMap()
 ){
 
     fun addRoot(uuid: UUID, element: ElementRAM){
         roots[uuid] = element
+        elements[uuid] = element
     }
 
 
-    fun searchElement(element: ElementRAM, uuid: UUID): ElementRAM?{
-        if(element.uuid == uuid){
-            return element
-        }
-        for(child in element.children.values.iterator()){
-            val result = searchElement(child, uuid)
-            if( result != null){
-                return result
-            }
+    fun searchElement( uuid: UUID): ElementRAM?{
+        if(elements.containsKey(uuid)){
+            return elements[uuid]
         }
         return null
     }
 
 
     @OptIn(ExperimentalTime::class)
-    fun addElement(root: ElementRAM, parentUuid: UUID, element: ElementRAM): ElementRAM{
-        val parent = searchElement(root, parentUuid)
+    fun addElement(parentUuid: UUID, element: ElementRAM): ElementRAM{
+        val parent = searchElement(parentUuid)
         if(parent != null){
             parent.children[element.uuid] = element
             return element.copy(

@@ -26,7 +26,10 @@ class BusinessDocument(
     val status: DocumentStatus,
     val transformVersion: Long,
     val kafkaOffset: Long,
-)
+){
+    val roots : Map<UUID,Element> = emptyMap<UUID,Element>()
+    val elements: Map<UUID, Element> = emptyMap()
+}
 
 @Serializable
 enum class DocumentStatus {

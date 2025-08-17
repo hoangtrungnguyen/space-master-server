@@ -35,7 +35,7 @@ class InitSyncDocument(
 
         elements.filter { it.parentUuid != null }.forEach {
             documentRAM.addElement(
-                rootElements[it.parentUuid]!!, it.parentUuid!!,
+                it.parentUuid!!,
                 it.toRAM()
             )
         }
