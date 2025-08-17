@@ -56,7 +56,7 @@ dependencies {
     implementation("com.h2database:h2:2.2.224")
 
     // REDIS
-    implementation("redis.clients:jedis:5.1.3")
+    implementation("io.lettuce:lettuce-core:6.8.0.RELEASE")
 
     testImplementation(kotlin("test"))
 }

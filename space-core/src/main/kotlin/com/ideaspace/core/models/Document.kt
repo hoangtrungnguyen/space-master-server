@@ -1,5 +1,10 @@
+@file:OptIn(ExperimentalTime::class)
+
 package com.ideaspace.core.models
 
+import com.ideaspace.core.dao.DocumentDAO
+import com.ideaspace.core.dto.DocumentDTO
+import com.ideaspace.core.dto.toDTO
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import java.util.*
@@ -21,7 +26,10 @@ class BusinessDocument(
     val status: DocumentStatus,
     val transformVersion: Long,
     val kafkaOffset: Long,
-)
+){
+    val roots : Map<UUID,Element> = emptyMap<UUID,Element>()
+    val elements: Map<UUID, Element> = emptyMap()
+}
 
 @Serializable
 enum class DocumentStatus {
@@ -32,3 +40,17 @@ enum class DocumentStatus {
 enum class DocumentType {
     DOC, CANVAS
 }
+fun BusinessDocument.toDTO( root: Element): DocumentDTO = DocumentDTO(
+    id = this.id,
+    uuid = this.uuid,
+    revId = this.revId,
+    title = this.title,
+    creatorId = this.creatorId,
+    ownerId = this.ownerId,
+    createdAt = this.createdAt,
+    lastModifiedAt = this.lastModifiedAt,
+    metadata = this.metadata,
+    documentType = this.documentType,
+    status = this.status,
+    content = root.toDTO()
+)

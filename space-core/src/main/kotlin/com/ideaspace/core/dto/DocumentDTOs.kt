@@ -61,3 +61,4 @@ fun toDTO(document: DocumentDAO, root: Element): DocumentDTO = DocumentDTO(
     status = document.status,
     content = root.toDTO()
 )
+

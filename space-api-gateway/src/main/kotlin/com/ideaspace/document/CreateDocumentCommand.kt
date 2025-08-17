@@ -2,11 +2,7 @@ package com.ideaspace.document
 
 import com.ideaspace.core.dto.DocumentDTO
 import com.ideaspace.core.dto.toDTO
-import com.ideaspace.core.kafkaMessage.AddElement
-import com.ideaspace.core.kafkaMessage.AddElementPayload
 import com.ideaspace.core.kafkaMessage.DocumentEventProducer
-import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
-import com.ideaspace.core.kafkaMessage.ElementOp
 import com.ideaspace.core.kafkaMessage.InitSyncEventValue
 import com.ideaspace.core.kafkaMessage.InitSyncPayload
 import com.ideaspace.core.kafkaMessage.SyncOperation
@@ -14,6 +10,7 @@ import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.models.DocumentStatus
 import com.ideaspace.core.models.DocumentType
 import com.ideaspace.core.models.Element
+import com.ideaspace.core.models.toDTO
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import io.ktor.server.plugins.di.*
@@ -54,7 +51,7 @@ class CreateDocumentCommand(
 
         val root = elementRepo.create(Element(
             uuid = UUID(0, 0),
-            docId = doc.id.value,
+            docId = doc.id,
             parentUuid = null,
             metadata = null,
             type = "#root",
@@ -65,7 +62,7 @@ class CreateDocumentCommand(
 
         val event = InitSyncEventValue(
             syncOp = SyncOperation.INIT_SYNC,
-            docId = doc.id.value,
+            docId = doc.id,
             processId = 2, // TODO: Generate process ID
             userId = 1, // TODO: Get from context
             sessionId = 1, // TODO: Get from context
@@ -74,9 +71,9 @@ class CreateDocumentCommand(
         )
 
         withContext(Dispatchers.IO) {
-            documentEventProducer.sendEvent(doc.id.value, event)
+            documentEventProducer.sendEvent(doc.id, event)
         }
-        return toDTO(doc, root)
+        return doc.toDTO(root)
     }
 
 }
