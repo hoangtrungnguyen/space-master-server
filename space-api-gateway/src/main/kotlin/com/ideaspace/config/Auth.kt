@@ -6,17 +6,24 @@ import com.ideaspace.core.models.User
 import com.ideaspace.core.repository.UserRepo
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.plugins.di.dependencies
+import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.authentication
+import io.ktor.server.auth.jwt.jwt
+import io.ktor.server.auth.principal
+import io.ktor.server.plugins.di.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
-import java.net.URLDecoder
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
 
-data class AuthClaims(
+val logger: Logger = LoggerFactory.getLogger("com.ideaspace.config.Auth")
+
+data class AuthPrincipal(
     val user: User
 )
 
@@ -38,53 +45,6 @@ data class UserInfo(
     val loginName: String,
     val fullName: String
 )
-
-/**
- * Authenticates a WebSocket connection using JWT token from query parameters
- * and verifies document access permissions
- */
-suspend fun ApplicationCall.authenticate(): AuthClaims? {
-    // Extract JWT token from query parameters
-    val bearer = request.headers["Authorization"]
-    val token = bearer?.substringAfter("Bearer ")
-    if (token.isNullOrEmpty()) {
-        println("WebSocket authentication failed: No token provided")
-        return null
-    }
-
-    // Decode the token if it's URL-encoded
-    val decodedToken = URLDecoder.decode(token, "UTF-8")
-
-    // Get JWT configuration from environment
-    val secret = application.environment.config.property("jwt.secret").getString()
-    val issuer = application.environment.config.property("jwt.issuer").getString()
-    val audience = application.environment.config.property("jwt.audience").getString()
-
-    // Verify and decode JWT token
-    val verifier = JWT
-        .require(Algorithm.HMAC256(secret))
-        .withAudience(audience)
-        .withIssuer(issuer)
-        .build()
-
-    val decodedJWT = verifier.verify(decodedToken)
-    val userId = decodedJWT.getClaim("userId").asLong()
-
-    if (userId == null) {
-        println("WebSocket authentication failed: Invalid token claims")
-        return null
-    }
-
-    // Verify user exists in database
-    val userRepo = application.dependencies.resolve<UserRepo>()
-    val user = userRepo.findById(userId)
-    if (user == null) {
-        println("WebSocket authentication failed: User not found or loginName mismatch")
-        return null
-    }
-
-    return AuthClaims(user)
-}
 
 /**
  * Generates a JWT token for the given user
@@ -111,7 +71,7 @@ fun ApplicationCall.generateJwtToken(user: User): String {
  */
 fun Route.authRoutes() {
     route("/api") {
-        post("/auth/login") {
+        post("/users/login") {
             try {
                 val loginRequest = call.receive<LoginRequest>()
                 
@@ -125,7 +85,7 @@ fun Route.authRoutes() {
                 }
                 
                 // Find user by loginName
-                val userRepo = call.application.dependencies.resolve<UserRepo>()
+                val userRepo = application.dependencies.resolve<UserRepo>()
                 val user = userRepo.findByLoginName(loginRequest.loginName)
                 
                 if (user == null) {
@@ -162,6 +122,55 @@ fun Route.authRoutes() {
                 )
             }
         }
+        authenticate("jwt-auth") {
+            get("/users/profile") {
+                val principal = call.principal<AuthPrincipal>()!!
+                val user = principal.user
+                call.respond(HttpStatusCode.OK, UserInfo(
+                    id = user.id,
+                    loginName = user.loginName,
+                    fullName = user.fullName
+                ))
+            }
+        }
     }
 }
 
+suspend fun Application.configureSecurity() {
+    val secret = environment.config.property("jwt.secret").getString()
+    val issuer = environment.config.property("jwt.issuer").getString()
+    val audience = environment.config.property("jwt.audience").getString()
+
+    val userRepo = dependencies.resolve<UserRepo>()
+
+    authentication {
+        jwt("jwt-auth") {
+            realm = "Space Master Server"
+            verifier(
+                JWT
+                    .require(Algorithm.HMAC256(secret))
+                    .withAudience(audience)
+                    .withIssuer(issuer)
+                    .build()
+            )
+            validate { credential ->
+                val userId = credential.payload.getClaim("userId").asLong()
+                if (userId == null) {
+                    logger.error("Invalid token claims: Missing userId")
+                    return@validate null
+                }
+
+                val user = userRepo.findById(userId)
+                if (user == null) {
+                    println("Invalid token claims: User not found")
+                    return@validate null
+                }
+
+                return@validate AuthPrincipal(user)
+            }
+            challenge { _, _ ->
+                call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
+            }
+        }
+    }
+}

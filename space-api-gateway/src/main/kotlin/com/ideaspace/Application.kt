@@ -10,12 +10,12 @@ fun main(args: Array<String>) {
     EngineMain.main(args)
 }
 
-fun Application.module() {
+suspend fun Application.module() {
     configureErrorHandling()
     configureHTTP()
-    configureSecurity()
     configureDocumentEventProducer()
     configureDatabases()
+    configureSecurity()
     configureRouting()
     configureSockets()
 }

@@ -23,8 +23,8 @@ fun Application.configureRouting() {
 
     routing {
         authRoutes()
-        documentManagementRoutes()
         userManagementRoutes()
+        documentManagementRoutes()
     }
 
 }
