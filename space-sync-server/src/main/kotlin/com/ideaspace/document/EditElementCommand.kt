@@ -22,29 +22,29 @@ class EditElementCommand(
 
         val editElementPayload = editDocEventValue.payload as EditElementPayload
 
-        val element = editElementPayload.element
-        val document = documentStorage.documentsMap[docId]!!
+        val elementData = editElementPayload.element
+        val document = documentStorage.documentsMap[docId] ?: throw IllegalStateException("Document not found")
 
-        val prevElement = document.searchElement(element.uuid)!!
+        val foundElement = document.searchElement(elementData.uuid)!!
 
-        val updatedElement = prevElement.copy(
-            uuid = element.uuid,
-            value = element.value,
-            metadata = element.metadata,
-            type = element.type
+        val updatedElement = foundElement.copy(
+            uuid = elementData.uuid,
+            value = elementData.value,
+            metadata = elementData.metadata,
+            type = elementData.type
         )
 
         document.update(
-           updatedElement,
+            updatedElement,
         )
 
-        val payload = editDocEventValue.toRedisDocumentEvent()
-        documentRedisPublisher.publishEditDocEvent(docId, processId, payload)
+        val payloadRedis = editDocEventValue.toRedisDocumentEvent()
+        documentRedisPublisher.publishEditDocEvent(docId, processId, payloadRedis)
         elementRepo.updateEditedElement(
-            uuid = element.uuid,
-            metadata = element.metadata,
-            value = element.value,
-            type = element.type
+            uuid = elementData.uuid,
+            metadata = elementData.metadata,
+            value = elementData.value,
+            type = elementData.type
         )
     }
 }
