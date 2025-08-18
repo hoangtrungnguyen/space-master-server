@@ -40,11 +40,13 @@ class AddElementCommand(
                     metadata = element.metadata,
                     path = element.uuid.toString(),
                     children = LinkedHashMap(),
+                    type = element.type,
+                    parentUuid =null ,
                     deletedAt = null
                 )
             )
         } else {
-            val root = documentStorage.documentsMap[docId]!!.roots[element.parentUuid]!!
+            assert(documentStorage.documentsMap[docId]!!.roots[element.parentUuid] != null)
             document.addElement(
                 element.parentUuid!!, ElementRAM(
                     uuid = element.uuid,
@@ -52,6 +54,8 @@ class AddElementCommand(
                     value = element.value,
                     metadata = element.metadata,
                     path = "",
+                    type = element.type,
+                    parentUuid = element.parentUuid,
                     children = LinkedHashMap(),
                     deletedAt = null
                 )
