@@ -33,7 +33,7 @@ class AddElementCommand(
         val document = documentStorage.documentsMap[docId]!!
         if (element.parentUuid == null) {
             document.addRoot(
-                element.uuid, ElementRAM(
+                 ElementRAM(
                     uuid = element.uuid,
                     element = null,
                     value = element.value,
@@ -46,9 +46,8 @@ class AddElementCommand(
                 )
             )
         } else {
-            assert(documentStorage.documentsMap[docId]!!.roots[element.parentUuid] != null)
             document.addElement(
-                element.parentUuid!!, ElementRAM(
+                 ElementRAM(
                     uuid = element.uuid,
                     element = null,
                     value = element.value,

@@ -25,27 +25,24 @@ class MoveElementCommand(
         val element = removeElementPayload.element
         val document = documentStorage.documentsMap[docId]!!
 
-        val prevElementRAM = document.searchElement(element.uuid)!!
+        val prevElementRAM = document.searchElement(element.uuid)!!.copy()
 
-        val targetParentUuid = element.parentUuid
+        //remove
+        document.remove(prevElementRAM)
 
-        if (targetParentUuid != null) {
-
-            //update target parent
-            val newElementRAM = prevElementRAM.copy(parentUuid = targetParentUuid)
-            val targetParent =  document.roots[targetParentUuid]
-            targetParent!!.children.remove(newElementRAM.uuid)
-            document.elements[targetParentUuid]!!.children[element.uuid] = newElementRAM
-
-            //update previous parent
-            if(prevElementRAM.parentUuid != null && prevElementRAM.parentUuid != targetParent.parentUuid) {
-                val prevParent = document.roots[prevElementRAM.parentUuid]!!
-                prevParent.children.remove(newElementRAM.uuid)
-                document.elements[prevParent.uuid] = prevParent
-            }
-
+        //add
+        if(element.parentUuid == null){
+            document.addRoot(prevElementRAM.copy(
+                parentUuid = null,
+            ))
+        } else {
+            document.addElement( prevElementRAM.copy(
+                parentUuid = element.parentUuid!!,
+            ))
         }
 
+
+        //publish changes
         documentRedisPublisher.publishEditDocEvent(docId, processId, editDocEventValue.toRedisDocumentEvent())
         elementRepo.updateMovedElement(
             uuid = element.uuid,

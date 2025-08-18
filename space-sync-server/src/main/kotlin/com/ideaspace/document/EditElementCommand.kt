@@ -26,6 +26,7 @@ class EditElementCommand(
         val document = documentStorage.documentsMap[docId]!!
 
         val prevElement = document.searchElement(element.uuid)!!
+
         val updatedElement = prevElement.copy(
             uuid = element.uuid,
             value = element.value,
@@ -35,7 +36,6 @@ class EditElementCommand(
 
         document.update(
            updatedElement,
-            prevElement.copy()
         )
 
         val payload = editDocEventValue.toRedisDocumentEvent()
