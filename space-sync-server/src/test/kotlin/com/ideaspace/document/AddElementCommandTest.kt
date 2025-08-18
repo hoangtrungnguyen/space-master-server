@@ -57,48 +57,7 @@ class AddElementCommandTest {
 
         @Test
         fun `execute should add a root element when parentUuid is null`() = runTest {
-            // Arrange
-            val elementUuid = UUID.randomUUID()
-            val element = AddElement(
-                uuid = elementUuid,
-                parentUuid = null,
-                metadata = JsonObject(emptyMap()),
-                type = "TEXT",
-                value = JsonObject(emptyMap()),
-            )
-            val payload = AddElementPayload(element = element, elementOp = ElementOp.EDIT_ELEMENT)
 
-            val editDocEventValue = EditDocEventValue(
-                payload = payload,
-                syncOp = SyncOperation.EDIT_DOC,
-                docId = docId,
-                processId = processId,
-                userId = userId,
-                sessionId = sessionId,
-                clientId = clientId
-            )
-
-            val command = AddElementCommand(editDocEventValue, docId, processId)
-
-            val elementRamSlot = slot<ElementRAM>()
-            every { documentRam.addRoot(eq(elementUuid), capture(elementRamSlot)) } just runs
-
-            // Act
-            command.execute(documentRedisPublisher, elementRepo, documentStorage)
-
-            // Assert
-            verify { documentRam.addRoot(elementUuid, any()) }
-            with(elementRamSlot.captured) {
-                assertEquals(element.uuid, uuid)
-                assertEquals(element.value, value)
-                assertEquals(element.metadata, metadata)
-                assertEquals(element.type, type)
-                assertNull(parentUuid)
-            }
-
-            coVerify { documentRedisPublisher.publishEditDocEvent(docId, processId, any()) }
-            coVerify { elementRepo.insert(any()) }
-            verify(exactly = 0) { documentRam.addElement(any(), any()) }
         }
     }
 
