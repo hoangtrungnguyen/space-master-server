@@ -74,12 +74,21 @@ class ElementRepoImpl(val db: Database) : ElementRepo {
         metadata: JsonElement,
         value: JsonElement,
         type: String
-    ) {
-        TODO("Not yet implemented")
+    ) = transaction(db){
+        ElementTable.update({ ElementTable.id eq uuid }, 1) {
+            it[ElementTable.metadata] = metadata
+            it[ElementTable.value] = value
+            it[ElementTable.type] = type
+        }
+        return@transaction ElementDAO.findById(uuid)!!.toEntity()
     }
 
-    override suspend fun deleteByUuid(uuid: UUID) {
-        TODO("Not yet implemented")
+    override suspend fun deleteByUuid(uuid: UUID): Boolean = transaction(db){
+        return@transaction ElementDAO.findById(uuid)?.delete()?.let {
+            true
+        } ?: run {
+            false
+        }
     }
 
     override suspend fun updateMovedElement(uuid: UUID, parentUuid: UUID?): Int = transaction(db){

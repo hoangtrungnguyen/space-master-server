@@ -18,11 +18,11 @@ interface ElementRepo {
         metadata: JsonElement,
         value: JsonElement,
         type: String,
-    )
+    ): Element
 
     suspend fun deleteByUuid(
         uuid: UUID
-    )
+    ): Boolean
 
     suspend fun updateMovedElement(
         uuid: UUID,
