@@ -49,7 +49,7 @@ data class UserInfo(
 /**
  * Generates a JWT token for the given user
  */
-fun ApplicationCall.generateJwtToken(user: User): String {
+private fun ApplicationCall.generateJwtToken(user: User): String {
     val secret = application.environment.config.property("jwt.secret").getString()
     val issuer = application.environment.config.property("jwt.issuer").getString()
     val audience = application.environment.config.property("jwt.audience").getString()

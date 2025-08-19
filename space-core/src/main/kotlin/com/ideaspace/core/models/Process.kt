@@ -1,6 +1,10 @@
+@file:OptIn(ExperimentalTime::class)
+
 package com.ideaspace.core.models
 
-import java.time.ZonedDateTime
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
+
 
 class Process(
     var id: Long,
@@ -9,6 +13,6 @@ class Process(
     var windowId: Long,
     var sessionId: Long,
     var isActive: Boolean,
-    var lastActiveAt: ZonedDateTime
+    var lastActiveAt: Instant
 ) {
 }

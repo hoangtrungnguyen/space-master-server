@@ -6,8 +6,10 @@ import com.ideaspace.core.datasources.postgres.connectToPostgresJDBC
 import io.ktor.server.application.*
 import io.ktor.server.plugins.di.dependencies
 import com.ideaspace.core.repository.CrudDocumentRepository
+import com.ideaspace.core.repository.ProcessRepo
 import com.ideaspace.core.repository.UserRepo
 import com.ideaspace.core.repositoryImpl.CrudDocumentRepositoryImpl
+import com.ideaspace.core.repositoryImpl.ProcessRepoImpl
 import com.ideaspace.core.repositoryImpl.UserRepoImpl
 
 fun Application.configureDatabases() {
@@ -21,6 +23,9 @@ fun Application.configureDatabases() {
         }
         provide<UserRepo>{
             UserRepoImpl(db)
+        }
+        provide<ProcessRepo>{
+            ProcessRepoImpl(db)
         }
     }
 }

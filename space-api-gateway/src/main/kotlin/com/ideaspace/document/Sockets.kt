@@ -1,10 +1,14 @@
+@file:OptIn(ExperimentalTime::class)
+
 package com.ideaspace.document
 
 import com.ideaspace.config.AuthPrincipal
 import com.ideaspace.core.kafkaMessage.DocumentEventProducer
 import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.models.BusinessDocument
+import com.ideaspace.core.models.Process
 import com.ideaspace.core.repository.CrudDocumentRepository
+import com.ideaspace.core.repository.ProcessRepo
 import com.ideaspace.session.DocumentConnection
 import com.ideaspace.session.SessionManager
 import io.ktor.server.application.*
@@ -18,10 +22,12 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.serialization.json.Json
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
 
 
-fun Application.configureSockets() {
+suspend fun Application.configureSockets() {
 
     install(WebSockets) {
         pingPeriod = 15.seconds
@@ -31,6 +37,9 @@ fun Application.configureSockets() {
     }
 
     val sessionManager by lazy { SessionManager() }
+    val docEventProducer = dependencies.resolve<DocumentEventProducer>()
+    val docRepo = dependencies.resolve<CrudDocumentRepository>()
+    val processRepo = dependencies.resolve<ProcessRepo>()
 
     routing {
         authenticate("jwt-auth") {
@@ -40,7 +49,7 @@ fun Application.configureSockets() {
                 // These setups happen once for every connection
                 // -----------------------------------------------
 
-                val authenticatedUser = call.principal<AuthPrincipal>() ?: return@webSocket close(
+                val principal = call.principal<AuthPrincipal>() ?: return@webSocket close(
                     CloseReason(VIOLATED_POLICY, "Authentication failed")
                 )
 
@@ -48,23 +57,35 @@ fun Application.configureSockets() {
                     CloseReason(VIOLATED_POLICY, "Document 'uuid' is required")
                 )
 
-                val docEventProducer = dependencies.resolve<DocumentEventProducer>()
-                val docRepo = dependencies.resolve<CrudDocumentRepository>()
                 val doc = docRepo.findByUuid(docUuid) ?: return@webSocket close(
                     CloseReason(VIOLATED_POLICY, "Document not found")
                 )
 
-                // Validate document access permissions
-                if (!validateDocumentAccess(authenticatedUser, doc)) {
+                if (!validateDocumentAccess(principal, doc)) {
                     return@webSocket close(
                         CloseReason(VIOLATED_POLICY, "Access denied to document")
                     )
                 }
 
-                val connection = DocumentConnection(
-                    userId = authenticatedUser.user.id,
+                val windowId = call.parameters["wid"]?.toLong() ?: return@webSocket close(
+                    CloseReason(VIOLATED_POLICY, "Window 'wid' is required")
+                )
+
+                val userId = principal.user.id
+                val process = processRepo.findByDocUserWindow(doc.id, userId, windowId) ?: processRepo.create(Process(
+                    id = -1,
                     docId = doc.id,
+                    userId = userId,
+                    windowId = windowId,
+                    sessionId = -1,
+                    isActive = true,
+                    lastActiveAt = Clock.System.now()
+                ))
+
+
+                val connection = DocumentConnection(
                     docUuid = doc.uuid,
+                    process = process,
                     session = this
                 )
                 sessionManager.register(connection, docUuid)
@@ -74,7 +95,7 @@ fun Application.configureSockets() {
                     send(Frame.Text(Json.encodeToString(mapOf(
                         "type" to "connection_established",
                         "message" to "Successfully connected to document $docUuid",
-                        "loginName" to authenticatedUser.user.loginName
+                        "loginName" to principal.user.loginName
                     ))))
 
                     incoming.consumeAsFlow().mapNotNull { frame ->
@@ -102,11 +123,13 @@ fun Application.configureSockets() {
                             }
                         }
                     }.collect()
+
+
                 } catch (e: Exception) {
-                    println("WebSocket connection error for user ${authenticatedUser.user.id}: ${e.localizedMessage}")
+                    println("WebSocket connection error for user $userId: ${e.localizedMessage}")
                 } finally {
                     sessionManager.unregister(connection, docUuid)
-                    println("WebSocket connection closed for user: ${authenticatedUser.user.loginName} (ID: ${authenticatedUser.user.id})")
+                    println("WebSocket connection closed for user: ${principal.user.loginName} (ID: $userId)")
                 }
             }
         }
