@@ -226,3 +226,7 @@ fun redisDocProcessKey(docId: Long, processId: Long): String {
 fun redisDocKey(docId: Long): String {
     return "document:$docId"
 }
+
+fun redisDocSyncEventsKey(docId: Long): String {
+    return "ideaspace:doc:$docId:stream"
+}
