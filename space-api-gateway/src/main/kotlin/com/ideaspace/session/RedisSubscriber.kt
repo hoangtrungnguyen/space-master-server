@@ -11,7 +11,11 @@ import io.lettuce.core.pubsub.StatefulRedisPubSubConnection
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
+
+val logger: Logger = LoggerFactory.getLogger("RedisSubscriber")
 
 /**
  * Redis keyspace notification subscriber for document sync events.
@@ -28,6 +32,19 @@ class RedisSubscriber(
     }
     private val pubSubConnection: StatefulRedisPubSubConnection<String, String> by lazy {
         redisClient.connectPubSub()
+    }
+
+    init {
+        dataConnection.async().configGet("notify-keyspace-events").thenAccept { result ->
+            val keyspaceConf = result.get("notify-keyspace-events") ?: ""
+            if (keyspaceConf.contains('K') && keyspaceConf.contains('t')) {
+                logger.info("Keyspace events (K) are available for stream commands (t). " +
+                        "Current 'notify-keyspace-events'='$keyspaceConf'.")
+            } else {
+                logger.error("Keyspace events (K) are NOT available for stream commands (t). " +
+                        "Current 'notify-keyspace-events'='$keyspaceConf'.")
+            }
+        }
     }
 
     /**
@@ -57,6 +74,10 @@ class RedisSubscriber(
         
         // Create a job to process events for this document
         val job = coroutineScope.launch {
+            // TODO Wait for maximum 200ms between sends.
+            //      If reached 200 messages before 200ms from the last send, then send immediately and reset the clock
+
+
             redisEventChannel.consumeEach { redisEvent ->
                 try {
                     if (redisEvent == "xadd") {

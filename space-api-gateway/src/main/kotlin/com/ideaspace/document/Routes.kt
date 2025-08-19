@@ -48,6 +48,13 @@ fun Route.documentManagementRoutes() {
     }
 }
 
+/**
+ * This websocket allow connecting to stream of changes of specific [BusinessDocument]
+ * via its [BusinessDocument.uuid].
+ *
+ * Client (Desktop app or Browser tab) must provide their generated Window Id
+ * via `wid` request parameter.
+ */
 fun Route.documentChangeRoutes() {
 
     authenticate("jwt-auth") {
