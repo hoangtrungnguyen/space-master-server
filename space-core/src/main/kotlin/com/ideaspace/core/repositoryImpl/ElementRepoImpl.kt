@@ -6,10 +6,13 @@ import com.ideaspace.core.dao.toEntity
 import com.ideaspace.core.models.Element
 import com.ideaspace.core.repository.ElementRepo
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.JsonElement
+import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.v1.dao.Entity
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
 import java.util.*
 import kotlin.time.ExperimentalTime
 
@@ -64,6 +67,37 @@ class ElementRepoImpl(val db: Database) : ElementRepo {
 
     override suspend fun findAllByDocId(docId: Long): List<Element> = transaction(db){
         return@transaction ElementDAO.find { ElementTable.docId eq docId }.toList().map(ElementDAO::toEntity)
+    }
+
+    override suspend fun updateEditedElement(
+        uuid: UUID,
+        metadata: JsonElement,
+        value: JsonElement,
+        type: String
+    ) = transaction(db){
+        ElementTable.update({ ElementTable.id eq uuid }, 1) {
+            it[ElementTable.metadata] = metadata
+            it[ElementTable.value] = value
+            it[ElementTable.type] = type
+        }
+        return@transaction ElementDAO.findById(uuid)!!.toEntity()
+    }
+
+    override suspend fun deleteByUuid(uuid: UUID): Boolean = transaction(db){
+        return@transaction ElementDAO.findById(uuid)?.delete()?.let {
+            true
+        } ?: run {
+            false
+        }
+    }
+
+    override suspend fun updateMovedElement(uuid: UUID, parentUuid: UUID?): Int = transaction(db){
+        val generated = ElementTable.update({
+            ElementTable.id eq uuid
+        }) {
+            it[ElementTable.parentUuid] = parentUuid
+        }
+        generated
     }
 
 }

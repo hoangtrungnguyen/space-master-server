@@ -79,7 +79,14 @@ dependencies {
 
     //TESTING
     testImplementation("io.ktor:ktor-server-test-host")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
+    testImplementation(kotlin("test"))
+    testImplementation("io.mockk:mockk:1.13.12")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 

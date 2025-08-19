@@ -5,6 +5,7 @@ import com.ideaspace.core.ram.DocumentRAM
 
 interface DocumentStorageInterface {
     fun add(documentId: Long , documentRAM: DocumentRAM)
+    fun findByUuid()
 }
 
 class DocumentStorage(
@@ -13,6 +14,10 @@ class DocumentStorage(
 
     override fun add(documentId: Long , documentRAM: DocumentRAM){
         documentsMap[documentId] = documentRAM
+    }
+
+    override fun findByUuid(){
+
     }
 
 }
