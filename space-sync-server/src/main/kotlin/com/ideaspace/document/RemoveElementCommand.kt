@@ -3,9 +3,13 @@ package com.ideaspace.document
 import com.ideaspace.core.kafkaMessage.EditDocEventValue
 import com.ideaspace.core.kafkaMessage.EditDocPayload
 import com.ideaspace.core.kafkaMessage.RemoveElementPayload
+import com.ideaspace.core.models.Element
 import com.ideaspace.core.redis.toRedisDocumentEvent
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.workers.DocumentStorage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.withContext
 
 class RemoveElementCommand(
     val editDocEventValue: EditDocEventValue,
@@ -17,23 +21,27 @@ class RemoveElementCommand(
         documentRedisPublisher: DocumentRedisPublisher,
         elementRepo: ElementRepo,
         documentStorage: DocumentStorage
-    ) {
+    ) : String{
         val removeElementPayload = editDocEventValue.payload as RemoveElementPayload
         val element = removeElementPayload.element
         val document = documentStorage.documentsMap[docId]!!
-        val prevElement = document.searchElement(element.uuid)!!
+        val prevElementRAM = document.searchElement(element.uuid) ?: throw Exception("Not found ${element.uuid}")
 
-        document.remove(prevElement)
+        document.remove(prevElementRAM)
 
-        documentRedisPublisher.publishEditDocEvent(
+        val redisEntryId = documentRedisPublisher.publishEditDocEvent(
             docId,
             processId,
             editDocEventValue.toRedisDocumentEvent()
         )
 
-        // DB
-        elementRepo.deleteByUuid(
-            element.uuid
-        )
+        return redisEntryId.also {
+            println("✅ Remove element ${element.uuid}")
+            withContext(currentCoroutineContext() + Dispatchers.IO){
+                    elementRepo.deleteByUuid(
+                        element.uuid
+                    )
+            }
+        }
     }
 }

@@ -26,6 +26,7 @@ class BusinessDocument(
     val status: DocumentStatus,
     val transformVersion: Long,
     val kafkaOffset: Long,
+    val latestRedisEntry: String
 ){
     val roots : Map<UUID,Element> = emptyMap<UUID,Element>()
     val elements: Map<UUID, Element> = emptyMap()

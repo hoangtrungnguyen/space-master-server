@@ -7,8 +7,12 @@ import com.ideaspace.core.redis.toRedisDocumentEvent
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.workers.DocumentStorage
 import io.lettuce.core.search.arguments.SugAddArgs.Builder.payload
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.withContext
 import kotlin.time.ExperimentalTime
 
+// from element to different group or no-group
 @OptIn(ExperimentalTime::class)
 class MoveElementCommand(
     val editDocEventValue: EditDocEventValue,
@@ -20,7 +24,7 @@ class MoveElementCommand(
         documentRedisPublisher: DocumentRedisPublisher,
         elementRepo: ElementRepo,
         documentStorage: DocumentStorage
-    ) {
+    ) : String {
         val removeElementPayload = editDocEventValue.payload as MoveElementPayload
         val element = removeElementPayload.element
         val document = documentStorage.documentsMap[docId]!!
@@ -41,12 +45,16 @@ class MoveElementCommand(
             ))
         }
 
-
         //publish changes
-        documentRedisPublisher.publishEditDocEvent(docId, processId, editDocEventValue.toRedisDocumentEvent())
-        elementRepo.updateMovedElement(
-            uuid = element.uuid,
-            parentUuid = element.parentUuid
-        )
+        val redisEntryId = documentRedisPublisher.publishEditDocEvent(docId, processId, editDocEventValue.toRedisDocumentEvent())
+        return redisEntryId.also {
+            println("✅ Moved element ${element.uuid}")
+            withContext(currentCoroutineContext() + Dispatchers.IO){
+                elementRepo.updateMovedElement(
+                    uuid = element.uuid,
+                    parentUuid = element.parentUuid
+                )
+            }
+        }
     }
 }

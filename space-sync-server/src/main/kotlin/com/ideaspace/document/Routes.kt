@@ -7,6 +7,8 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.plugins.di.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 
 fun Route.documentManagementRoutes() {
     route("/api") {
@@ -18,9 +20,7 @@ fun Route.documentManagementRoutes() {
             get("/{uuid}"){
                 val documentId = call.parameters["uuid"]?.toLong() ?: throw IllegalArgumentException("Document ID is required")
                 val document = application.dependencies.resolve<CrudDocumentRepository>().findById(documentId) ?: throw NoSuchElementException("Document not found")
-                val root = application.dependencies.resolve<DocumentStorage>().documentsMap[document.id]?.getRoots()?.values?.map {
-                    it.toString()
-                } ?: throw NoSuchElementException("Document content not found in storage")
+                val root = application.dependencies.resolve<DocumentStorage>().documentsMap[document.id] ?: throw NoSuchElementException("Document content not found in storage")
                 call.respondText(text = root.toString(), status = HttpStatusCode.OK)
             }
         }

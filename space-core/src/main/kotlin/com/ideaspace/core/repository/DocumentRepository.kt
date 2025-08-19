@@ -8,8 +8,6 @@ interface CrudDocumentRepository {
 
     suspend fun findByUuid(uuid: String): BusinessDocument?
 
-    suspend fun update(id: String, space: Any): Any?
-
     suspend fun findAll(): List<BusinessDocument>
 
     suspend fun findById(id: Long): BusinessDocument?
@@ -20,5 +18,5 @@ interface CrudDocumentRepository {
 
     suspend fun updateOffset(uuid: String, offset: Long)
 
-    suspend fun sendEvent(event: DocumentSyncEventValue)
+    suspend fun saveLatestRedisEntry(id: Long, entryId: String)
 }

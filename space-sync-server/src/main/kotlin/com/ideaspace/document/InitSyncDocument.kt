@@ -30,7 +30,7 @@ class InitSyncDocument(
         val documentRAM = DocumentRAM(
             id = doc.id,
             title = doc.title,
-            roots = rootElements
+            _roots = rootElements
         )
 
         elements.filter { it.parentUuid != null }.forEach {
