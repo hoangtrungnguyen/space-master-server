@@ -15,9 +15,12 @@ import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.document.AddElementCommand
 import com.ideaspace.document.DocumentRedisPublisher
 import com.ideaspace.document.EditElementCommand
+import com.ideaspace.document.FinishedSyncDocCommand
 import com.ideaspace.document.InitSyncDocument
 import com.ideaspace.document.MoveElementCommand
 import com.ideaspace.document.RemoveElementCommand
+import com.ideaspace.document.SaveDocCommand
+import com.ideaspace.document.SaveLatestRedisEntry
 import io.ktor.server.plugins.di.DependencyRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +31,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
-import kotlin.text.get
 
 class KafkaPartitionProcessor() {
     companion object {
@@ -61,24 +63,28 @@ class KafkaPartitionProcessor() {
 
         println("KEY ${key} - MESSAGE COUNTER: ${messageCounter[key]}")
 
+        val processId = record.value().processId
+
         partitionScope.launch {
             val doc = registry.resolve<CrudDocumentRepository>().findById(key)!!
 
-            when (record.value()) {
+            when (val docEventVale: DocumentSyncEventValue = record.value()) {
                 is EditDocEventValue -> {
                     saveOffset(registry, doc, record.offset())
                     registry.edit(record.value() as EditDocEventValue, doc, record.value().processId)
                 }
 
                 is FinishSyncEventValue -> {
-                    println("FinishSyncEventValue")
+                    registry.finish(doc, docEventVale)
                 }
 
                 is InitSyncEventValue -> {
-                    registry.initDoc(doc, record.value().processId)
+                    registry.initDoc(doc, processId)
                 }
 
-                is SaveDocEventValue -> TODO()
+                is SaveDocEventValue -> {
+                    registry.save(doc, docEventVale)
+                }
             }
 
 
@@ -107,7 +113,7 @@ class KafkaPartitionProcessor() {
 
 
 private suspend fun DependencyRegistry.edit(editDocValue: EditDocEventValue, doc: BusinessDocument, processId: Long) {
-    when (editDocValue.payload) {
+    val redisEntry: String = when (editDocValue.payload) {
         is AddElementPayload -> {
             AddElementCommand(
                 editDocValue,
@@ -120,37 +126,49 @@ private suspend fun DependencyRegistry.edit(editDocValue: EditDocEventValue, doc
             )
         }
 
-        is EditElementPayload -> EditElementCommand(
-            editDocValue,
-            doc.id,
-            processId
-        ).execute(
-            documentRedisPublisher = this.resolve<DocumentRedisPublisher>(),
-            elementRepo = this.resolve<ElementRepo>(),
-            documentStorage = this.resolve<DocumentStorage>(),
-        )
+        is EditElementPayload -> {
+            EditElementCommand(
+                editDocValue,
+                doc.id,
+                processId
+            ).execute(
+                documentRedisPublisher = this.resolve<DocumentRedisPublisher>(),
+                elementRepo = this.resolve<ElementRepo>(),
+                documentStorage = this.resolve<DocumentStorage>(),
+            )
+        }
 
-        is MoveElementPayload -> MoveElementCommand(
-            editDocValue,
-            doc.id,
-            processId
-        ).execute(
-            documentRedisPublisher = this.resolve<DocumentRedisPublisher>(),
-            elementRepo = this.resolve<ElementRepo>(),
-            documentStorage = this.resolve<DocumentStorage>(),
-        )
+        is MoveElementPayload -> {
+            MoveElementCommand(
+                editDocValue,
+                doc.id,
+                processId
+            ).execute(
+                documentRedisPublisher = this.resolve<DocumentRedisPublisher>(),
+                elementRepo = this.resolve<ElementRepo>(),
+                documentStorage = this.resolve<DocumentStorage>(),
+            )
+        }
 
-        is RemoveElementPayload -> RemoveElementCommand(
-            editDocValue,
-            doc.id,
-            processId
-        ).execute(
-            documentRedisPublisher = this.resolve<DocumentRedisPublisher>(),
-            elementRepo = this.resolve<ElementRepo>(),
-            documentStorage = this.resolve<DocumentStorage>(),
-        )
-
+        is RemoveElementPayload -> {
+            RemoveElementCommand(
+                editDocValue,
+                doc.id,
+                processId
+            ).execute(
+                documentRedisPublisher = this.resolve<DocumentRedisPublisher>(),
+                elementRepo = this.resolve<ElementRepo>(),
+                documentStorage = this.resolve<DocumentStorage>(),
+            )
+        }
     }
+
+    SaveLatestRedisEntry(
+        doc.id,
+        redisEntry
+    ).execute(
+        documentRepository = this.resolve<CrudDocumentRepository>(),
+    )
 }
 
 
@@ -163,3 +181,19 @@ private suspend fun DependencyRegistry.initDoc(doc: BusinessDocument, processId:
         documentStorage = this.resolve<DocumentStorage>(),
     )
 }
+
+private suspend fun DependencyRegistry.finish(doc: BusinessDocument, finishSyncEventValue: FinishSyncEventValue) {
+    FinishedSyncDocCommand(doc, finishSyncEventValue).execute(
+        documentPublisher = this.resolve<DocumentRedisPublisher>(),
+        elementRepo = this.resolve<ElementRepo>(),
+        documentStorage = this.resolve<DocumentStorage>(),
+    )
+}
+
+
+private suspend fun DependencyRegistry.save(doc: BusinessDocument, saveDocEventValue: SaveDocEventValue) {
+    SaveDocCommand(doc, saveDocEventValue).execute(
+        documentPublisher = this.resolve<DocumentRedisPublisher>(),
+    )
+}
+

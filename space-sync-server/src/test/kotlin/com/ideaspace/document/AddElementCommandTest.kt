@@ -37,6 +37,7 @@ class AddElementCommandTest {
     private val userId = 1234L
     private val sessionId = 7777L
     private val clientId = 123L
+
     @BeforeEach
     fun setUp() {
         documentRedisPublisher = mockk()
@@ -45,7 +46,7 @@ class AddElementCommandTest {
         documentRam = mockk(relaxed = true) // relaxed to avoid mocking every single method
 
         // Common setup for all tests
-        coEvery { documentRedisPublisher.publishEditDocEvent(any(), any(), any()) } just runs
+        coEvery { documentRedisPublisher.publishEditDocEvent(any(), any(), any()) }
         coEvery { elementRepo.insert(any()) } returns mockk()
         every { documentStorage.documentsMap } returns mutableMapOf(docId to documentRam)
     }

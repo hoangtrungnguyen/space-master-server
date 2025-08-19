@@ -78,11 +78,11 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json")
 
     //TESTING
-    testImplementation("io.ktor:ktor-server-test-host")
     testImplementation(kotlin("test"))
     testImplementation("io.mockk:mockk:1.13.12")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
-
+    testImplementation("io.ktor:ktor-server-test-host:${ktor_version}")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:${kotlin_version}")
 }
 
 tasks.test {

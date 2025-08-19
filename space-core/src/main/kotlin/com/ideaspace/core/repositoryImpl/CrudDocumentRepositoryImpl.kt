@@ -2,17 +2,16 @@ package com.ideaspace.core.repositoryImpl
 
 import com.ideaspace.core.dao.DocumentDAO
 import com.ideaspace.core.dao.DocumentTable
+import com.ideaspace.core.dao.ElementTable
 import com.ideaspace.core.dao.toModel
-import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.repository.CrudDocumentRepository
 import kotlinx.coroutines.runBlocking
-import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
 import java.util.*
-import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class CrudDocumentRepositoryImpl(val db: Database ) : CrudDocumentRepository {
@@ -21,6 +20,15 @@ class CrudDocumentRepositoryImpl(val db: Database ) : CrudDocumentRepository {
         runBlocking {
             transaction(db) {
                 SchemaUtils.create(DocumentTable)
+
+                val missingColStatements = SchemaUtils.addMissingColumnsStatements(
+                    DocumentTable, ElementTable,
+                    withLogs= true
+                )
+
+                missingColStatements.forEach {
+                    exec(it)
+                }
             }
         }
     }
@@ -42,10 +50,6 @@ class CrudDocumentRepositoryImpl(val db: Database ) : CrudDocumentRepository {
 
     override suspend fun findByUuid(uuid: String): BusinessDocument? = transaction(db) {
         DocumentDAO.find { DocumentTable.uuid eq UUID.fromString(uuid) }.firstOrNull()?.toModel()
-    }
-
-    override suspend fun update(id: String, space: Any): Any? {
-        TODO()
     }
 
     override suspend fun findAll(): List<BusinessDocument> = transaction(db) {
@@ -73,14 +77,17 @@ class CrudDocumentRepositoryImpl(val db: Database ) : CrudDocumentRepository {
     override suspend fun updateOffset(uuid: String, offset: Long) {
         val parsedUuid = runCatching { UUID.fromString(uuid) }.getOrNull() ?: return
         transaction(db) {
-            DocumentDAO.find { DocumentTable.uuid eq parsedUuid }.firstOrNull()?.also {
-                it.kafkaOffset = offset
-                it.lastModifiedAt = Clock.System.now()
-            }
+                DocumentTable.update({ DocumentTable.uuid eq parsedUuid }) {
+                    it[kafkaOffset] = offset
+                }
         }
     }
 
-    override suspend fun sendEvent(event: DocumentSyncEventValue) {
-        TODO("Not yet implemented")
+    override suspend fun saveLatestRedisEntry(id: Long, entryId: String) {
+        transaction(db) {
+            DocumentTable.update({ DocumentTable.id eq id }) {
+                it[latestRedisEntry] = entryId
+            }
+        }
     }
 }

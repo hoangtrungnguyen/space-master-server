@@ -46,7 +46,8 @@ class CreateDocumentCommand(
             documentType = document.documentType,
             status = DocumentStatus.DRAFT,
             transformVersion = 1,
-            kafkaOffset = -1
+            kafkaOffset = -1,
+            latestRedisEntry = ""
         ))
 
         val root = elementRepo.create(Element(

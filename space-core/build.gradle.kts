@@ -45,7 +45,7 @@ dependencies {
 
     // --- JDBC and R2DBC ---
     implementation("org.jetbrains.exposed:exposed-core:1.0.0-beta-5")
-    implementation("org.jetbrains.exposed:exposed-r2dbc:1.0.0-beta-5")
+//    implementation("org.jetbrains.exposed:exposed-r2dbc:1.0.0-beta-5")
     implementation("org.jetbrains.exposed:exposed-dao:1.0.0-beta-5")
     implementation("org.jetbrains.exposed:exposed-kotlin-datetime:1.0.0-beta-5")
 
@@ -54,6 +54,9 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-json:1.0.0-beta-5")
     implementation("org.postgresql:postgresql:$postgres_version")
     implementation("com.h2database:h2:2.2.224")
+
+    implementation("org.jetbrains.exposed:exposed-migration:1.0.0-beta-5")
+
 
     // REDIS
     implementation("io.lettuce:lettuce-core:6.8.0.RELEASE")

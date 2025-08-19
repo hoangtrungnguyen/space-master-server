@@ -5,6 +5,9 @@ import com.ideaspace.core.kafkaMessage.EditElementPayload
 import com.ideaspace.core.redis.toRedisDocumentEvent
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.workers.DocumentStorage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.withContext
 import kotlin.time.ExperimentalTime
 
 class EditElementCommand(
@@ -18,7 +21,7 @@ class EditElementCommand(
         documentRedisPublisher: DocumentRedisPublisher,
         elementRepo: ElementRepo,
         documentStorage: DocumentStorage
-    ) {
+    ) : String {
 
         val editElementPayload = editDocEventValue.payload as EditElementPayload
 
@@ -39,12 +42,17 @@ class EditElementCommand(
         )
 
         val payloadRedis = editDocEventValue.toRedisDocumentEvent()
-        documentRedisPublisher.publishEditDocEvent(docId, processId, payloadRedis)
-        elementRepo.updateEditedElement(
-            uuid = elementData.uuid,
-            metadata = elementData.metadata,
-            value = elementData.value,
-            type = elementData.type
-        )
+        return documentRedisPublisher.publishEditDocEvent(docId, processId, payloadRedis)
+            .also {
+                println("✅ Updated element ${updatedElement.uuid}")
+                withContext(currentCoroutineContext() + Dispatchers.IO) {
+                    elementRepo.updateEditedElement(
+                        uuid = elementData.uuid,
+                        metadata = elementData.metadata,
+                        value = elementData.value,
+                        type = elementData.type
+                    )
+                }
+            }
     }
 }

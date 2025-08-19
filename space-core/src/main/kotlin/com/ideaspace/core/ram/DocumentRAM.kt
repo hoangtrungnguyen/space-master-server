@@ -1,31 +1,44 @@
 package com.ideaspace.core.ram
 
+import kotlinx.serialization.KSerializer
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
 import kotlin.time.Clock
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
 data class DocumentRAM(
     val id: Long,
     val title: String,
-    private val roots: ConcurrentHashMap<UUID, ElementRAM> = ConcurrentHashMap(),
+    private val _roots: ConcurrentHashMap<UUID, ElementRAM> = ConcurrentHashMap(),
+    private val _elements: ConcurrentHashMap<UUID, ElementRAM> = ConcurrentHashMap()
 ) {
 
-    private val _elements: ConcurrentHashMap<UUID, ElementRAM> = ConcurrentHashMap()
-    private val elements get(): MutableMap<UUID, ElementRAM> = _elements
+    init{
+        roots.forEach {
+            _elements[it.key] = it.value
+        }
+    }
+
+    val roots get(): MutableMap<UUID, ElementRAM> = _roots
 
     val size get() = _elements.size
 
     fun addRoot(element: ElementRAM) {
-        roots[element.uuid] = element.copy(path = "${element.uuid}")
-        elements[element.uuid] = element.copy(path = "${element.uuid}")
+        _roots[element.uuid] = element
+        _roots[element.uuid]!!.path = "${element.uuid}"
+        _elements[element.uuid] = element
+        _elements[element.uuid]!!.path= "${element.uuid}"
     }
 
     fun searchElement(uuid: UUID): ElementRAM? {
-        if (elements.containsKey(uuid) && elements[uuid]!!.deletedAt == null) {
-            val found = elements[uuid]?.also {
+        if (_elements.containsKey(uuid) && _elements[uuid]!!.deletedAt == null) {
+            val found = _elements[uuid]?.also {
                 //TODO: if debug, do this check
                 findParent(it)
             }
@@ -36,11 +49,11 @@ data class DocumentRAM(
 
     private fun findParent(element: ElementRAM): ElementRAM? {
         if (element.parentUuid == null) {
-            val root = roots[element.uuid]
+            val root = _roots[element.uuid]
             assert(root != null)
             return null
         } else {
-            return elements[element.parentUuid]
+            return _elements[element.parentUuid]
         }
     }
 
@@ -48,10 +61,10 @@ data class DocumentRAM(
     fun addElement(newElement: ElementRAM): ElementRAM {
         val parentUuid = newElement.parentUuid!!
         val parent = searchElement(parentUuid) ?: throw Exception("Element $parentUuid not found")
-        val element = newElement.copy(   path = "${parent.path}/${newElement.uuid}")
-        parent.children[element.uuid] = element
-        elements[element.uuid] = element
-        return element
+        newElement.path = "${parent.path}/${newElement.uuid}"
+        parent.children[newElement.uuid] = newElement
+        _elements[newElement.uuid] = newElement
+        return newElement
     }
 
     fun update(element: ElementRAM) {
@@ -59,13 +72,13 @@ data class DocumentRAM(
 
             val parent = searchElement(element.parentUuid)!!
             parent.children[element.uuid] = element
-            roots[parent.uuid] = parent
-            elements[parent.uuid] = parent
+            _roots[parent.uuid] = parent
+            _elements[parent.uuid] = parent
 
-            elements[element.uuid] = element
+            _elements[element.uuid] = element
         } else {
-            elements[element.uuid] = element
-            roots[element.uuid] = element
+            _elements[element.uuid] = element
+            _roots[element.uuid] = element
         }
     }
 
@@ -73,10 +86,11 @@ data class DocumentRAM(
         if (element.parentUuid != null) {
             val parent = searchElement(element.parentUuid)
             parent!!.children.remove(element.uuid)
-            elements[parent.uuid] = parent
-            elements[element.uuid] = element.copy(deletedAt = Clock.System.now())
+            _elements[parent.uuid] = parent
+            _elements[element.uuid]!!.deletedAt = Clock.System.now()
         } else {
-            elements[element.uuid] = element.copy(deletedAt = Clock.System.now())
+            _roots[element.uuid]!!.deletedAt = Clock.System.now()
+            _elements[element.uuid]!!.deletedAt = Clock.System.now()
         }
     }
 

@@ -1,13 +1,7 @@
 package com.ideaspace.workers
 
-import com.ideaspace.core.redis.EditDocEvent
-import com.ideaspace.core.redis.FinishSyncEvent
-import com.ideaspace.core.redis.InitSyncEvent
-import com.ideaspace.core.redis.SaveDocEvent
-import com.ideaspace.core.redis.redisDocProcessKey
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
-import org.slf4j.LoggerFactory
 
 
 object RedisManager {

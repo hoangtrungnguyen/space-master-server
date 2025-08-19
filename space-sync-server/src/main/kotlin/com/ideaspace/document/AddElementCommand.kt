@@ -9,6 +9,10 @@ import com.ideaspace.core.redis.toRedisEditPayLoad
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.workers.DocumentStorage
 import io.ktor.server.plugins.di.DependencyRegistry
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.withContext
 import java.util.LinkedHashMap
 import kotlin.time.ExperimentalTime
 
@@ -23,7 +27,7 @@ class AddElementCommand(
         documentRedisPublisher: DocumentRedisPublisher,
         elementRepo: ElementRepo,
         documentStorage: DocumentStorage
-    ) {
+    ) : String {
 
         val addElementPayload =editDocEventValue.payload as AddElementPayload
 
@@ -62,17 +66,21 @@ class AddElementCommand(
         }
 
         val payload = editDocEventValue.toRedisDocumentEvent()
-        documentRedisPublisher.publishEditDocEvent(docId,processId, payload )
-        elementRepo.insert(
-            Element(
-                uuid = element.uuid,
-                docId = docId,
-                parentUuid = element.parentUuid,
-                metadata = element.metadata,
-                type = element.type,
-                value = element.value,
-                deletedAt = null
-            )
-        )
+        val redisEntry = documentRedisPublisher.publishEditDocEvent(docId,processId, payload )
+        return redisEntry.also {
+            withContext(currentCoroutineContext() + Dispatchers.IO){
+                elementRepo.insert(
+                    Element(
+                        uuid = element.uuid,
+                        docId = docId,
+                        parentUuid = element.parentUuid,
+                        metadata = element.metadata,
+                        type = element.type,
+                        value = element.value,
+                        deletedAt = null
+                    )
+                )
+            }
+        }
     }
 }
