@@ -24,7 +24,7 @@ class InitSyncDocument(
 
         val rootElements =
             ConcurrentHashMap(elements.filter { it.parentUuid == null }.map {
-                it.toRAM()
+                it.toRAM(it.parentUuid.toString())
             }.associateBy { it.uuid })
 
         val documentRAM = DocumentRAM(
@@ -35,8 +35,7 @@ class InitSyncDocument(
 
         elements.filter { it.parentUuid != null }.forEach {
             documentRAM.addElement(
-                it.parentUuid!!,
-                it.toRAM()
+                it.toRAM("")
             )
         }
 

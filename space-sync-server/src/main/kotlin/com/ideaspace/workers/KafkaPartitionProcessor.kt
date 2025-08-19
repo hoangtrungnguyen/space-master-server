@@ -14,7 +14,10 @@ import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.document.AddElementCommand
 import com.ideaspace.document.DocumentRedisPublisher
+import com.ideaspace.document.EditElementCommand
 import com.ideaspace.document.InitSyncDocument
+import com.ideaspace.document.MoveElementCommand
+import com.ideaspace.document.RemoveElementCommand
 import io.ktor.server.plugins.di.DependencyRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -117,9 +120,36 @@ private suspend fun DependencyRegistry.edit(editDocValue: EditDocEventValue, doc
             )
         }
 
-        is EditElementPayload -> TODO()
-        is MoveElementPayload -> TODO()
-        is RemoveElementPayload -> TODO()
+        is EditElementPayload -> EditElementCommand(
+            editDocValue,
+            doc.id,
+            processId
+        ).execute(
+            documentRedisPublisher = this.resolve<DocumentRedisPublisher>(),
+            elementRepo = this.resolve<ElementRepo>(),
+            documentStorage = this.resolve<DocumentStorage>(),
+        )
+
+        is MoveElementPayload -> MoveElementCommand(
+            editDocValue,
+            doc.id,
+            processId
+        ).execute(
+            documentRedisPublisher = this.resolve<DocumentRedisPublisher>(),
+            elementRepo = this.resolve<ElementRepo>(),
+            documentStorage = this.resolve<DocumentStorage>(),
+        )
+
+        is RemoveElementPayload -> RemoveElementCommand(
+            editDocValue,
+            doc.id,
+            processId
+        ).execute(
+            documentRedisPublisher = this.resolve<DocumentRedisPublisher>(),
+            elementRepo = this.resolve<ElementRepo>(),
+            documentStorage = this.resolve<DocumentStorage>(),
+        )
+
     }
 }
 

@@ -1,7 +1,6 @@
 package com.ideaspace.document
 
 import com.ideaspace.core.redis.RedisDocumentEvent
-import com.ideaspace.core.redis.RedisEditDocPayload
 import com.ideaspace.core.redis.redisDocKey
 import com.ideaspace.core.redis.redisDocProcessKey
 import com.ideaspace.workers.RedisManager
@@ -11,9 +10,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 class DocumentRedisPublisher(
     private val streamMaxLen: Long = 10_000L
@@ -27,12 +24,8 @@ class DocumentRedisPublisher(
 
         val syncCommands: RedisCommands<String, String> = RedisManager.connection.sync()
 
-
         val jsonElement = Json.encodeToJsonElement(redisDocumentEvent)
         if (jsonElement is JsonObject) {
-            // Convert the JsonObject to a Map<String, String> for Redis XADD.
-            // JsonPrimitives are converted to their string content.
-            // Other JsonElements (JsonObject, JsonArray) are serialized to a JSON string.
             val redisMap: Map<String, String> = jsonElement.jsonObject.mapValues { (_, value) ->
                 if (value is JsonPrimitive) {
                     value.content
@@ -40,8 +33,6 @@ class DocumentRedisPublisher(
                     Json.encodeToString(JsonElement.serializer(), value)
                 }
             }
-
-            // Use the converted map in the XADD command.
             val messageId = syncCommands.xadd(redisKey, redisMap)
             println("✅ Saved operation ${processId} to Redis stream '$redisKey' with message ID $messageId")
         } else {
@@ -56,7 +47,6 @@ class DocumentRedisPublisher(
         val redisKey = redisDocKey(docId)
 
         val syncCommands: RedisCommands<String, String> = RedisManager.connection.sync()
-
         // 4. Use the XADD command to publish the message
         // The "*" tells Redis to generate a unique ID for this entry automatically.
         val messageId = syncCommands.xadd(
