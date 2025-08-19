@@ -1,8 +1,8 @@
 package com.ideaspace.document
 
 import com.ideaspace.core.kafkaMessage.EditDocEventValue
-import com.ideaspace.core.kafkaMessage.RemoveElement
-import com.ideaspace.core.kafkaMessage.RemoveElementPayload
+import com.ideaspace.core.kafkaMessage.EditElement
+import com.ideaspace.core.kafkaMessage.EditElementPayload
 import com.ideaspace.core.ram.DocumentRAM
 import com.ideaspace.core.ram.ElementRAM
 import com.ideaspace.core.repository.ElementRepo
@@ -15,6 +15,8 @@ import io.mockk.mockk
 import io.mockk.runs
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -22,7 +24,7 @@ import java.util.UUID
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
-class RemoveElementCommandTest {
+class EditElementCommandTest {
 
     private lateinit var documentRedisPublisher: DocumentRedisPublisher
     private lateinit var elementRepo: ElementRepo
@@ -43,22 +45,31 @@ class RemoveElementCommandTest {
     }
 
     @Test
-    @DisplayName("execute should remove an element, publish the event, and delete from the repo")
-    fun `execute should remove an element`() = runTest {
+    @DisplayName("execute should update an element, publish the event, and update the repo")
+    fun `execute should correctly update an element`() = runTest {
         // Given
         val elementUuid = UUID.randomUUID()
-        val removeElement = RemoveElement(uuid = elementUuid)
-        val removeElementPayload = RemoveElementPayload(element = removeElement)
+        val updatedValue = buildJsonObject { put("text", "new content") }
+        val updatedMetadata = buildJsonObject { put("author", "test_user") }
+        val updatedType = "text"
+
+        val editElement = EditElement(
+            uuid = elementUuid,
+            value = updatedValue,
+            metadata = updatedMetadata,
+            type = updatedType
+        )
+        val editElementPayload = EditElementPayload(element = editElement)
         val editDocEventValue = EditDocEventValue(
             docId = docId,
             processId = processId,
             userId = 123L,
             sessionId = 456L,
             clientId = 789L,
-            payload = removeElementPayload
+            payload = editElementPayload
         )
 
-        val elementToRemove = ElementRAM(
+        val originalElement = ElementRAM(
             uuid = elementUuid,
             value = JsonNull,
             metadata = JsonNull,
@@ -70,19 +81,25 @@ class RemoveElementCommandTest {
             deletedAt = null
         )
 
-        every { documentRam.searchElement(elementUuid) } returns elementToRemove
-        coEvery { documentRedisPublisher.publishEditDocEvent(
-            any(), any(), any()) } returns "redis-entry-id"
-        coEvery { elementRepo.deleteByUuid(elementUuid) } returns true
+        every { documentRam.searchElement(elementUuid) } returns originalElement
+        coEvery { documentRedisPublisher.publishEditDocEvent(any(), any(), any()) } returns "redis-key-id"
+        coEvery { elementRepo.updateEditedElement(any(), any(), any(), any()) } returns mockk()
 
-        val command = RemoveElementCommand(editDocEventValue, docId, processId)
+        val command = EditElementCommand(editDocEventValue, docId, processId)
 
         // When
         command.execute(documentRedisPublisher, elementRepo, documentStorage)
 
         // Then
-        coVerify { documentRam.remove(elementToRemove) }
+        coVerify { documentRam.update(any()) }
         coVerify { documentRedisPublisher.publishEditDocEvent(docId, processId, any()) }
-        coVerify { elementRepo.deleteByUuid(elementUuid) }
+        coVerify {
+            elementRepo.updateEditedElement(
+                uuid = elementUuid,
+                metadata = updatedMetadata,
+                value = updatedValue,
+                type = updatedType
+            )
+        }
     }
 }

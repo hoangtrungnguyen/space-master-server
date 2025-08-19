@@ -22,7 +22,7 @@ class CrudDocumentRepositoryImpl(val db: Database ) : CrudDocumentRepository {
                 SchemaUtils.create(DocumentTable)
 
                 val missingColStatements = SchemaUtils.addMissingColumnsStatements(
-                    DocumentTable, ElementTable,
+                    DocumentTable,
                     withLogs= true
                 )
 

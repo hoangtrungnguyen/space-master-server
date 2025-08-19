@@ -1,5 +1,6 @@
 package com.ideaspace.core.repositoryImpl
 
+import com.ideaspace.core.dao.DocumentTable
 import com.ideaspace.core.dao.ElementDAO
 import com.ideaspace.core.dao.ElementTable
 import com.ideaspace.core.dao.toEntity
@@ -25,6 +26,16 @@ class ElementRepoImpl(val db: Database) : ElementRepo {
         runBlocking {
             transaction(db) {
                 SchemaUtils.create(ElementTable)
+
+                val missingColStatements = SchemaUtils.addMissingColumnsStatements(
+                    ElementTable,
+                    withLogs = true
+                )
+
+                missingColStatements.forEach {
+                    exec(it)
+                }
+
             }
         }
     }
@@ -66,7 +77,7 @@ class ElementRepoImpl(val db: Database) : ElementRepo {
             .map(ElementDAO::toEntity)
     }
 
-    override suspend fun findAllByDocId(docId: Long): List<Element> = transaction(db){
+    override suspend fun findAllByDocId(docId: Long): List<Element> = transaction(db) {
         return@transaction ElementDAO.find { ElementTable.docId eq docId }.toList().map(ElementDAO::toEntity)
     }
 
@@ -75,7 +86,7 @@ class ElementRepoImpl(val db: Database) : ElementRepo {
         metadata: JsonElement,
         value: JsonElement,
         type: String
-    ) = transaction(db){
+    ) = transaction(db) {
         ElementTable.update({ ElementTable.id eq uuid }, 1) {
             it[ElementTable.metadata] = metadata
             it[ElementTable.value] = value
@@ -84,7 +95,7 @@ class ElementRepoImpl(val db: Database) : ElementRepo {
         return@transaction ElementDAO.findById(uuid)!!.toEntity()
     }
 
-    override suspend fun deleteByUuid(uuid: UUID): Boolean = transaction(db){
+    override suspend fun deleteByUuid(uuid: UUID): Boolean = transaction(db) {
         return@transaction ElementDAO.findById(uuid)?.delete()?.let {
             true
         } ?: run {
@@ -92,7 +103,7 @@ class ElementRepoImpl(val db: Database) : ElementRepo {
         }
     }
 
-    override suspend fun updateMovedElement(uuid: UUID, parentUuid: UUID?): Int = transaction(db){
+    override suspend fun updateMovedElement(uuid: UUID, parentUuid: UUID?): Int = transaction(db) {
         val generated = ElementTable.update({
             ElementTable.id eq uuid
         }) {

@@ -18,10 +18,11 @@ fun Application.connectToPostgresJDBC(embedded: Boolean): Database{
         val url = environment.config.property("postgres.url").getString()
         log.info("Connecting to postgres database at $url")
         val user = environment.config.property("postgres.user").getString()
+        val driver = environment.config.property("postgres.driver").getString() // Get driver from config
         val password = environment.config.property("postgres.password").getString()
         val postgresqldb = Database.connect(
             url,
-            driver = "org.postgresql.Driver",
+            driver = driver,
             user = user,
             password = password
         )

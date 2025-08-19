@@ -9,6 +9,7 @@ postgres:
   url: "jdbc:postgresql://localhost:5439/idea_space_main"
   user: postgres
   password: postgres
+  driver: "org.postgresql.Driver"
 
 kafka:
   # Use environment variables with sensible defaults for local development.

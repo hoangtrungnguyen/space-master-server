@@ -78,17 +78,24 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json")
 
     //TESTING
-    testImplementation(kotlin("test"))
     testImplementation("io.mockk:mockk:1.13.12")
+
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
     testImplementation("io.ktor:ktor-server-test-host:${ktor_version}")
     testImplementation("org.jetbrains.kotlin:kotlin-test:${kotlin_version}")
+
+    //
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
+
+    // Add these lines for Testcontainers
+    testImplementation("org.testcontainers:postgresql:1.19.0")
+    testImplementation("org.testcontainers:junit-jupiter:1.19.0")
 }
 
 tasks.test {
     useJUnitPlatform()
 }
-
 
 kotlin {
     jvmToolchain(21)
