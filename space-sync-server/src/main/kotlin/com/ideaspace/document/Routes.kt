@@ -18,7 +18,7 @@ fun Route.documentManagementRoutes() {
             get("/{uuid}"){
                 val documentId = call.parameters["uuid"]?.toLong() ?: throw IllegalArgumentException("Document ID is required")
                 val document = application.dependencies.resolve<CrudDocumentRepository>().findById(documentId) ?: throw NoSuchElementException("Document not found")
-                val root = application.dependencies.resolve<DocumentStorage>().documentsMap[document.id]?.roots?.values?.map {
+                val root = application.dependencies.resolve<DocumentStorage>().documentsMap[document.id]?.getRoots()?.values?.map {
                     it.toString()
                 } ?: throw NoSuchElementException("Document content not found in storage")
                 call.respondText(text = root.toString(), status = HttpStatusCode.OK)

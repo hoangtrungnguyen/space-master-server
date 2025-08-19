@@ -6,6 +6,7 @@ import com.ideaspace.core.dao.ProcessDAO
 import com.ideaspace.core.dao.ProcessTable
 import com.ideaspace.core.dao.toModel
 import com.ideaspace.core.models.Process
+import com.ideaspace.core.models.ProcessKey
 import com.ideaspace.core.repository.ProcessRepo
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.core.and
@@ -41,11 +42,11 @@ class ProcessRepoImpl(val db: Database) : ProcessRepo {
         ProcessDAO.findById(id)?.toModel()
     }
 
-    override suspend fun findByDocUserWindow(docId: Long, userId: Long, windowId: Long): Process? = transaction(db) {
+    override suspend fun findByKey(key: ProcessKey): Process? = transaction(db) {
         ProcessDAO.find { 
-            (ProcessTable.docId eq docId) and 
-            (ProcessTable.userId eq userId) and 
-            (ProcessTable.windowId eq windowId) 
+            (ProcessTable.docId eq key.docId) and
+            (ProcessTable.userId eq key.userId) and
+            (ProcessTable.windowId eq key.windowId)
         }.firstOrNull()?.toModel()
     }
 

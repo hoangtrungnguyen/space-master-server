@@ -15,18 +15,10 @@ import com.ideaspace.core.repositoryImpl.UserRepoImpl
 fun Application.configureDatabases() {
     val db = connectToPostgresJDBC(embedded = false)
     dependencies {
-        provide<CrudDocumentRepository>{
-            CrudDocumentRepositoryImpl(db)
-        }
-        provide<ElementRepo> {
-            ElementRepoImpl(db)
-        }
-        provide<UserRepo>{
-            UserRepoImpl(db)
-        }
-        provide<ProcessRepo>{
-            ProcessRepoImpl(db)
-        }
+        provide<CrudDocumentRepository>{  CrudDocumentRepositoryImpl(db) }
+        provide<ElementRepo> {  ElementRepoImpl(db) }
+        provide<UserRepo>{  UserRepoImpl(db) }
+        provide<ProcessRepo>{  ProcessRepoImpl(db) }
     }
 }
 

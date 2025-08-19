@@ -17,6 +17,9 @@ data class DocumentRAM(
     private val elements get(): MutableMap<UUID, ElementRAM> = _elements
 
     val size get() = _elements.size
+    
+    // Public accessor for roots
+    fun getRoots(): Map<UUID, ElementRAM> = roots.toMap()
 
     fun addRoot(element: ElementRAM) {
         roots[element.uuid] = element.copy(path = "${element.uuid}")

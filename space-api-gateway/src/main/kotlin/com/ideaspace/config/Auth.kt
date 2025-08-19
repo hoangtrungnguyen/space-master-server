@@ -6,10 +6,8 @@ import com.ideaspace.core.models.User
 import com.ideaspace.core.repository.UserRepo
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.auth.authenticate
-import io.ktor.server.auth.authentication
-import io.ktor.server.auth.jwt.jwt
-import io.ktor.server.auth.principal
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.plugins.di.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -70,68 +68,55 @@ private fun ApplicationCall.generateJwtToken(user: User): String {
  * Configures authentication routes
  */
 fun Route.authRoutes() {
-    route("/api") {
-        post("/users/login") {
-            try {
-                val loginRequest = call.receive<LoginRequest>()
-                
-                // Validate input
-                if (loginRequest.loginName.isBlank()) {
-                    call.respond(
-                        HttpStatusCode.BadRequest,
-                        ErrorResponse("INVALID_INPUT", "Login name cannot be empty", null, System.currentTimeMillis())
-                    )
-                    return@post
-                }
-                
-                // Find user by loginName
-                val userRepo = application.dependencies.resolve<UserRepo>()
-                val user = userRepo.findByLoginName(loginRequest.loginName)
-                
-                if (user == null) {
-                    call.respond(
-                        HttpStatusCode.Unauthorized,
-                        ErrorResponse("USER_NOT_FOUND", "User with login name '${loginRequest.loginName}' not found", null, System.currentTimeMillis())
-                    )
-                    return@post
-                }
-                
-                // Generate JWT token
-                val token = call.generateJwtToken(user)
-                val expiresAt = Instant.now().plus(7, ChronoUnit.DAYS)
-                
-                // Create response
-                val response = LoginResponse(
-                    token = token,
-                    user = UserInfo(
-                        id = user.id,
-                        loginName = user.loginName,
-                        fullName = user.fullName
-                    ),
-                    expiresAt = expiresAt.toString()
-                )
-                
-                println("Successfully generated JWT token for user: ${user.loginName} (ID: ${user.id})")
-                call.respond(HttpStatusCode.OK, response)
-                
-            } catch (e: Exception) {
-                println("Login error: ${e.message}")
+    post("/api/users/login") {
+        try {
+            val loginRequest = call.receive<LoginRequest>()
+
+            // Validate input
+            if (loginRequest.loginName.isBlank()) {
                 call.respond(
-                    HttpStatusCode.InternalServerError,
-                    ErrorResponse("INTERNAL_ERROR", "An error occurred during login", null, System.currentTimeMillis())
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse("INVALID_INPUT", "Login name cannot be empty", null, System.currentTimeMillis())
                 )
+                return@post
             }
-        }
-        authenticate("jwt-auth") {
-            get("/users/profile") {
-                val principal = call.principal<AuthPrincipal>()!!
-                val user = principal.user
-                call.respond(HttpStatusCode.OK, UserInfo(
+
+            // Find user by loginName
+            val userRepo = application.dependencies.resolve<UserRepo>()
+            val user = userRepo.findByLoginName(loginRequest.loginName)
+
+            if (user == null) {
+                call.respond(
+                    HttpStatusCode.Unauthorized,
+                    ErrorResponse("USER_NOT_FOUND", "User with login name '${loginRequest.loginName}' not found", null, System.currentTimeMillis())
+                )
+                return@post
+            }
+
+            // Generate JWT token
+            val token = call.generateJwtToken(user)
+            val expiresAt = Instant.now().plus(7, ChronoUnit.DAYS)
+
+            // Create response
+            val response = LoginResponse(
+                token = token,
+                user = UserInfo(
                     id = user.id,
                     loginName = user.loginName,
                     fullName = user.fullName
-                ))
-            }
+                ),
+                expiresAt = expiresAt.toString()
+            )
+
+            println("Successfully generated JWT token for user: ${user.loginName} (ID: ${user.id})")
+            call.respond(HttpStatusCode.OK, response)
+
+        } catch (e: Exception) {
+            println("Login error: ${e.message}")
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                ErrorResponse("INTERNAL_ERROR", "An error occurred during login", null, System.currentTimeMillis())
+            )
         }
     }
 }

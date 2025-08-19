@@ -55,7 +55,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-dao:1.0.0-beta-5")
 
     //REDIS
-    implementation("redis.clients:jedis:5.1.3")
+    implementation("io.lettuce:lettuce-core:6.8.0.RELEASE")
 
     implementation("io.insert-koin:koin-ktor:${koin_version}")
     implementation("io.insert-koin:koin-logger-slf4j:${koin_version}")

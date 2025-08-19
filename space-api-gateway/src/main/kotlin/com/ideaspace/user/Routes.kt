@@ -1,24 +1,35 @@
 package com.ideaspace.user
 
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.plugins.di.dependencies
-import io.ktor.server.request.receive
+import com.ideaspace.config.AuthPrincipal
+import com.ideaspace.config.UserInfo
+import io.ktor.http.*
+import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.principal
+import io.ktor.server.plugins.di.*
+import io.ktor.server.request.*
 import io.ktor.server.response.respond
-import io.ktor.server.routing.Route
-import io.ktor.server.routing.application
-import io.ktor.server.routing.post
-import io.ktor.server.routing.route
+import io.ktor.server.routing.*
 
 fun Route.userManagementRoutes() {
-    route("/api") {
-        route("/users") {
-            post("/register") {
-                val request = call.receive<RegisterNameRequest>()
-                val command = RegisterNameCommand(request)
-                val data = command.execute(application.dependencies)
-                call.respond(HttpStatusCode.OK,data )
-            }
+    post("/api/users/register") {
+        val request = call.receive<RegisterNameRequest>()
+        val command = RegisterNameCommand(request)
+        val user = command.execute(application.dependencies)
+        call.respond(HttpStatusCode.OK, UserInfo(
+            id = user.id,
+            loginName = user.loginName,
+            fullName = user.fullName
+        ))
+    }
+    authenticate("jwt-auth") {
+        get("/api/users/profile") {
+            val principal = call.principal<AuthPrincipal>()!!
+            val user = principal.user
+            call.respond(HttpStatusCode.OK, UserInfo(
+                id = user.id,
+                loginName = user.loginName,
+                fullName = user.fullName
+            ))
         }
     }
-
 }

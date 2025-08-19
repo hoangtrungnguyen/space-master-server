@@ -3,7 +3,7 @@ package com.ideaspace.document
 import com.ideaspace.core.redis.RedisDocumentEvent
 import com.ideaspace.core.redis.redisDocKey
 import com.ideaspace.core.redis.redisDocProcessKey
-import com.ideaspace.workers.RedisManager
+import com.ideaspace.core.redis.RedisManager
 import io.lettuce.core.api.sync.RedisCommands
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
