@@ -5,8 +5,10 @@ import com.ideaspace.core.kafkaMessage.RemoveElement
 import com.ideaspace.core.kafkaMessage.RemoveElementPayload
 import com.ideaspace.core.ram.DocumentRAM
 import com.ideaspace.core.ram.ElementRAM
+import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.workers.DocumentStorage
+import com.ideaspace.workers.LogPublisher
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -28,6 +30,9 @@ class RemoveElementCommandTest {
     private lateinit var elementRepo: ElementRepo
     private lateinit var documentStorage: DocumentStorage
     private lateinit var documentRam: DocumentRAM
+    private lateinit var logPublisher: LogPublisher
+    private lateinit var docRepository: CrudDocumentRepository
+
 
     private val docId = 1L
     private val processId = 100L
@@ -38,8 +43,46 @@ class RemoveElementCommandTest {
         elementRepo = mockk(relaxed = true)
         documentStorage = mockk(relaxed = true)
         documentRam = mockk(relaxed = true)
+        logPublisher = mockk(relaxed = true)
+        docRepository = mockk(relaxed = true)
+
 
         every { documentStorage.documentsMap[docId] } returns documentRam
+    }
+
+    @Test
+    fun `execute should log a warning if element not found`() = runTest {
+        // Given
+        val elementUuid = UUID.randomUUID()
+        val removeElement = RemoveElement(uuid = elementUuid)
+        val removeElementPayload = RemoveElementPayload(element = removeElement)
+        val editDocEventValue = EditDocEventValue(
+            docId = docId,
+            processId = processId,
+            userId = 123L,
+            sessionId = 456L,
+            clientId = 789L,
+            payload = removeElementPayload
+        )
+
+        every { documentRam.searchElement(elementUuid) } returns null
+        coEvery { logPublisher.warn(any(), toLogServer = any()) } just runs
+
+        val command = RemoveElementCommand(
+            editDocEventValue, docId, processId,
+            documentRedisPublisher, elementRepo, documentStorage, logPublisher,
+            docRepository
+        )
+
+        // When
+        command.execute()
+
+        // Then
+        coVerify(exactly = 1) { logPublisher.warn(any(), toLogServer = any()) }
+        coVerify(exactly = 0) { documentRam.remove(any()) }
+        coVerify(exactly = 0) { documentRedisPublisher.publishEditDocEvent(any(), any(), any()) }
+        coVerify(exactly = 0) { elementRepo.deleteByUuid(any()) }
+        coVerify(exactly = 0) { docRepository.saveLatestRedisEntry(any(), any()) }
     }
 
     @Test
@@ -71,18 +114,26 @@ class RemoveElementCommandTest {
         )
 
         every { documentRam.searchElement(elementUuid) } returns elementToRemove
-        coEvery { documentRedisPublisher.publishEditDocEvent(
-            any(), any(), any()) } returns "redis-entry-id"
+        coEvery {
+            documentRedisPublisher.publishEditDocEvent(
+                any(), any(), any()
+            )
+        } returns "redis-entry-id"
         coEvery { elementRepo.deleteByUuid(elementUuid) } returns true
 
-        val command = RemoveElementCommand(editDocEventValue, docId, processId)
+        val command = RemoveElementCommand(
+            editDocEventValue, docId, processId,
+            documentRedisPublisher, elementRepo, documentStorage, logPublisher,
+            docRepository
+        )
 
         // When
-        command.execute(documentRedisPublisher, elementRepo, documentStorage)
+        command.execute()
 
         // Then
         coVerify { documentRam.remove(elementToRemove) }
         coVerify { documentRedisPublisher.publishEditDocEvent(docId, processId, any()) }
         coVerify { elementRepo.deleteByUuid(elementUuid) }
+        coVerify { docRepository.saveLatestRedisEntry(docId, "redis-entry-id") }
     }
 }

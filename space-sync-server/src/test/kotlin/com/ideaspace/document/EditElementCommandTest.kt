@@ -5,8 +5,10 @@ import com.ideaspace.core.kafkaMessage.EditElement
 import com.ideaspace.core.kafkaMessage.EditElementPayload
 import com.ideaspace.core.ram.DocumentRAM
 import com.ideaspace.core.ram.ElementRAM
+import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.workers.DocumentStorage
+import com.ideaspace.workers.LogPublisher
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -30,6 +32,8 @@ class EditElementCommandTest {
     private lateinit var elementRepo: ElementRepo
     private lateinit var documentStorage: DocumentStorage
     private lateinit var documentRam: DocumentRAM
+    private lateinit var logPublisher: LogPublisher
+    private lateinit var documentRepo: CrudDocumentRepository
 
     private val docId = 1L
     private val processId = 100L
@@ -40,8 +44,49 @@ class EditElementCommandTest {
         elementRepo = mockk(relaxed = true)
         documentStorage = mockk(relaxed = true)
         documentRam = mockk(relaxed = true)
+        logPublisher = mockk(relaxed = true)
+        documentRepo = mockk(relaxed = true)
 
+        every { logPublisher.warn(any(),any(), any()) } returns mockk()
         every { documentStorage.documentsMap[docId] } returns documentRam
+    }
+
+    @Test
+    fun `execute should log a warning if element not found`() = runTest {
+        // Given
+        val elementUuid = UUID.randomUUID()
+        val editElement = EditElement(
+            uuid = elementUuid,
+            value = JsonNull,
+            metadata = JsonNull,
+            type = "shape"
+        )
+        val editElementPayload = EditElementPayload(element = editElement)
+        val editDocEventValue = EditDocEventValue(
+            docId = docId,
+            processId = processId,
+            userId = 123L,
+            sessionId = 456L,
+            clientId = 789L,
+            payload = editElementPayload
+        )
+
+        every { documentRam.searchElement(elementUuid) } returns null
+
+        val command = EditElementCommand(
+            editDocEventValue, docId, processId,
+            documentRedisPublisher, elementRepo, documentStorage, logPublisher, documentRepo
+        )
+
+        // When
+        command.execute()
+
+        // Then
+        coVerify(exactly = 1) { logPublisher.warn(any(), toLogServer = any()) }
+        coVerify(exactly = 0) { documentRam.update(any()) }
+        coVerify(exactly = 0) { documentRedisPublisher.publishEditDocEvent(any(), any(), any()) }
+        coVerify(exactly = 0) { elementRepo.updateEditedElement(any(), any(), any(), any()) }
+        coVerify(exactly = 0) { documentRepo.saveLatestRedisEntry(any(), any()) }
     }
 
     @Test
@@ -85,10 +130,13 @@ class EditElementCommandTest {
         coEvery { documentRedisPublisher.publishEditDocEvent(any(), any(), any()) } returns "redis-key-id"
         coEvery { elementRepo.updateEditedElement(any(), any(), any(), any()) } returns mockk()
 
-        val command = EditElementCommand(editDocEventValue, docId, processId)
+        val command = EditElementCommand(
+            editDocEventValue, docId, processId,
+            documentRedisPublisher, elementRepo, documentStorage, logPublisher, documentRepo
+        )
 
         // When
-        command.execute(documentRedisPublisher, elementRepo, documentStorage)
+        command.execute()
 
         // Then
         coVerify { documentRam.update(any()) }
@@ -100,6 +148,9 @@ class EditElementCommandTest {
                 value = updatedValue,
                 type = updatedType
             )
+        }
+        coVerify {
+            documentRepo.saveLatestRedisEntry(docId, "redis-key-id")
         }
     }
 }

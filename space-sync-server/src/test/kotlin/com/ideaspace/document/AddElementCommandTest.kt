@@ -6,8 +6,10 @@ import com.ideaspace.core.kafkaMessage.EditDocEventValue
 import com.ideaspace.core.models.Element
 import com.ideaspace.core.ram.DocumentRAM
 import com.ideaspace.core.ram.ElementRAM
+import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.workers.DocumentStorage
+import com.ideaspace.workers.LogPublisher
 import io.mockk.*
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonNull
@@ -25,6 +27,8 @@ class AddElementCommandTest {
     private lateinit var elementRepo: ElementRepo
     private lateinit var documentStorage: DocumentStorage
     private lateinit var documentRam: DocumentRAM
+    private lateinit var logPublisher: LogPublisher
+    private lateinit var docRepo: CrudDocumentRepository
 
     private val docId = 1L
     private val processId = 100L
@@ -34,12 +38,17 @@ class AddElementCommandTest {
         documentRedisPublisher = mockk()
         elementRepo = mockk()
         documentStorage = mockk()
-        documentRam = spyk(DocumentRAM(id = docId, title = "Test Document")) // Use spyk to allow partial mocking
-
+        documentRam = mockk(relaxed = true)
+        logPublisher = mockk(relaxed = true)
+        docRepo = mockk()
         // Common setup for all tests
         coEvery { documentRedisPublisher.publishEditDocEvent(any(), any(), any()) } returns "redis-entry-id"
         coEvery { elementRepo.insert(any()) } returns mockk()
+        coEvery { docRepo.saveLatestRedisEntry(any(), any()) } just runs
+
         every { documentStorage.documentsMap } returns mutableMapOf(docId to documentRam)
+        every { documentStorage.documentsMap[docId] } returns documentRam
+        every { logPublisher.warn(any(),any(), any()) } returns mockk()
     }
 
     private fun createTestEvent(parentUuid: UUID? = null): EditDocEventValue {
@@ -61,6 +70,44 @@ class AddElementCommandTest {
         )
     }
 
+    @Test
+    fun `execute should log a warning and not add element if element uuid already exists`() = runTest {
+            // Given
+            val existingUuid = UUID.randomUUID()
+            val testEvent = createTestEvent(parentUuid = null).copy(
+                payload = AddElementPayload(
+                    element = AddElement(
+                        uuid = existingUuid,
+                        parentUuid = null,
+                        metadata = JsonNull,
+                        type = "shape",
+                        value = JsonNull
+                    )
+                )
+            )
+
+        every { documentRam.exist(existingUuid) } returns true
+
+            val command = AddElementCommand(
+                testEvent, docId, processId,
+                documentRedisPublisher, elementRepo, documentStorage, logPublisher,
+                docRepo
+            )
+
+            // When
+            command.execute()
+
+            // Then
+            coVerify(exactly = 1) { logPublisher.warn(any(), any(), any()) }
+            coVerify(exactly = 0) { documentRam.addRoot(any()) }
+            coVerify(exactly = 0) { documentRam.addElement(any()) }
+            coVerify(exactly = 0) { elementRepo.insert(any()) }
+            coVerify(exactly = 0) { documentRedisPublisher.publishEditDocEvent(any(), any(), any()) }
+            coVerify(exactly = 0) { docRepo.saveLatestRedisEntry(any(), any()) }
+        }
+
+
+
     @Nested
     @DisplayName("Root Element Addition")
     inner class RootElementAddition {
@@ -69,17 +116,21 @@ class AddElementCommandTest {
         fun `execute should add a root element when parentUuid is null`() = runTest {
             // Given
             val testEvent = createTestEvent(parentUuid = null)
-            val command = AddElementCommand(testEvent, docId, processId)
+            val command = AddElementCommand(
+                testEvent, docId, processId,
+                documentRedisPublisher, elementRepo, documentStorage, logPublisher,
+                docRepo
+            )
             val slot = slot<ElementRAM>()
 
             // When
-            val result = command.execute(documentRedisPublisher, elementRepo, documentStorage)
+            command.execute()
 
             // Then
-            assertEquals("redis-entry-id", result)
             coVerify(exactly = 1) { documentRam.addRoot(capture(slot)) }
             coVerify(exactly = 1) { elementRepo.insert(any()) }
             coVerify(exactly = 1) { documentRedisPublisher.publishEditDocEvent(docId, processId, any()) }
+            coVerify(exactly = 1) { docRepo.saveLatestRedisEntry(docId, "redis-entry-id") }
             assertEquals((testEvent.payload as AddElementPayload).element.uuid, slot.captured.uuid)
         }
     }
@@ -93,7 +144,10 @@ class AddElementCommandTest {
             // Given
             val parentUuid = UUID.randomUUID()
             val testEvent = createTestEvent(parentUuid = parentUuid)
-            val command = AddElementCommand(testEvent, docId, processId)
+            val command = AddElementCommand(
+                testEvent, docId, processId,
+                documentRedisPublisher, elementRepo, documentStorage, logPublisher, docRepo
+            )
             val slot = slot<ElementRAM>()
             val parentElement = ElementRAM(
                 uuid = parentUuid,
@@ -106,16 +160,16 @@ class AddElementCommandTest {
                 path = "",
                 deletedAt = null
             )
-            every { documentRam.searchElement(parentUuid) } returns parentElement
+            every { documentRam.exist(parentUuid) } returns true
             every { documentRam.addElement(any()) } returnsArgument 0
             // When
-            val result = command.execute(documentRedisPublisher, elementRepo, documentStorage)
+            command.execute()
 
             // Then
-            assertEquals("redis-entry-id", result)
             coVerify(exactly = 1) { documentRam.addElement(capture(slot)) }
             coVerify(exactly = 1) { elementRepo.insert(any()) }
             coVerify(exactly = 1) { documentRedisPublisher.publishEditDocEvent(docId, processId, any()) }
+            coVerify(exactly = 1) { docRepo.saveLatestRedisEntry(docId, "redis-entry-id") }
             assertEquals((testEvent.payload as AddElementPayload).element.uuid, slot.captured.uuid)
             assertEquals(parentUuid, slot.captured.parentUuid)
         }

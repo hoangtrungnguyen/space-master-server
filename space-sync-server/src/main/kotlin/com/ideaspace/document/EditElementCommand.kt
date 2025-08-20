@@ -3,6 +3,7 @@ package com.ideaspace.document
 import com.ideaspace.core.kafkaMessage.EditDocEventValue
 import com.ideaspace.core.kafkaMessage.EditElementPayload
 import com.ideaspace.core.redis.toRedisDocumentEvent
+import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.core.utils.LogData
 import com.ideaspace.workers.DocumentStorage
@@ -17,16 +18,16 @@ import kotlin.time.ExperimentalTime
 class EditElementCommand(
     val editDocEventValue: EditDocEventValue,
     val docId: Long,
-    val processId: Long
-) {
+    val processId: Long,
+    val documentRedisPublisher: DocumentRedisPublisher,
+    val elementRepo: ElementRepo,
+    val documentStorage: DocumentStorage,
+    val logPublisher: LogPublisher,
+    override val documentRepository: CrudDocumentRepository
+) : BaseDocCommand {
 
     @OptIn(ExperimentalTime::class)
-    suspend fun execute(
-        documentRedisPublisher: DocumentRedisPublisher,
-        elementRepo: ElementRepo,
-        documentStorage: DocumentStorage,
-        logPublisher: LogPublisher
-    ): String {
+    override suspend fun execute() {
 
         val editElementPayload = editDocEventValue.payload as EditElementPayload
 
@@ -35,15 +36,18 @@ class EditElementCommand(
 
         val foundElement = document.searchElement(elementData.uuid)
 
-        if(foundElement == null){
-            logPublisher.warn(toLogServer = true, event = LogData(
-                loggerName = this::class.simpleName.toString(),
-                message = Json.encodeToJsonElement(editDocEventValue),
-                userId = editDocEventValue.userId,
-                docId = docId,
-                processId = processId,
-            ))
-            return ""
+        if (foundElement == null) {
+            logPublisher.warn(
+                toLogServer = true, event = LogData(
+                    loggerName = this::class.simpleName.toString(),
+                    message = Json.encodeToJsonElement(editDocEventValue),
+                    userId = editDocEventValue.userId,
+                    docId = docId,
+                    processId = processId,
+                )
+            )
+            println("⚠️ Element not found")
+            return
         }
 
         val updatedElement = foundElement.copy(
@@ -58,17 +62,18 @@ class EditElementCommand(
         )
 
         val payloadRedis = editDocEventValue.toRedisDocumentEvent()
-        return documentRedisPublisher.publishEditDocEvent(docId, processId, payloadRedis)
-            .also {
-                println("✅ Updated element ${updatedElement.uuid}")
-                withContext(currentCoroutineContext() + Dispatchers.IO) {
-                    elementRepo.updateEditedElement(
-                        uuid = elementData.uuid,
-                        metadata = elementData.metadata,
-                        value = elementData.value,
-                        type = elementData.type
-                    )
-                }
-            }
+        val redisEntryId = documentRedisPublisher.publishEditDocEvent(docId, processId, payloadRedis)
+        super.saveLatestRedisEntry(docId, redisEntryId)
+
+        println("✅ Updated element ${updatedElement.uuid}")
+
+        withContext(currentCoroutineContext() + Dispatchers.IO) {
+            elementRepo.updateEditedElement(
+                uuid = elementData.uuid,
+                metadata = elementData.metadata,
+                value = elementData.value,
+                type = elementData.type
+            )
+        }
     }
 }

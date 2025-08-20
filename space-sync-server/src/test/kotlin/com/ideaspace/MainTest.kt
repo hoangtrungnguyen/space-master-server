@@ -24,26 +24,4 @@ class MainTest {
         assertEquals("Hello World!", response.bodyAsText())
     }
 
-    @Test
-    fun `test configureDatabases`() = testApplication {
-        environment {
-
-        }
-        application {
-            // Given
-            configureDatabases()
-
-            // When & Then
-            val documentStorage = dependencies.resolve<DocumentStorage>()
-            assertNotNull(documentStorage)
-
-            val crudDocumentRepository = dependencies.resolve<CrudDocumentRepository>()
-            assertNotNull(crudDocumentRepository)
-
-            val elementRepo = dependencies.resolve<ElementRepo>()
-            assertNotNull(elementRepo)
-        }
-    }
-
-
 }

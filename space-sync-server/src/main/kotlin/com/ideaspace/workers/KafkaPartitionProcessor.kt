@@ -13,6 +13,7 @@ import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.document.AddElementCommand
+import com.ideaspace.document.CommandFactory
 import com.ideaspace.document.DocumentRedisPublisher
 import com.ideaspace.document.EditElementCommand
 import com.ideaspace.document.FinishedSyncDocCommand
@@ -71,7 +72,11 @@ class KafkaPartitionProcessor() {
             when (val docEventVale: DocumentSyncEventValue = record.value()) {
                 is EditDocEventValue -> {
                     saveOffset(registry, doc, record.offset())
-                    registry.edit(record.value() as EditDocEventValue, doc, record.value().processId)
+                    val command = registry.resolve<CommandFactory>().createCommand(
+                        docEventVale,
+                        doc, processId
+                    )
+                    command.execute()
                 }
 
                 is FinishSyncEventValue -> {
@@ -108,72 +113,6 @@ class KafkaPartitionProcessor() {
         }
         partitionScopePool.clear()
         println("All partition processors shut down.")
-    }
-}
-
-
-private suspend fun DependencyRegistry.edit(editDocValue: EditDocEventValue, doc: BusinessDocument, processId: Long) {
-    val redisEntry: String = when (editDocValue.payload) {
-        is AddElementPayload -> {
-            AddElementCommand(
-                editDocValue,
-                doc.id,
-                processId
-            ).execute(
-                documentRedisPublisher = this.resolve<DocumentRedisPublisher>(),
-                elementRepo = this.resolve<ElementRepo>(),
-                documentStorage = this.resolve<DocumentStorage>(),
-                logPublisher = this.resolve<LogPublisher>()
-            )
-        }
-
-        is EditElementPayload -> {
-            EditElementCommand(
-                editDocValue,
-                doc.id,
-                processId
-            ).execute(
-                documentRedisPublisher = this.resolve<DocumentRedisPublisher>(),
-                elementRepo = this.resolve<ElementRepo>(),
-                documentStorage = this.resolve<DocumentStorage>(),
-                logPublisher = this.resolve<LogPublisher>()
-            )
-        }
-
-        is MoveElementPayload -> {
-            MoveElementCommand(
-                editDocValue,
-                doc.id,
-                processId
-            ).execute(
-                documentRedisPublisher = this.resolve<DocumentRedisPublisher>(),
-                elementRepo = this.resolve<ElementRepo>(),
-                documentStorage = this.resolve<DocumentStorage>(),
-                logPublisher = this.resolve<LogPublisher>()
-            )
-        }
-
-        is RemoveElementPayload -> {
-            RemoveElementCommand(
-                editDocValue,
-                doc.id,
-                processId
-            ).execute(
-                documentRedisPublisher = this.resolve<DocumentRedisPublisher>(),
-                elementRepo = this.resolve<ElementRepo>(),
-                documentStorage = this.resolve<DocumentStorage>(),
-                logPublisher = this.resolve<LogPublisher>()
-            )
-        }
-    }
-
-    if (redisEntry.isNotEmpty()) {
-        SaveLatestRedisEntry(
-            doc.id,
-            redisEntry
-        ).execute(
-            documentRepository = this.resolve<CrudDocumentRepository>(),
-        )
     }
 }
 

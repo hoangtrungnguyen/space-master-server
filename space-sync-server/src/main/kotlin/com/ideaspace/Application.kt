@@ -9,6 +9,7 @@ import com.ideaspace.config.configureRedisRoute
 import com.ideaspace.config.configureRouting
 import com.ideaspace.config.configureSerialization
 import com.ideaspace.config.configureServerKafka
+import com.ideaspace.document.provideDocumentDI
 import io.ktor.server.application.*
 import io.ktor.server.netty.EngineMain
 
@@ -25,5 +26,8 @@ fun Application.module() {
     configureRouting()
     configureRedisRoute()
     configureLogging()
+
+    provideDocumentDI()
+
     configureServerKafka()
 }

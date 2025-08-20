@@ -4,6 +4,7 @@ import com.ideaspace.core.kafkaMessage.EditDocEventValue
 import com.ideaspace.core.kafkaMessage.MoveElementPayload
 import com.ideaspace.core.kafkaMessage.RemoveElementPayload
 import com.ideaspace.core.redis.toRedisDocumentEvent
+import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.core.utils.LogData
 import com.ideaspace.workers.DocumentStorage
@@ -21,56 +22,65 @@ import kotlin.time.ExperimentalTime
 class MoveElementCommand(
     val editDocEventValue: EditDocEventValue,
     val docId: Long,
-    val processId: Long
-) {
+    val processId: Long,
+    val documentRedisPublisher: DocumentRedisPublisher,
+    val elementRepo: ElementRepo,
+    val documentStorage: DocumentStorage,
+    val logPublisher: LogPublisher,
+    override val documentRepository: CrudDocumentRepository
+) : BaseDocCommand{
 
-    suspend fun execute(
-        documentRedisPublisher: DocumentRedisPublisher,
-        elementRepo: ElementRepo,
-        documentStorage: DocumentStorage,
-        logPublisher: LogPublisher
-    ) : String {
+   override suspend fun execute() {
         val removeElementPayload = editDocEventValue.payload as MoveElementPayload
         val element = removeElementPayload.element
         val document = documentStorage.documentsMap[docId]!!
 
         val prevElementRAM = document.searchElement(element.uuid)
 
-        if(prevElementRAM == null){
-            logPublisher.warn(toLogServer = true, event = LogData(
-                loggerName = this::class.simpleName.toString(),
-                message = Json.encodeToJsonElement(editDocEventValue),
-                userId = editDocEventValue.userId,
-                docId = docId,
-                processId = processId,
-            ))
-            return ""
+        if (prevElementRAM == null) {
+            logPublisher.warn(
+                toLogServer = true, event = LogData(
+                    loggerName = this::class.simpleName.toString(),
+                    message = Json.encodeToJsonElement(editDocEventValue),
+                    userId = editDocEventValue.userId,
+                    docId = docId,
+                    processId = processId,
+                    exceptionInfo = "⚠️ Element uuid ${element.uuid} not found"
+                )
+            )
+            return
         }
 
         //remove
         document.remove(prevElementRAM)
 
         //add
-        if(element.parentUuid == null){
-            document.addRoot(prevElementRAM.copy(
-                parentUuid = null,
-            ))
+        if (element.parentUuid == null) {
+            document.addRoot(
+                prevElementRAM.copy(
+                    parentUuid = null,
+                )
+            )
         } else {
-            document.addElement( prevElementRAM.copy(
-                parentUuid = element.parentUuid!!,
-            ))
+            document.addElement(
+                prevElementRAM.copy(
+                    parentUuid = element.parentUuid!!,
+                )
+            )
         }
 
         //publish changes
-        val redisEntryId = documentRedisPublisher.publishEditDocEvent(docId, processId, editDocEventValue.toRedisDocumentEvent())
-        return redisEntryId.also {
-            println("✅ Moved element ${element.uuid}")
-            withContext(currentCoroutineContext() + Dispatchers.IO){
-                elementRepo.updateMovedElement(
-                    uuid = element.uuid,
-                    parentUuid = element.parentUuid
-                )
-            }
+        val redisEntryId =
+            documentRedisPublisher.publishEditDocEvent(docId, processId, editDocEventValue.toRedisDocumentEvent())
+        documentRepository.saveLatestRedisEntry(docId, redisEntryId)
+
+        println("✅ Moved element ${element.uuid}")
+        withContext(currentCoroutineContext() + Dispatchers.IO) {
+            elementRepo.updateMovedElement(
+                uuid = element.uuid,
+                parentUuid = element.parentUuid
+            )
         }
+
     }
 }

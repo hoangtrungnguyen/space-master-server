@@ -5,6 +5,7 @@ import com.ideaspace.core.kafkaMessage.EditDocPayload
 import com.ideaspace.core.kafkaMessage.RemoveElementPayload
 import com.ideaspace.core.models.Element
 import com.ideaspace.core.redis.toRedisDocumentEvent
+import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.core.utils.LogData
 import com.ideaspace.workers.DocumentStorage
@@ -19,16 +20,15 @@ import kotlin.time.Clock
 class RemoveElementCommand(
     val editDocEventValue: EditDocEventValue,
     val docId: Long,
-    val processId: Long
+    val processId: Long,
+    val documentRedisPublisher: DocumentRedisPublisher,
+    val elementRepo: ElementRepo,
+    val documentStorage: DocumentStorage,
+    val logPublisher: LogPublisher,
+    override val documentRepository: CrudDocumentRepository
+) : BaseDocCommand{
 
-) {
-
-    suspend fun execute(
-        documentRedisPublisher: DocumentRedisPublisher,
-        elementRepo: ElementRepo,
-        documentStorage: DocumentStorage,
-        logPublisher: LogPublisher
-    ): String {
+    override suspend fun execute() {
         val removeElementPayload = editDocEventValue.payload as RemoveElementPayload
         val element = removeElementPayload.element
         val document = documentStorage.documentsMap[docId]!!
@@ -43,13 +43,12 @@ class RemoveElementCommand(
                 editDocEventValue.toRedisDocumentEvent()
             )
 
-            return redisEntryId.also {
-                println("✅ Remove element ${element.uuid}")
-                withContext(currentCoroutineContext() + Dispatchers.IO) {
-                    elementRepo.deleteByUuid(
-                        element.uuid
-                    )
-                }
+            documentRepository.saveLatestRedisEntry(docId, redisEntryId)
+            println("✅ Remove element ${element.uuid}")
+            withContext(currentCoroutineContext() + Dispatchers.IO) {
+                elementRepo.deleteByUuid(
+                    element.uuid
+                )
             }
         } else {
             //duplicated element.uuid
@@ -61,10 +60,9 @@ class RemoveElementCommand(
                     userId = editDocEventValue.userId,
                     docId = docId,
                     processId = processId,
+                    exceptionInfo = "⚠️ Element uuid ${element.uuid} not found"
                 )
             )
-
-            return ""
         }
     }
 }

@@ -5,8 +5,10 @@ import com.ideaspace.core.kafkaMessage.MoveElement
 import com.ideaspace.core.kafkaMessage.MoveElementPayload
 import com.ideaspace.core.ram.DocumentRAM
 import com.ideaspace.core.ram.ElementRAM
+import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.workers.DocumentStorage
+import com.ideaspace.workers.LogPublisher
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -29,6 +31,8 @@ class MoveElementCommandTest {
     private lateinit var elementRepo: ElementRepo
     private lateinit var documentStorage: DocumentStorage
     private lateinit var documentRam: DocumentRAM
+    private lateinit var logPublisher: LogPublisher
+    private lateinit var docRepository: CrudDocumentRepository
 
     private val docId = 1L
     private val processId = 100L
@@ -39,9 +43,49 @@ class MoveElementCommandTest {
         elementRepo = mockk(relaxed = true)
         documentStorage = mockk(relaxed = true)
         documentRam = mockk(relaxed = true)
+        logPublisher = mockk(relaxed = true)
+        docRepository = mockk(relaxed = true)
 
+        coEvery { logPublisher.warn(any(), any(), any()) } just runs
         every { documentStorage.documentsMap[docId] } returns documentRam
     }
+
+    @Test
+    fun `execute should log a warning if element not found`() = runTest {
+        // Given
+        val elementUuid = UUID.randomUUID()
+        val moveElement = MoveElement(uuid = elementUuid, parentUuid = null)
+        val moveElementPayload = MoveElementPayload(element = moveElement)
+        val editDocEventValue = EditDocEventValue(
+            docId = docId,
+            processId = processId,
+            userId = 123L,
+            sessionId = 456L,
+            clientId = 789L,
+            payload = moveElementPayload
+        )
+
+        every { documentRam.searchElement(elementUuid) } returns null
+
+        val command = MoveElementCommand(
+            editDocEventValue, docId, processId,
+            documentRedisPublisher, elementRepo, documentStorage, logPublisher,
+            documentRepository = docRepository
+        )
+
+        // When
+        command.execute()
+
+        // Then
+        coVerify(exactly = 1) { logPublisher.warn(any(), any(), any()) }
+        coVerify(exactly = 0) { documentRam.remove(any()) }
+        coVerify(exactly = 0) { documentRam.addRoot(any()) }
+        coVerify(exactly = 0) { documentRam.addElement(any()) }
+        coVerify(exactly = 0) { documentRedisPublisher.publishEditDocEvent(any(), any(), any()) }
+        coVerify(exactly = 0) { elementRepo.updateMovedElement(any(), any()) }
+        coVerify(exactly = 0) { docRepository.saveLatestRedisEntry(any(), any()) }
+    }
+
 
     @Nested
     @DisplayName("When parentUuid is not null")
@@ -80,10 +124,14 @@ class MoveElementCommandTest {
             coEvery { documentRedisPublisher.publishEditDocEvent(any(), any(), any()) } returns "redis-entry-id"
             coEvery { elementRepo.updateMovedElement(any(), any()) } returns 1
 
-            val command = MoveElementCommand(editDocEventValue, docId, processId)
+            val command = MoveElementCommand(
+                editDocEventValue, docId, processId,
+                documentRedisPublisher, elementRepo, documentStorage, logPublisher,
+                documentRepository = docRepository
+            )
 
             // When
-            command.execute(documentRedisPublisher, elementRepo, documentStorage)
+            command.execute()
 
             // Then
             coVerify { documentRam.remove(elementToMove) }
@@ -95,6 +143,7 @@ class MoveElementCommandTest {
                     parentUuid = newParentUuid
                 )
             }
+            coVerify { docRepository.saveLatestRedisEntry(docId, "redis-entry-id") }
         }
     }
 
@@ -135,10 +184,15 @@ class MoveElementCommandTest {
             coEvery { documentRedisPublisher.publishEditDocEvent(any(), any(), any()) } returns "redis-entry-id"
             coEvery { elementRepo.updateMovedElement(any(), any()) } returns 1
 
-            val command = MoveElementCommand(editDocEventValue, docId, processId)
+            val command = MoveElementCommand(
+                editDocEventValue, docId, processId,
+                documentRedisPublisher, elementRepo, documentStorage, logPublisher,
+                documentRepository = docRepository
+            )
 
             // When
-            command.execute(documentRedisPublisher, elementRepo, documentStorage)
+            command.execute()
+
 
             // Then
             coVerify { documentRam.remove(elementToMove) }
@@ -150,6 +204,8 @@ class MoveElementCommandTest {
                     parentUuid = null
                 )
             }
+
+            coVerify { docRepository.saveLatestRedisEntry(docId, "redis-entry-id") }
         }
     }
 }
