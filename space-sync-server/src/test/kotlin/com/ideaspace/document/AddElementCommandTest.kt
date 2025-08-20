@@ -3,29 +3,23 @@ package com.ideaspace.document
 import com.ideaspace.core.kafkaMessage.AddElement
 import com.ideaspace.core.kafkaMessage.AddElementPayload
 import com.ideaspace.core.kafkaMessage.EditDocEventValue
-import com.ideaspace.core.kafkaMessage.ElementOp
-import com.ideaspace.core.kafkaMessage.SyncOperation
+import com.ideaspace.core.models.Element
 import com.ideaspace.core.ram.DocumentRAM
 import com.ideaspace.core.ram.ElementRAM
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.workers.DocumentStorage
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.just
-import io.mockk.mockk
-import io.mockk.runs
-import io.mockk.slot
-import io.mockk.verify
+import io.mockk.*
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.JsonObject
-import org.junit.jupiter.api.Assertions.*
+import kotlinx.serialization.json.JsonNull
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import java.util.UUID
+import java.util.*
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 class AddElementCommandTest {
     private lateinit var documentRedisPublisher: DocumentRedisPublisher
     private lateinit var elementRepo: ElementRepo
@@ -34,45 +28,96 @@ class AddElementCommandTest {
 
     private val docId = 1L
     private val processId = 100L
-    private val userId = 1234L
-    private val sessionId = 7777L
-    private val clientId = 123L
+
     @BeforeEach
     fun setUp() {
         documentRedisPublisher = mockk()
         elementRepo = mockk()
         documentStorage = mockk()
-        documentRam = mockk(relaxed = true) // relaxed to avoid mocking every single method
+        documentRam = spyk(DocumentRAM(id = docId, title = "Test Document")) // Use spyk to allow partial mocking
 
         // Common setup for all tests
-        coEvery { documentRedisPublisher.publishEditDocEvent(any(), any(), any()) } just runs
+        coEvery { documentRedisPublisher.publishEditDocEvent(any(), any(), any()) } returns "redis-entry-id"
         coEvery { elementRepo.insert(any()) } returns mockk()
         every { documentStorage.documentsMap } returns mutableMapOf(docId to documentRam)
     }
 
+    private fun createTestEvent(parentUuid: UUID? = null): EditDocEventValue {
+        return EditDocEventValue(
+            docId = docId,
+            processId = processId,
+            userId = 1L,
+            sessionId = 1L,
+            clientId = 1L,
+            payload = AddElementPayload(
+                element = AddElement(
+                    uuid = UUID.randomUUID(),
+                    parentUuid = parentUuid,
+                    metadata = JsonNull,
+                    type = "shape",
+                    value = JsonNull
+                )
+            )
+        )
+    }
 
     @Nested
-    @DisplayName("parent uuid is empty")
-    inner class ParentIsEmpty{
+    @DisplayName("Root Element Addition")
+    inner class RootElementAddition {
 
         @Test
         fun `execute should add a root element when parentUuid is null`() = runTest {
+            // Given
+            val testEvent = createTestEvent(parentUuid = null)
+            val command = AddElementCommand(testEvent, docId, processId)
+            val slot = slot<ElementRAM>()
 
+            // When
+            val result = command.execute(documentRedisPublisher, elementRepo, documentStorage)
+
+            // Then
+            assertEquals("redis-entry-id", result)
+            coVerify(exactly = 1) { documentRam.addRoot(capture(slot)) }
+            coVerify(exactly = 1) { elementRepo.insert(any()) }
+            coVerify(exactly = 1) { documentRedisPublisher.publishEditDocEvent(docId, processId, any()) }
+            assertEquals((testEvent.payload as AddElementPayload).element.uuid, slot.captured.uuid)
         }
     }
 
+    @Nested
+    @DisplayName("Child Element Addition")
+    inner class ChildElementAddition {
 
+        @Test
+        fun `execute should add a child element when parentUuid is not null`() = runTest {
+            // Given
+            val parentUuid = UUID.randomUUID()
+            val testEvent = createTestEvent(parentUuid = parentUuid)
+            val command = AddElementCommand(testEvent, docId, processId)
+            val slot = slot<ElementRAM>()
+            val parentElement = ElementRAM(
+                uuid = parentUuid,
+                value = JsonNull,
+                metadata = JsonNull,
+                type = "shape",
+                parentUuid = null,
+                element = null,
+                children = LinkedHashMap(),
+                path = "",
+                deletedAt = null
+            )
+            every { documentRam.searchElement(parentUuid) } returns parentElement
+            every { documentRam.addElement(any()) } returnsArgument 0
+            // When
+            val result = command.execute(documentRedisPublisher, elementRepo, documentStorage)
 
-    @Test
-    fun getEditDocEventValue() {
+            // Then
+            assertEquals("redis-entry-id", result)
+            coVerify(exactly = 1) { documentRam.addElement(capture(slot)) }
+            coVerify(exactly = 1) { elementRepo.insert(any()) }
+            coVerify(exactly = 1) { documentRedisPublisher.publishEditDocEvent(docId, processId, any()) }
+            assertEquals((testEvent.payload as AddElementPayload).element.uuid, slot.captured.uuid)
+            assertEquals(parentUuid, slot.captured.parentUuid)
+        }
     }
-
-    @Test
-    fun getDocId() {
-    }
-
-    @Test
-    fun getProcessId() {
-    }
-
 }

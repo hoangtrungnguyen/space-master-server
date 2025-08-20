@@ -4,12 +4,8 @@ import com.ideaspace.core.models.Element
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
-
-
 
 data class ElementRAM @ExperimentalTime constructor(
     val uuid: UUID,
@@ -19,8 +15,8 @@ data class ElementRAM @ExperimentalTime constructor(
     val parentUuid: UUID?,
     val element: ElementRAM?,
     val children: LinkedHashMap<UUID, ElementRAM> = LinkedHashMap(),
-    val path: String,
-    val deletedAt: Instant?
+    var path: String,
+    var deletedAt: Instant?
 )
 
 @OptIn(ExperimentalTime::class)

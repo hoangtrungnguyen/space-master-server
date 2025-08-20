@@ -45,7 +45,7 @@ data class EditDocEvent(
 
 @Serializable
 @SerialName("SAVE_DOC")
-data class SaveDocEvent(
+data class RedisSaveDocEvent(
     override val docId: Long,
     val syncOp: SyncOperation = SyncOperation.SAVE_DOC,
     val processId: Long,
@@ -57,7 +57,7 @@ data class SaveDocEvent(
 
 @Serializable
 @SerialName("FINISH_SYNC")
-data class FinishSyncEvent(
+data class RedisFinishSyncEvent(
     override val docId: Long,
     val syncOp: SyncOperation = SyncOperation.FINISH_SYNC,
     val processId: Long,
@@ -169,7 +169,7 @@ fun DocumentSyncEventValue.toRedisDocumentEvent(): RedisDocumentEvent {
             sessionId = this.sessionId,
             clientId = this.clientId,
             payload = this.payload.toRedisEditPayLoad())
-        is SaveDocEventValue -> SaveDocEvent(
+        is SaveDocEventValue -> RedisSaveDocEvent(
             docId = this.docId,
             processId = this.processId,
             userId = this.userId,
@@ -177,7 +177,7 @@ fun DocumentSyncEventValue.toRedisDocumentEvent(): RedisDocumentEvent {
             clientId = this.clientId,
             payload = RedisSaveDocPayload()
         )
-        is FinishSyncEventValue -> FinishSyncEvent(
+        is FinishSyncEventValue -> RedisFinishSyncEvent(
             docId = this.docId,
             processId = this.processId,
             userId = this.userId,
@@ -219,9 +219,7 @@ fun EditDocPayload.toRedisEditPayLoad(): RedisEditDocPayload {
         )
     }
 }
-fun redisDocProcessKey(docId: Long, processId: Long): String {
-    return "document:${docId}process:${processId}"
-}
+
 
 fun redisDocKey(docId: Long): String {
     return "document:$docId"

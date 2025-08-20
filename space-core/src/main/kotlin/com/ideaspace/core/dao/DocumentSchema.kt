@@ -30,6 +30,7 @@ object DocumentTable: LongIdTable("document") {
     val status = enumerationByName<DocumentStatus>("status", 255)
     val transformVersion = long("transform_version")
     val kafkaOffset = long("kafka_offset")
+    val latestRedisEntry = varchar("latest_redis_entry", 255).nullable()
 }
 
 class DocumentDAO(id: EntityID<Long>) : LongEntity(id) {
@@ -47,7 +48,7 @@ class DocumentDAO(id: EntityID<Long>) : LongEntity(id) {
     var status by DocumentTable.status
     var transformVersion by DocumentTable.transformVersion
     var kafkaOffset by DocumentTable.kafkaOffset
-
+    var latestRedisEntry by DocumentTable.latestRedisEntry
 }
 
 fun DocumentDAO.toModel() : BusinessDocument {
@@ -64,6 +65,7 @@ fun DocumentDAO.toModel() : BusinessDocument {
         documentType = this.documentType,
         status = this.status,
         transformVersion = this.transformVersion,
-        kafkaOffset = this.kafkaOffset
+        kafkaOffset = this.kafkaOffset,
+        latestRedisEntry = this.latestRedisEntry ?: ""
     )
 }
