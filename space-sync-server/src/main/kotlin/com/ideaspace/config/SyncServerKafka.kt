@@ -10,6 +10,7 @@ import com.ideaspace.workers.KafkaPartitionProcessor
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStarted
 import io.ktor.server.application.ApplicationStopping
+import io.ktor.server.plugins.di.DependencyRegistry
 import io.ktor.server.plugins.di.dependencies
 import io.ktor.server.plugins.di.resolve
 import kotlinx.coroutines.launch
@@ -67,3 +68,5 @@ fun Application.configureServerKafka() {
         }
     }
 }
+
+

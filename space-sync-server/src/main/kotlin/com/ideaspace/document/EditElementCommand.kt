@@ -4,10 +4,14 @@ import com.ideaspace.core.kafkaMessage.EditDocEventValue
 import com.ideaspace.core.kafkaMessage.EditElementPayload
 import com.ideaspace.core.redis.toRedisDocumentEvent
 import com.ideaspace.core.repository.ElementRepo
+import com.ideaspace.core.utils.LogData
 import com.ideaspace.workers.DocumentStorage
+import com.ideaspace.workers.LogPublisher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToJsonElement
 import kotlin.time.ExperimentalTime
 
 class EditElementCommand(
@@ -20,15 +24,27 @@ class EditElementCommand(
     suspend fun execute(
         documentRedisPublisher: DocumentRedisPublisher,
         elementRepo: ElementRepo,
-        documentStorage: DocumentStorage
-    ) : String {
+        documentStorage: DocumentStorage,
+        logPublisher: LogPublisher
+    ): String {
 
         val editElementPayload = editDocEventValue.payload as EditElementPayload
 
         val elementData = editElementPayload.element
         val document = documentStorage.documentsMap[docId] ?: throw IllegalStateException("Document not found")
 
-        val foundElement = document.searchElement(elementData.uuid)!!
+        val foundElement = document.searchElement(elementData.uuid)
+
+        if(foundElement == null){
+            logPublisher.warn(toLogServer = true, event = LogData(
+                loggerName = this::class.simpleName.toString(),
+                message = Json.encodeToJsonElement(editDocEventValue),
+                userId = editDocEventValue.userId,
+                docId = docId,
+                processId = processId,
+            ))
+            return ""
+        }
 
         val updatedElement = foundElement.copy(
             uuid = elementData.uuid,

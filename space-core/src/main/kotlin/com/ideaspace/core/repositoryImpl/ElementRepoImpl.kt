@@ -87,7 +87,7 @@ class ElementRepoImpl(val db: Database) : ElementRepo {
         value: JsonElement,
         type: String
     ) = transaction(db) {
-        ElementTable.update({ ElementTable.id eq uuid }, 1) {
+        ElementTable.update({ ElementTable.id eq uuid }) {
             it[ElementTable.metadata] = metadata
             it[ElementTable.value] = value
             it[ElementTable.type] = type

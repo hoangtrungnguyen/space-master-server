@@ -123,6 +123,7 @@ private suspend fun DependencyRegistry.edit(editDocValue: EditDocEventValue, doc
                 documentRedisPublisher = this.resolve<DocumentRedisPublisher>(),
                 elementRepo = this.resolve<ElementRepo>(),
                 documentStorage = this.resolve<DocumentStorage>(),
+                logPublisher = this.resolve<LogPublisher>()
             )
         }
 
@@ -135,6 +136,7 @@ private suspend fun DependencyRegistry.edit(editDocValue: EditDocEventValue, doc
                 documentRedisPublisher = this.resolve<DocumentRedisPublisher>(),
                 elementRepo = this.resolve<ElementRepo>(),
                 documentStorage = this.resolve<DocumentStorage>(),
+                logPublisher = this.resolve<LogPublisher>()
             )
         }
 
@@ -147,6 +149,7 @@ private suspend fun DependencyRegistry.edit(editDocValue: EditDocEventValue, doc
                 documentRedisPublisher = this.resolve<DocumentRedisPublisher>(),
                 elementRepo = this.resolve<ElementRepo>(),
                 documentStorage = this.resolve<DocumentStorage>(),
+                logPublisher = this.resolve<LogPublisher>()
             )
         }
 
@@ -159,16 +162,19 @@ private suspend fun DependencyRegistry.edit(editDocValue: EditDocEventValue, doc
                 documentRedisPublisher = this.resolve<DocumentRedisPublisher>(),
                 elementRepo = this.resolve<ElementRepo>(),
                 documentStorage = this.resolve<DocumentStorage>(),
+                logPublisher = this.resolve<LogPublisher>()
             )
         }
     }
 
-    SaveLatestRedisEntry(
-        doc.id,
-        redisEntry
-    ).execute(
-        documentRepository = this.resolve<CrudDocumentRepository>(),
-    )
+    if (redisEntry.isNotEmpty()) {
+        SaveLatestRedisEntry(
+            doc.id,
+            redisEntry
+        ).execute(
+            documentRepository = this.resolve<CrudDocumentRepository>(),
+        )
+    }
 }
 
 

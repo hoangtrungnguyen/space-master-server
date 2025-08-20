@@ -30,6 +30,9 @@ data class DocumentRAM(
     val size get() = _elements.size
     
     fun addRoot(element: ElementRAM) {
+        if(_roots.containsKey(element.uuid)){
+            throw Exception("Existed root.uuid ${element.uuid}")
+        }
         _roots[element.uuid] = element
         _roots[element.uuid]!!.path = "${element.uuid}"
         _elements[element.uuid] = element
@@ -37,7 +40,7 @@ data class DocumentRAM(
     }
 
     fun searchElement(uuid: UUID): ElementRAM? {
-        if (_elements.containsKey(uuid) && _elements[uuid]!!.deletedAt == null) {
+        if (exist(uuid)) {
             val found = _elements[uuid]?.also {
                 //TODO: if debug, do this check
                 findParent(it)
@@ -45,6 +48,10 @@ data class DocumentRAM(
             return found
         }
         return null
+    }
+
+    fun exist(uuid: UUID) : Boolean{
+        return _elements.containsKey(uuid) && _elements[uuid]!!.deletedAt == null
     }
 
     private fun findParent(element: ElementRAM): ElementRAM? {
@@ -59,6 +66,9 @@ data class DocumentRAM(
 
     @OptIn(ExperimentalTime::class)
     fun addElement(newElement: ElementRAM): ElementRAM {
+        if(_elements.containsKey(newElement.uuid)){
+            throw Exception("Element uuid is existed ${newElement.uuid}")
+        }
         val parentUuid = newElement.parentUuid!!
         val parent = searchElement(parentUuid) ?: throw Exception("Element $parentUuid not found")
         newElement.path = "${parent.path}/${newElement.uuid}"

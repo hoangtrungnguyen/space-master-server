@@ -72,7 +72,7 @@ dependencies {
     //LOGGING
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-serialization-jackson:3.2.2")
-
+    implementation("org.slf4j:slf4j-api:1.7.32")
 
     // SERIALIZE
     implementation("io.ktor:ktor-serialization-kotlinx-json")

@@ -20,6 +20,11 @@ class InitSyncDocument(
         elementRepo: ElementRepo
     ) {
 
+        if( documentStorage.exist(doc.id) ){
+            print("✅ InitSyncDocument - Document with id ${doc.id} is already exist")
+            return
+        }
+
         val elements = elementRepo.findAllByDocId(doc.id)
 
         val rootElements =

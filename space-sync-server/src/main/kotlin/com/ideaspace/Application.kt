@@ -3,6 +3,7 @@ package com.ideaspace
 import com.ideaspace.config.configureDatabases
 import com.ideaspace.config.configureErrorHandling
 import com.ideaspace.config.configureHTTP
+import com.ideaspace.config.configureLogging
 import com.ideaspace.config.configureMonitoring
 import com.ideaspace.config.configureRedisRoute
 import com.ideaspace.config.configureRouting
@@ -23,5 +24,6 @@ fun Application.module() {
     configureDatabases()
     configureRouting()
     configureRedisRoute()
+    configureLogging()
     configureServerKafka()
 }

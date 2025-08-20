@@ -6,42 +6,65 @@ import com.ideaspace.core.kafkaMessage.RemoveElementPayload
 import com.ideaspace.core.models.Element
 import com.ideaspace.core.redis.toRedisDocumentEvent
 import com.ideaspace.core.repository.ElementRepo
+import com.ideaspace.core.utils.LogData
 import com.ideaspace.workers.DocumentStorage
+import com.ideaspace.workers.LogPublisher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlin.time.Clock
 
 class RemoveElementCommand(
     val editDocEventValue: EditDocEventValue,
     val docId: Long,
     val processId: Long
 
-){
+) {
+
     suspend fun execute(
         documentRedisPublisher: DocumentRedisPublisher,
         elementRepo: ElementRepo,
-        documentStorage: DocumentStorage
-    ) : String{
+        documentStorage: DocumentStorage,
+        logPublisher: LogPublisher
+    ): String {
         val removeElementPayload = editDocEventValue.payload as RemoveElementPayload
         val element = removeElementPayload.element
         val document = documentStorage.documentsMap[docId]!!
-        val prevElementRAM = document.searchElement(element.uuid) ?: throw Exception("Not found ${element.uuid}")
+        val prevElementRAM = document.searchElement(element.uuid)
 
-        document.remove(prevElementRAM)
+        if (prevElementRAM != null) {
+            document.remove(prevElementRAM)
 
-        val redisEntryId = documentRedisPublisher.publishEditDocEvent(
-            docId,
-            processId,
-            editDocEventValue.toRedisDocumentEvent()
-        )
+            val redisEntryId = documentRedisPublisher.publishEditDocEvent(
+                docId,
+                processId,
+                editDocEventValue.toRedisDocumentEvent()
+            )
 
-        return redisEntryId.also {
-            println("✅ Remove element ${element.uuid}")
-            withContext(currentCoroutineContext() + Dispatchers.IO){
+            return redisEntryId.also {
+                println("✅ Remove element ${element.uuid}")
+                withContext(currentCoroutineContext() + Dispatchers.IO) {
                     elementRepo.deleteByUuid(
                         element.uuid
                     )
+                }
             }
+        } else {
+            //duplicated element.uuid
+            logPublisher.warn(
+                toLogServer = true,
+                event = LogData(
+                    loggerName = "RemoveElementCommand",
+                    message = Json.encodeToJsonElement(editDocEventValue),
+                    userId = editDocEventValue.userId,
+                    docId = docId,
+                    processId = processId,
+                )
+            )
+
+            return ""
         }
     }
 }

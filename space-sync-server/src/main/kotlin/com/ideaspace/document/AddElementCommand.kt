@@ -7,12 +7,16 @@ import com.ideaspace.core.ram.ElementRAM
 import com.ideaspace.core.redis.toRedisDocumentEvent
 import com.ideaspace.core.redis.toRedisEditPayLoad
 import com.ideaspace.core.repository.ElementRepo
+import com.ideaspace.core.utils.LogData
 import com.ideaspace.workers.DocumentStorage
+import com.ideaspace.workers.LogPublisher
 import io.ktor.server.plugins.di.DependencyRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToJsonElement
 import java.util.LinkedHashMap
 import kotlin.time.ExperimentalTime
 
@@ -26,7 +30,9 @@ class AddElementCommand(
     suspend fun execute(
         documentRedisPublisher: DocumentRedisPublisher,
         elementRepo: ElementRepo,
-        documentStorage: DocumentStorage
+        documentStorage: DocumentStorage,
+        logPublisher: LogPublisher
+
     ) : String {
 
         val addElementPayload =editDocEventValue.payload as AddElementPayload
@@ -35,6 +41,21 @@ class AddElementCommand(
         val elementOp = addElementPayload.elementOp
 
         val document = documentStorage.documentsMap[docId]!!
+        if(document.exist(element.uuid)){
+            logPublisher.warn(
+                toLogServer = true,
+                event = LogData(
+                    loggerName = this.javaClass.simpleName.toString(),
+                    message = Json.encodeToJsonElement(editDocEventValue),
+                    userId = editDocEventValue.userId,
+                    docId = docId,
+                    processId = processId,
+                    exceptionInfo = "Element uuid ${element.uuid} is existed"
+                )
+            )
+            return ""
+        }
+
         if (element.parentUuid == null) {
             document.addRoot(
                  ElementRAM(
