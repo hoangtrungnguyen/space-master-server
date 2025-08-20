@@ -219,9 +219,7 @@ fun EditDocPayload.toRedisEditPayLoad(): RedisEditDocPayload {
         )
     }
 }
-fun redisDocProcessKey(docId: Long, processId: Long): String {
-    return "document:${docId}process:${processId}"
-}
+
 
 fun redisDocKey(docId: Long): String {
     return "document:$docId"

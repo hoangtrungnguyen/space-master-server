@@ -8,13 +8,18 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.slf4j.LoggerFactory
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
+@OptIn(ExperimentalAtomicApi::class)
 class DocumentEventConsumer(
     private val topic: String,
     private val kafkaConsumer: KafkaConsumer<Long, DocumentSyncEventValue>,
     private val onRecordReceived: suspend (record: ConsumerRecord<Long, DocumentSyncEventValue>) -> Unit
 ) {
     private val logger = LoggerFactory.getLogger(DocumentEventConsumer::class.java)
+
+    private val running = AtomicBoolean(true)
 
     suspend fun consumeEvents() {
         // Subscribe the consumer to the specified topic.
@@ -23,15 +28,18 @@ class DocumentEventConsumer(
 
         try {
             withContext(Dispatchers.IO) {
-                while (coroutineContext.isActive) {
+                while (coroutineContext.isActive && running.get()) {
                     val records = kafkaConsumer.poll(Duration.ofMillis(100))
                     for (record in records) {
+                        println("Received record: $record")
                         onRecordReceived(record)
                     }
                 }
             }
         } catch (e: Exception) {
-            logger.error("Error consuming events from topic '$topic'", e)
+            if (running.get()) {
+                logger.error("Error consuming events from topic '$topic'", e)
+            }
         } finally {
             // Ensure the consumer is closed properly when the loop exits or an error occurs.
             logger.warn("Closing Kafka consumer for topic '$topic'.")
@@ -43,6 +51,7 @@ class DocumentEventConsumer(
      * Closes the underlying Kafka consumer.
      */
     fun close() {
-        kafkaConsumer.close()
+        running.set(false)
+        kafkaConsumer.wakeup()
     }
 }

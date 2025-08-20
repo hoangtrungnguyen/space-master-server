@@ -5,7 +5,6 @@ import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.workers.DocumentStorage
 import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.plugins.di.dependencies
-import io.ktor.server.plugins.di.resolve
 import io.ktor.server.testing.testApplication
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
