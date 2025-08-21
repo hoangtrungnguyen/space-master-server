@@ -29,18 +29,26 @@ import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 fun Route.documentManagementRoutes() {
-    post("/api/documents/create") {
-        val request = call.receive<CreateDocumentRequest>()
+    authenticate("auth-session") {
 
-        val command = CreateDocumentCommand(request)
-        val result = command.execute(application.dependencies)
+        post("/api/documents/create") {
+            val request = call.receive<CreateDocumentRequest>()
 
-        call.respond(status = HttpStatusCode.OK, result)
+            val command = CreateDocumentCommand(request)
+            val result = command.execute(application.dependencies)
+
+            call.respond(status = HttpStatusCode.OK, result)
+        }
+
+        delete("/api/documents/{id}") {
+
+        }
+
+        get("/api/documents") {
+
+        }
     }
 
-    delete("/api/documents/{id}") {
-
-    }
 }
 
 /**
@@ -89,28 +97,38 @@ fun Route.documentChangeRoutes() {
 
             val userId = principal.user.id
             val processKey = ProcessKey(doc.id, userId, windowId)
-            val process = processRepo.findByKey(processKey) ?: processRepo.create(Process(
-                id = -1,
-                docId = doc.id,
-                userId = userId,
-                windowId = windowId,
-                sessionId = -1,
-                isActive = true,
-                lastActiveAt = Clock.System.now()
-            ))
+            val process = processRepo.findByKey(processKey) ?: processRepo.create(
+                Process(
+                    id = -1,
+                    docId = doc.id,
+                    userId = userId,
+                    windowId = windowId,
+                    sessionId = -1,
+                    isActive = true,
+                    lastActiveAt = Clock.System.now()
+                )
+            )
 
-            sessionManager.register(processKey, DocumentConnection(
-                process = process,
-                webSocket = this
-            ))
+            sessionManager.register(
+                processKey, DocumentConnection(
+                    process = process,
+                    webSocket = this
+                )
+            )
 
             try {
                 // Send a welcome message to confirm successful connection
-                send(Frame.Text(Json.encodeToString(mapOf(
-                    "type" to "connection_established",
-                    "message" to "Successfully connected to document $docUuid",
-                    "loginName" to principal.user.loginName
-                ))))
+                send(
+                    Frame.Text(
+                        Json.encodeToString(
+                            mapOf(
+                                "type" to "connection_established",
+                                "message" to "Successfully connected to document $docUuid",
+                                "loginName" to principal.user.loginName
+                            )
+                        )
+                    )
+                )
 
                 incoming.consumeAsFlow().mapNotNull { frame ->
                     if (frame is Frame.Text) {
@@ -119,18 +137,30 @@ fun Route.documentChangeRoutes() {
                             val event = Json.decodeFromString<DocumentSyncEventValue>(frameText)
                             docEventProducer.sendEvent(doc.id, event)
 
-                            send(Frame.Text(Json.encodeToString(mapOf(
-                                "type" to "success",
-                                "message" to "Received event from process ${event.processId}"
-                            ))))
+                            send(
+                                Frame.Text(
+                                    Json.encodeToString(
+                                        mapOf(
+                                            "type" to "success",
+                                            "message" to "Received event from process ${event.processId}"
+                                        )
+                                    )
+                                )
+                            )
 
                         } catch (e: Exception) {
                             e.printStackTrace()
                             try {
-                                send(Frame.Text(Json.encodeToString(mapOf(
-                                    "type" to "error",
-                                    "message" to "Failed to process message: ${e.localizedMessage}"
-                                ))))
+                                send(
+                                    Frame.Text(
+                                        Json.encodeToString(
+                                            mapOf(
+                                                "type" to "error",
+                                                "message" to "Failed to process message: ${e.localizedMessage}"
+                                            )
+                                        )
+                                    )
+                                )
                             } catch (sendError: Exception) {
                                 println("Failed to send error response: ${sendError.localizedMessage}")
                             }
@@ -148,7 +178,6 @@ fun Route.documentChangeRoutes() {
         }
     }
 }
-
 
 
 /**

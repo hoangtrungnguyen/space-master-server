@@ -44,6 +44,8 @@ data class UserInfo(
     val fullName: String
 )
 
+
+const val accessTokenName: String = "access_token"
 /**
  * Generates a JWT token for the given user
  */
@@ -99,8 +101,6 @@ fun Route.authRoutes() {
                 return@post
             }
 
-            // Generate JWT token
-            val token = call.generateJwtToken(user)
             val expiresAt = Instant.now().plus(7, ChronoUnit.DAYS)
 
             // Create response
@@ -115,14 +115,11 @@ fun Route.authRoutes() {
 
             println("Successfully generated JWT token for user: ${user.loginName} (ID: ${user.id})")
 
-            val userSession = UserSession(
-                name = user.loginName, count = 1,
-                token = token
-            )
+            // Generate JWT token
+            val token = call.generateJwtToken(user)
             call.sessions.set(
-                userSession
+                accessTokenName, token
             )
-
             call.respond(HttpStatusCode.OK, response)
 
         } catch (e: Exception) {
@@ -143,7 +140,7 @@ fun Route.authRoutes() {
 
 suspend fun Application.configureSecurity() {
     install(Sessions) {
-        cookie<UserSession>("user_session") {
+        cookie<String>(accessTokenName) {
             cookie.path = "/"
             cookie.maxAgeInSeconds = 86400
             // IMPORTANT: Allow the cookie to be sent with cross-site requests
@@ -167,10 +164,9 @@ suspend fun Application.configureSecurity() {
         .build()
 
     authentication {
-        session<UserSession>("auth-session") {
+        session<String>("auth-session") {
             validate { credential ->
-                val token = credential.token
-                val decodedToken = verifier.verify(token)
+                val decodedToken = verifier.verify(credential)
                 val userId = decodedToken.getClaim("userId").asLong()
                 if (userId == null) {
                     logger.error("Invalid token claims: Missing userId")
