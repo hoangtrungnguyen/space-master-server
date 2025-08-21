@@ -1,5 +1,6 @@
 package com.ideaspace.config
 
+import com.ideaspace.utils.isLocalMode
 import dev.hayden.KHealth
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -32,17 +33,21 @@ fun Application.configureHttpServer() {
     install(ContentNegotiation) {
         json()
     }
-    install(CallLogging) {
-        level = Level.INFO // Set the logging level (e.g., INFO, DEBUG, TRACE)
-        filter { call -> call.request.path().startsWith("/") } // Optional: filter requests to log
-        format { call -> // Optional: customize the log message format
-            val status = call.response.status()
-            val httpMethod = call.request.httpMethod.value
-            val path = call.request.uri
-            """Status: $status, Method: $httpMethod, Path: $path
+
+    if (environment.isLocalMode) {
+        install(CallLogging) {
+            level = Level.INFO // Set the logging level (e.g., INFO, DEBUG, TRACE)
+            filter { call -> call.request.path().startsWith("/") } // Optional: filter requests to log
+            format { call -> // Optional: customize the log message format
+                val status = call.response.status()
+                val httpMethod = call.request.httpMethod.value
+                val path = call.request.uri
+                """Status: $status, Method: $httpMethod, Path: $path
             """.trimMargin()
+            }
         }
     }
+
     install(KHealth)
     routing {
         swaggerUI(path = "openapi")
