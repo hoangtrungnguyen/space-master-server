@@ -2,11 +2,11 @@ package com.ideaspace.core.repositoryImpl
 
 import com.ideaspace.core.dao.DocumentDAO
 import com.ideaspace.core.dao.DocumentTable
-import com.ideaspace.core.dao.ElementTable
 import com.ideaspace.core.dao.toModel
 import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.repository.CrudDocumentRepository
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -52,8 +52,11 @@ class CrudDocumentRepositoryImpl(val db: Database ) : CrudDocumentRepository {
         DocumentDAO.find { DocumentTable.uuid eq UUID.fromString(uuid) }.firstOrNull()?.toModel()
     }
 
+    @OptIn(ExperimentalTime::class)
     override suspend fun findAll(): List<BusinessDocument> = transaction(db) {
-        DocumentDAO.all().map{it.toModel()}.toList()
+        DocumentDAO.all().orderBy(
+            DocumentTable.createdAt to SortOrder.DESC
+        ).map { it.toModel() }.toList()
     }
 
     override suspend fun findById(id: Long): BusinessDocument? = transaction(db){

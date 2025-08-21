@@ -4,7 +4,6 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.ideaspace.core.models.User
 import com.ideaspace.core.repository.UserRepo
-import com.ideaspace.user.UserSession
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -133,7 +132,7 @@ fun Route.authRoutes() {
 
 
     post("/api/users/logout") {
-        call.sessions.clear<UserSession>()
+        call.sessions.clear(accessTokenName)
         call.respond(HttpStatusCode.OK, "Successfully logged out")
     }
 }

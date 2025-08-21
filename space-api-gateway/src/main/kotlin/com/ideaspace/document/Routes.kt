@@ -45,6 +45,18 @@ fun Route.documentManagementRoutes() {
         }
 
         get("/api/documents") {
+            val principal = call.principal<AuthPrincipal>()!!
+            val user = principal.user
+
+            val command = GetAllDocument(
+                user.id,
+                application.dependencies.resolve()
+            )
+            val result = command.execute()
+            call.respond(status = HttpStatusCode.OK, result)
+        }
+
+        get("/api/documents/{uuid}") {
 
         }
     }

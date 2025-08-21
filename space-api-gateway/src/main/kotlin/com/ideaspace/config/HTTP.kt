@@ -10,7 +10,6 @@ import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.swagger.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import io.ktor.util.*
 import org.slf4j.event.Level
 
 fun Application.configureHttpServer() {
@@ -41,8 +40,6 @@ fun Application.configureHttpServer() {
             val httpMethod = call.request.httpMethod.value
             val path = call.request.uri
             """Status: $status, Method: $httpMethod, Path: $path
-                |Headers: ${call.request.headers.toMap()}
-                |Cookies: ${call.request.cookies.rawCookies}
             """.trimMargin()
         }
     }
