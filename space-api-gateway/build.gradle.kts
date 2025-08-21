@@ -43,6 +43,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-server-config-yaml")
     implementation("io.ktor:ktor-server-call-logging")
+    implementation("io.ktor:ktor-server-call-logging-jvm")
     implementation("io.ktor:ktor-server-di")
     implementation("io.ktor:ktor-server-cors")
 
@@ -63,6 +64,8 @@ dependencies {
     
     // JWT Authentication
     implementation("com.auth0:java-jwt:4.4.0")
+    implementation("io.ktor:ktor-server-sessions")
+    implementation("io.ktor:ktor-server-auth")
 
     // TESTING
 

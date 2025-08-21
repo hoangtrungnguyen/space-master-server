@@ -3,11 +3,10 @@ package com.ideaspace.user
 import com.ideaspace.config.AuthPrincipal
 import com.ideaspace.config.UserInfo
 import io.ktor.http.*
-import io.ktor.server.auth.authenticate
-import io.ktor.server.auth.principal
+import io.ktor.server.auth.*
 import io.ktor.server.plugins.di.*
 import io.ktor.server.request.*
-import io.ktor.server.response.respond
+import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
 fun Route.userManagementRoutes() {
@@ -21,7 +20,7 @@ fun Route.userManagementRoutes() {
             fullName = user.fullName
         ))
     }
-    authenticate("jwt-auth") {
+    authenticate("auth-session") {
         get("/api/users/profile") {
             val principal = call.principal<AuthPrincipal>()!!
             val user = principal.user

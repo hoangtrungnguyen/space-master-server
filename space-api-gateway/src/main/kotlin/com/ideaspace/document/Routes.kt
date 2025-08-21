@@ -13,23 +13,18 @@ import com.ideaspace.core.repository.ProcessRepo
 import com.ideaspace.session.DocumentConnection
 import com.ideaspace.session.SessionManager
 import io.ktor.http.*
-import io.ktor.server.auth.authenticate
-import io.ktor.server.auth.principal
-import io.ktor.server.plugins.di.dependencies
+import io.ktor.server.auth.*
+import io.ktor.server.plugins.di.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.websocket.webSocket
-import io.ktor.websocket.CloseReason
-import io.ktor.websocket.CloseReason.Codes.VIOLATED_POLICY
-import io.ktor.websocket.Frame
-import io.ktor.websocket.close
-import io.ktor.websocket.readText
+import io.ktor.server.websocket.*
+import io.ktor.websocket.*
+import io.ktor.websocket.CloseReason.Codes.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.serialization.json.Json
-import kotlin.text.toLong
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -57,7 +52,7 @@ fun Route.documentManagementRoutes() {
  */
 fun Route.documentChangeRoutes() {
 
-    authenticate("jwt-auth") {
+    authenticate("auth-session") {
         val d = application.dependencies
 
         webSocket("/ws/documents/{uuid}") {

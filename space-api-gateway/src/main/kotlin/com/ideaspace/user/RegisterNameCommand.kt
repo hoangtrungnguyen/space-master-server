@@ -2,7 +2,7 @@ package com.ideaspace.user
 
 import com.ideaspace.core.models.User
 import com.ideaspace.core.repository.UserRepo
-import io.ktor.server.plugins.di.DependencyRegistry
+import io.ktor.server.plugins.di.*
 import kotlinx.serialization.Serializable
 
 class RegisterNameCommand(
@@ -20,3 +20,5 @@ data class RegisterNameRequest(
     val fullName: String,
 )
 
+@Serializable
+data class UserSession(val name: String, val count: Int, val token: String)
