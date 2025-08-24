@@ -30,11 +30,15 @@ class SessionManager(
         val oldConnection = process2connection.put(key, connection)
         if (oldConnection != null) {
             oldConnection.close(CloseReason(Codes.NORMAL, "Reconnect"))
-            println("User ${key.userId} re-connected to document ${key.docId} via window ${key.windowId}. " +
-                    "Total connections to this document: ${process2connection.size}.")
+            println(
+                "User ${key.userId} re-connected to document ${key.docId} via window ${key.windowId}. " +
+                        "Total connections to this document: ${process2connection.size}."
+            )
         } else {
-            println("User ${key.userId} connected to document ${key.docId} via window ${key.windowId}. " +
-                    "Total connections to this document: ${process2connection.size}.")
+            println(
+                "User ${key.userId} connected to document ${key.docId} via window ${key.windowId}. " +
+                        "Total connections to this document: ${process2connection.size}."
+            )
         }
     }
 
@@ -42,8 +46,10 @@ class SessionManager(
         doc2process[key.docId]?.let { process2connection ->
             val removedConnection = process2connection.remove(key)
             if (removedConnection != null) {
-                println("User ${key.userId} disconnected documented ${key.docId} on window ${key.windowId}. " +
-                        "Remaining connections: ${process2connection.size}")
+                println(
+                    "User ${key.userId} disconnected documented ${key.docId} on window ${key.windowId}. " +
+                            "Remaining connections: ${process2connection.size}"
+                )
             }
 
 
@@ -106,6 +112,14 @@ class SessionManager(
     suspend fun close() {
         redisSubscriber.close()
         redis.close()
+    }
+
+    suspend fun broadCastPeer(docId: Long) {
+        val processes = doc2process[docId]!!.values.map { it.process }
+        for (el in doc2process[docId]!!) {
+            val connection = el.value
+            connection.send(processes)
+        }
     }
 }
 

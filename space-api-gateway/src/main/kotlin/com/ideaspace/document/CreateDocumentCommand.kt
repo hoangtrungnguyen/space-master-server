@@ -1,16 +1,11 @@
 package com.ideaspace.document
 
 import com.ideaspace.core.dto.DocumentDTO
-import com.ideaspace.core.dto.toDTO
 import com.ideaspace.core.kafkaMessage.DocumentEventProducer
 import com.ideaspace.core.kafkaMessage.InitSyncEventValue
 import com.ideaspace.core.kafkaMessage.InitSyncPayload
 import com.ideaspace.core.kafkaMessage.SyncOperation
-import com.ideaspace.core.models.BusinessDocument
-import com.ideaspace.core.models.DocumentStatus
-import com.ideaspace.core.models.DocumentType
-import com.ideaspace.core.models.Element
-import com.ideaspace.core.models.toDTO
+import com.ideaspace.core.models.*
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import io.ktor.server.plugins.di.*
@@ -25,7 +20,7 @@ import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class, ExperimentalTime::class)
 class CreateDocumentCommand(
-    val document: CreateDocumentRequest
+    val request: CreateDocumentRequest
 ) {
 
     suspend fun execute(dependencies: DependencyRegistry): DocumentDTO {
@@ -37,13 +32,13 @@ class CreateDocumentCommand(
             id = -1,
             uuid = UUID(0, 0),
             revId = -1,
-            title = document.title,
+            title = request.title,
             creatorId = 1,
             ownerId = 1,
             createdAt = Clock.System.now(),
             lastModifiedAt = Clock.System.now(),
             metadata = null,
-            documentType = document.documentType,
+            documentType = request.documentType,
             status = DocumentStatus.DRAFT,
             transformVersion = 1,
             kafkaOffset = -1,
@@ -64,10 +59,10 @@ class CreateDocumentCommand(
         val event = InitSyncEventValue(
             syncOp = SyncOperation.INIT_SYNC,
             docId = doc.id,
-            processId = 2, // TODO: Generate process ID
-            userId = 1, // TODO: Get from context
-            sessionId = 1, // TODO: Get from context
-            clientId = 1, // TODO: Get from context
+            processId = request.processId,
+            userId = request.userId, // TODO: Get from context
+            sessionId = request.sessionId, // TODO: Get from context
+            clientId = request.clientId, // TODO: Get from context
             payload = InitSyncPayload()
         )
 
@@ -83,4 +78,8 @@ class CreateDocumentCommand(
 data class CreateDocumentRequest(
     val title: String,
     val documentType: DocumentType,
+    val processId: Long,
+    val userId: Long,
+    val sessionId: Long,
+    val clientId: Long
 )

@@ -10,6 +10,9 @@ import com.ideaspace.core.models.Process
 import com.ideaspace.core.models.ProcessKey
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ProcessRepo
+import com.ideaspace.rtcmanager.RTCData
+import com.ideaspace.rtcmanager.RTCManager
+import com.ideaspace.rtcmanager.RTCService
 import com.ideaspace.session.DocumentConnection
 import com.ideaspace.session.SessionManager
 import io.ktor.http.*
@@ -21,9 +24,7 @@ import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import io.ktor.websocket.CloseReason.Codes.*
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.Json
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -80,6 +81,7 @@ fun Route.documentChangeRoutes() {
             val docEventProducer = d.resolve<DocumentEventProducer>()
             val docRepo = d.resolve<CrudDocumentRepository>()
             val processRepo = d.resolve<ProcessRepo>()
+            val rtcManager = d.resolve<RTCManager>()
 
             // -----------------------------------------------
             // These setups happen once for every connection
@@ -109,6 +111,10 @@ fun Route.documentChangeRoutes() {
 
             val userId = principal.user.id
             val processKey = ProcessKey(doc.id, userId, windowId)
+
+
+            // docId, userId, windowId
+
             val process = processRepo.findByKey(processKey) ?: processRepo.create(
                 Process(
                     id = -1,
@@ -128,6 +134,19 @@ fun Route.documentChangeRoutes() {
                 )
             )
 
+            val webSocketUri = call.request.uri
+            val port = call.request.port()
+            rtcManager.add(
+                doc.id, RTCData(
+                    port,
+                    webSocketUri
+                )
+            )
+
+            sessionManager.broadCastPeer(doc.id)
+
+            val rtcService = RTCService()
+
             try {
                 // Send a welcome message to confirm successful connection
                 send(
@@ -142,13 +161,11 @@ fun Route.documentChangeRoutes() {
                     )
                 )
 
-                incoming.consumeAsFlow().mapNotNull { frame ->
+                val messageFlow: Flow<Any> = incoming.consumeAsFlow().mapNotNull { frame ->
                     if (frame is Frame.Text) {
                         try {
                             val frameText = frame.readText()
                             val event = Json.decodeFromString<DocumentSyncEventValue>(frameText)
-                            docEventProducer.sendEvent(doc.id, event)
-
                             send(
                                 Frame.Text(
                                     Json.encodeToString(
@@ -159,7 +176,7 @@ fun Route.documentChangeRoutes() {
                                     )
                                 )
                             )
-
+                            return@mapNotNull event
                         } catch (e: Exception) {
                             e.printStackTrace()
                             try {
@@ -178,13 +195,26 @@ fun Route.documentChangeRoutes() {
                             }
                         }
                     }
-                }.collect()
+                }.stateIn(this)
 
-
+                rtcService.transform(
+                    this,
+                    messageFlow
+                        .filterIsInstance<DocumentSyncEventValue>(),
+                    { editDocEvent
+                        ->
+                        println("edit doc event sent to sync server. doc.id=${doc.id}")
+                        docEventProducer.sendEvent(doc.id, editDocEvent)
+                    }, { initSyncEventValue ->
+                        println("init doc event sent to sync server. doc.id=${doc.id}")
+                        docEventProducer.sendEvent(doc.id, initSyncEventValue)
+                    })
             } catch (e: Exception) {
                 println("WebSocket connection error for user $userId: ${e.localizedMessage}")
             } finally {
+                rtcManager.remove(doc.id, webSocketUri)
                 sessionManager.unregister(processKey)
+                rtcService.close()
                 println("WebSocket connection closed for user: ${principal.user.loginName} (ID: $userId)")
             }
         }

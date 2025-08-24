@@ -20,9 +20,12 @@ enum class SyncOperation {
     FINISH_SYNC
 }
 
+
+sealed class DocumentEvent {}
+
 @Serializable
 @JsonClassDiscriminator("sync_op")
-sealed class DocumentSyncEventValue {
+sealed class DocumentSyncEventValue : DocumentEvent() {
     abstract val syncOp: SyncOperation
     abstract val docId: Long
     abstract val processId: Long
@@ -31,6 +34,8 @@ sealed class DocumentSyncEventValue {
     abstract val clientId: Long
     abstract val payload: DocumentSyncPayload
 }
+
+class UnknownDocEvent() : DocumentEvent()
 
 @Serializable
 @SerialName("INIT_SYNC")

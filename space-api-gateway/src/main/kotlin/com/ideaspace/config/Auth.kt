@@ -116,6 +116,7 @@ fun Route.authRoutes() {
 
             // Generate JWT token
             val token = call.generateJwtToken(user)
+
             call.sessions.set(
                 accessTokenName, token
             )
@@ -138,6 +139,7 @@ fun Route.authRoutes() {
 }
 
 suspend fun Application.configureSecurity() {
+    //config sessions
     install(Sessions) {
         cookie<String>(accessTokenName) {
             cookie.path = "/"
