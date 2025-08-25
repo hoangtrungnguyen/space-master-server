@@ -45,6 +45,7 @@ data class UserInfo(
 
 
 const val accessTokenName: String = "access_token"
+
 /**
  * Generates a JWT token for the given user
  */
@@ -136,6 +137,16 @@ fun Route.authRoutes() {
         call.sessions.clear(accessTokenName)
         call.respond(HttpStatusCode.OK, "Successfully logged out")
     }
+
+    get("/api/user/verify-session") {
+        // Access the cookie value directly
+        val myCookie = call.request.cookies[accessTokenName]
+        if (myCookie != null) {
+            call.respondText(status = HttpStatusCode.OK, text = "Successfully verified session")
+        } else {
+            call.respondText(status = HttpStatusCode.Unauthorized, text = "Unauthorized")
+        }
+    }
 }
 
 suspend fun Application.configureSecurity() {
@@ -186,7 +197,6 @@ suspend fun Application.configureSecurity() {
                 call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
             }
         }
-
-
     }
+
 }

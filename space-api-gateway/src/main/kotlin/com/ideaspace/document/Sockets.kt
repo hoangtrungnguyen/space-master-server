@@ -139,17 +139,7 @@ fun Route.documentWebSocketRoutes() {
                         val frameText = frame.readText()
                         val event = Json.decodeFromString<DocumentSyncEventValue>(frameText)
                         docEventProducer.sendEvent(doc.id, event)
-                        send(
-                            Frame.Text(
-                                Json.encodeToString(
-                                    mapOf(
-                                        "type" to "success",
-                                        "message" to "Received event from process ${event.processId}"
-                                    )
-                                )
-                            )
-                        )
-
+                        println("Sent event for $docUuid. Event: $event to REDIS")
                         event
                     }.catch { cause ->
                         try {
