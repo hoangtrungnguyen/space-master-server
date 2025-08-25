@@ -3,8 +3,8 @@ package com.ideaspace
 import com.ideaspace.config.*
 import com.ideaspace.core.kafkaMessage.configureDocumentEventProducer
 import com.ideaspace.document.configureSockets
-import com.ideaspace.document.documentChangeRoutes
 import com.ideaspace.document.documentManagementRoutes
+import com.ideaspace.document.documentWebSocketRoutes
 import com.ideaspace.rtcmanager.configureWebRTC
 import com.ideaspace.user.userManagementRoutes
 import io.ktor.server.application.*
@@ -28,6 +28,6 @@ suspend fun Application.module() {
         authRoutes()
         userManagementRoutes()
         documentManagementRoutes()
-        documentChangeRoutes()
+        documentWebSocketRoutes()
     }
 }

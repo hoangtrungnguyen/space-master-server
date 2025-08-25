@@ -5,6 +5,8 @@ import io.ktor.server.plugins.di.*
 
 fun Application.configureWebRTC() {
     dependencies.provide<RTCManager> {
-        RTCManager()
+        InMemoryRTCManagerImpl(
+            resolve()
+        )
     }
 }

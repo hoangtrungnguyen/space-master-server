@@ -1,55 +1,98 @@
 package com.ideaspace.rtcmanager
 
 import com.ideaspace.core.kafkaMessage.*
+import com.ideaspace.core.models.Process
 import com.ideaspace.core.models.ProcessKey
+import com.ideaspace.session.SessionManager
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
-import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 
-
+@Serializable
 data class RTCData(
-    val port: Int,
-    val url: String
+    val peerCount: Int,
+    val setOfPeer: Set<Process>,
+    val removedPeer: Process? = null,
+    val newPeer: Process? = null,
 ) {
+    val type get(): String = "RTCData"
 }
 
+interface RTCManager {
+    suspend fun publishPeer(process: Process)
+    suspend fun removePeer(process: Process)
+}
 
-class RTCManager() {
+//TODO: Redis RTC Manager
 
-    private val rtcPool: ConcurrentHashMap<Long, MutableSet<RTCData>> = ConcurrentHashMap()
+class InMemoryRTCManagerImpl(
+    val sessionManager: SessionManager
+) : RTCManager {
+    val rtcPool: MutableMap<Long, MutableSet<Process>> = HashMap()
 
-    fun add(docId: Long, rtcData: RTCData) {
-        val setOfPeer = rtcPool[docId]
+    override suspend fun publishPeer(process: Process) {
+        val docId = process.docId
+        var setOfPeer = rtcPool[docId]
         if (setOfPeer != null) {
-            setOfPeer.add(rtcData)
+            setOfPeer.add(process)
             rtcPool[docId] = setOfPeer
         } else {
-            val mutableSet = mutableSetOf<RTCData>(rtcData)
+            val mutableSet = mutableSetOf<Process>(process)
             rtcPool[docId] = mutableSet
+            setOfPeer = mutableSet
         }
 
+        sessionManager.getConnections(docId)?.values?.let { connections ->
+            coroutineScope {
+                for (connection in connections) {
+                    launch(connection.webSocket.coroutineContext) {
+                        connection.send(
+                            RTCData(
+                                setOfPeer.size,
+                                newPeer = process,
+                                setOfPeer = setOfPeer,
+                            )
+                        )
+                    }
+                }
+            }
+        }
         println("rtcPool.values.size ${rtcPool.values.size}")
     }
 
-    fun remove(docId: Long, url: String) {
+    override suspend fun removePeer(process: Process) {
+        val docId = process.docId
         val setOfPeer = rtcPool[docId]
         if (setOfPeer != null) {
-            setOfPeer.removeIf { it.url == url }
+            setOfPeer.remove(process)
             rtcPool[docId] = setOfPeer
+            sessionManager.getConnections(docId)?.values?.let { connections ->
+                coroutineScope {
+                    for (connection in connections) {
+                        launch(connection.webSocket.coroutineContext) {
+                            connection.send<RTCData>(
+                                RTCData(
+                                    setOfPeer.size,
+                                    removedPeer = process,
+                                    setOfPeer = setOfPeer,
+                                )
+                            )
+                        }
+                    }
+                }
+            }
         } else {
             println("remove not found docId $docId")
         }
     }
 }
 
-class RTCService() {
+class MessageFlowGateService() {
 
     private val isSyncFinishedState = MutableStateFlow(false)
-
-    private val changeFlow: MutableSharedFlow<RTCData> = MutableSharedFlow()
-
-    private val rtcManager: ConcurrentHashMap<Long, ConcurrentHashMap<ProcessKey, RTCData>> = ConcurrentHashMap()
 
     suspend fun transform(
         session: DefaultWebSocketServerSession, eventFlow: Flow<DocumentSyncEventValue>,
@@ -146,21 +189,6 @@ class RTCService() {
                     windowId = 123
                 )
                 println("Current Process Key: $key")
-//                rtcManager.compute(finishEvent.docId){_, oldValue ->
-//                    if(oldValue == null){
-//                        ConcurrentHashMap().let {
-//                            it.compute (
-//                                key, RTCData(
-//
-//                                )
-//                            )
-//                        }
-//                    } else {
-//                       oldValue.let {
-//
-//                       }
-//                    }
-//                }
             }
         }.filter { it.event is InitSyncEventValue }.map {
             it.event

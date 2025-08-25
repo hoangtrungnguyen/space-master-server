@@ -114,12 +114,5 @@ class SessionManager(
         redis.close()
     }
 
-    suspend fun broadCastPeer(docId: Long) {
-        val processes = doc2process[docId]!!.values.map { it.process }
-        for (el in doc2process[docId]!!) {
-            val connection = el.value
-            connection.send(processes)
-        }
-    }
 }
 
