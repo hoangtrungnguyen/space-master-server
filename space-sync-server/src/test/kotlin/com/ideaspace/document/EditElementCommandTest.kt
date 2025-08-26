@@ -12,9 +12,7 @@ import com.ideaspace.workers.LogPublisher
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.runs
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.buildJsonObject
@@ -66,8 +64,7 @@ class EditElementCommandTest {
             docId = docId,
             processId = processId,
             userId = 123L,
-            sessionId = 456L,
-            clientId = 789L,
+            windowId = 789L,
             payload = editElementPayload
         )
 
@@ -109,8 +106,7 @@ class EditElementCommandTest {
             docId = docId,
             processId = processId,
             userId = 123L,
-            sessionId = 456L,
-            clientId = 789L,
+            windowId = 789L,
             payload = editElementPayload
         )
 

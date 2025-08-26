@@ -86,7 +86,7 @@ class SessionManager(
     /**
      * Handle incoming sync events from Redis and broadcast to connected clients
      */
-    private suspend fun handleSyncEvent(docId: Long, documentMessage: DocumentMessage) {
+    private suspend fun handleSyncEvent(docId: Long, documentMessage: DocumentChannelOutput) {
         val connections = doc2process[docId]
         if (connections != null) {
             val eventText = Json.encodeToString(documentMessage)

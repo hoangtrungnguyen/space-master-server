@@ -15,6 +15,6 @@ class SaveDocCommand(
     suspend fun execute(
         documentPublisher: DocumentRedisPublisher,
     ) {
-        documentPublisher.publishSaveDocEvent(saveDocEventValue.toRedisDocumentEvent() as RedisSaveDocEvent)
+        documentPublisher.publishSaveDocEvent(saveDocEventValue)
     }
 }

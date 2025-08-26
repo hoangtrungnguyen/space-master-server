@@ -3,7 +3,6 @@ package com.ideaspace.document
 import com.ideaspace.core.kafkaMessage.AddElement
 import com.ideaspace.core.kafkaMessage.AddElementPayload
 import com.ideaspace.core.kafkaMessage.EditDocEventValue
-import com.ideaspace.core.models.Element
 import com.ideaspace.core.ram.DocumentRAM
 import com.ideaspace.core.ram.ElementRAM
 import com.ideaspace.core.repository.CrudDocumentRepository
@@ -56,8 +55,7 @@ class AddElementCommandTest {
             docId = docId,
             processId = processId,
             userId = 1L,
-            sessionId = 1L,
-            clientId = 1L,
+            windowId = 1L,
             payload = AddElementPayload(
                 element = AddElement(
                     uuid = UUID.randomUUID(),

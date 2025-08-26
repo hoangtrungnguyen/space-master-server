@@ -1,37 +1,15 @@
 package com.ideaspace.workers
 
-import com.ideaspace.core.kafkaMessage.AddElementPayload
-import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
-import com.ideaspace.core.kafkaMessage.EditDocEventValue
-import com.ideaspace.core.kafkaMessage.EditElementPayload
-import com.ideaspace.core.kafkaMessage.FinishSyncEventValue
-import com.ideaspace.core.kafkaMessage.InitSyncEventValue
-import com.ideaspace.core.kafkaMessage.MoveElementPayload
-import com.ideaspace.core.kafkaMessage.RemoveElementPayload
-import com.ideaspace.core.kafkaMessage.SaveDocEventValue
+import com.ideaspace.core.kafkaMessage.*
 import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
-import com.ideaspace.document.AddElementCommand
-import com.ideaspace.document.CommandFactory
-import com.ideaspace.document.DocumentRedisPublisher
-import com.ideaspace.document.EditElementCommand
-import com.ideaspace.document.FinishedSyncDocCommand
-import com.ideaspace.document.InitSyncDocument
-import com.ideaspace.document.MoveElementCommand
-import com.ideaspace.document.RemoveElementCommand
-import com.ideaspace.document.SaveDocCommand
-import com.ideaspace.document.SaveLatestRedisEntry
-import io.ktor.server.plugins.di.DependencyRegistry
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
+import com.ideaspace.document.*
+import io.ktor.server.plugins.di.*
+import kotlinx.coroutines.*
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.set
 
 class KafkaPartitionProcessor() {
     companion object {
@@ -70,7 +48,14 @@ class KafkaPartitionProcessor() {
             val doc = registry.resolve<CrudDocumentRepository>().findById(key)!!
 
             when (val docEventVale: DocumentSyncEventValue = record.value()) {
-                is EditDocEventValue -> {
+                is InitSyncEventValue -> {
+                    registry.initDoc(doc, processId)
+                }
+
+                is AddElementEventValue ,
+                is EditElementEventValue,
+                is MoveElementEventValue,
+                is RemoveElementEventValue -> {
                     saveOffset(registry, doc, record.offset())
                     val command = registry.resolve<CommandFactory>().createCommand(
                         docEventVale,
@@ -79,17 +64,14 @@ class KafkaPartitionProcessor() {
                     command.execute()
                 }
 
+                is SaveDocEventValue -> {
+                    registry.save(doc, docEventVale)
+                }
                 is FinishSyncEventValue -> {
                     registry.finish(doc, docEventVale)
                 }
 
-                is InitSyncEventValue -> {
-                    registry.initDoc(doc, processId)
-                }
-
-                is SaveDocEventValue -> {
-                    registry.save(doc, docEventVale)
-                }
+                else -> throw RuntimeException("Missing handle for ${docEventVale.syncOp}")
             }
 
 

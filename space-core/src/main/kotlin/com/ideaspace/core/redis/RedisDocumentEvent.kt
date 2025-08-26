@@ -26,9 +26,7 @@ data class InitSyncEvent(
     val syncOp: SyncOperation = SyncOperation.INIT_SYNC,
     val processId: Long,
     val userId: Long,
-    val sessionId: Long,
-    val clientId: Long,
-    val payload: RedisInitSyncPayload
+    val windowId: Long,
 ) : RedisDocumentEvent()
 
 @Serializable
@@ -38,8 +36,7 @@ data class EditDocEvent(
     val syncOp: SyncOperation = SyncOperation.EDIT_DOC,
     val processId: Long,
     val userId: Long,
-    val sessionId: Long,
-    val clientId: Long,
+    val windowId: Long,
     val payload: RedisEditDocPayload
 ) : RedisDocumentEvent()
 
@@ -50,8 +47,7 @@ data class RedisSaveDocEvent(
     val syncOp: SyncOperation = SyncOperation.SAVE_DOC,
     val processId: Long,
     val userId: Long,
-    val sessionId: Long,
-    val clientId: Long,
+    val windowId: Long,
     val payload: RedisSaveDocPayload
 ) : RedisDocumentEvent()
 
@@ -62,8 +58,7 @@ data class RedisFinishSyncEvent(
     val syncOp: SyncOperation = SyncOperation.FINISH_SYNC,
     val processId: Long,
     val userId: Long,
-    val sessionId: Long,
-    val clientId: Long,
+    val windowId: Long,
     val payload: RedisFinishSyncPayload
 ) : RedisDocumentEvent()
 
@@ -124,7 +119,7 @@ data class RedisAddElement(
     override val uuid: UUID,
     @SerialName("parent_uuid") @Serializable(with = UUIDToString::class)
     val parentUuid: UUID? = null,
-    val metadata: JsonElement = JsonObject(emptyMap()),
+    val metadata: JsonElement?,
     val type: String,
     val value: JsonElement
 ) : RedisElement()
@@ -133,7 +128,7 @@ data class RedisAddElement(
 data class RedisEditElement(
     @Serializable(with = UUIDToString::class)
     override val uuid: UUID,
-    val metadata: JsonElement = JsonObject(emptyMap()),
+    val metadata: JsonElement?,
     val type: String,
     val value: JsonElement
 ) : RedisElement()
@@ -158,33 +153,29 @@ fun DocumentSyncEventValue.toRedisDocumentEvent(): RedisDocumentEvent {
             docId = this.docId,
             processId = this.processId,
             userId = this.userId,
-            sessionId = this.sessionId,
-            clientId = this.clientId,
-            payload = RedisInitSyncPayload()
+            windowId = this.windowId,
         )
         is EditDocEventValue -> EditDocEvent(
             docId = this.docId,
             processId = this.processId,
             userId = this.userId,
-            sessionId = this.sessionId,
-            clientId = this.clientId,
+            windowId = this.windowId,
             payload = this.payload.toRedisEditPayLoad())
         is SaveDocEventValue -> RedisSaveDocEvent(
             docId = this.docId,
             processId = this.processId,
             userId = this.userId,
-            sessionId = this.sessionId,
-            clientId = this.clientId,
+            windowId = this.windowId,
             payload = RedisSaveDocPayload()
         )
         is FinishSyncEventValue -> RedisFinishSyncEvent(
             docId = this.docId,
             processId = this.processId,
             userId = this.userId,
-            sessionId = this.sessionId,
-            clientId = this.clientId,
+            windowId = this.windowId,
             payload = RedisFinishSyncPayload()
         )
+        else -> throw RuntimeException("Missing case handling ${this.javaClass}")
     }
 }
 fun EditDocPayload.toRedisEditPayLoad(): RedisEditDocPayload {

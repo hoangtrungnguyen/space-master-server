@@ -60,8 +60,7 @@ class RemoveElementCommandTest {
             docId = docId,
             processId = processId,
             userId = 123L,
-            sessionId = 456L,
-            clientId = 789L,
+            windowId = 789L,
             payload = removeElementPayload
         )
 
@@ -96,8 +95,7 @@ class RemoveElementCommandTest {
             docId = docId,
             processId = processId,
             userId = 123L,
-            sessionId = 456L,
-            clientId = 789L,
+            windowId = 789L,
             payload = removeElementPayload
         )
 

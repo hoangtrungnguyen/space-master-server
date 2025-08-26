@@ -78,8 +78,7 @@ class KafkaPartitionProcessorTest {
                 docId = 1L,
                 processId = 2L,
                 userId = 3L,
-                sessionId = 4L,
-                clientId = 5L,
+                windowId = 5L,
                 payload = addElementPayload
             )
             val record = createConsumerRecord(1L, event)

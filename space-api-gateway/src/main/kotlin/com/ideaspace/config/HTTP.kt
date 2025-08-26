@@ -11,11 +11,12 @@ import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.swagger.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.json.Json
 import org.slf4j.event.Level
 
 fun Application.configureHttpServer() {
     install(CORS) {
-        allowHost("localhost:5173", schemes = listOf("http", "httpss"))
+        allowHost("localhost:5173", schemes = listOf("http", "https"))
 
         // This is the crucial part that works with `credentials: 'include'`
         allowCredentials = true
@@ -31,7 +32,9 @@ fun Application.configureHttpServer() {
         anyHost() // @TODO: Don't do this in production if possible. Try to limit it.
     }
     install(ContentNegotiation) {
-        json()
+        json(Json{
+            ignoreUnknownKeys = true
+        })
     }
 
     if (environment.isLocalMode) {

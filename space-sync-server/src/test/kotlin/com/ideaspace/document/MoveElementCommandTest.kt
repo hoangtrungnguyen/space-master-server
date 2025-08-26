@@ -60,8 +60,7 @@ class MoveElementCommandTest {
             docId = docId,
             processId = processId,
             userId = 123L,
-            sessionId = 456L,
-            clientId = 789L,
+            windowId = 789L,
             payload = moveElementPayload
         )
 
@@ -103,8 +102,7 @@ class MoveElementCommandTest {
                 docId = docId,
                 processId = processId,
                 userId = 123L,
-                sessionId = 456L,
-                clientId = 789L,
+                windowId = 789L,
                 payload = moveElementPayload
             )
 
@@ -163,8 +161,7 @@ class MoveElementCommandTest {
                 docId = docId,
                 processId = processId,
                 userId = 123L,
-                sessionId = 456L,
-                clientId = 789L,
+                windowId = 789L,
                 payload = moveElementPayload
             )
 

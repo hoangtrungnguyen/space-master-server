@@ -1,7 +1,7 @@
 package com.ideaspace.document
 
+import com.ideaspace.config.AuthPrincipal
 import com.ideaspace.core.dto.DocumentDTO
-import com.ideaspace.core.dto.toDTO
 import com.ideaspace.core.kafkaMessage.DocumentEventProducer
 import com.ideaspace.core.kafkaMessage.InitSyncEventValue
 import com.ideaspace.core.kafkaMessage.InitSyncPayload
@@ -14,8 +14,6 @@ import com.ideaspace.core.models.toDTO
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import io.ktor.server.plugins.di.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import java.util.*
@@ -25,6 +23,7 @@ import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class, ExperimentalTime::class)
 class CreateDocumentCommand(
+    val principal: AuthPrincipal,
     val document: CreateDocumentRequest
 ) {
 
@@ -38,8 +37,8 @@ class CreateDocumentCommand(
             uuid = UUID(0, 0),
             revId = -1,
             title = document.title,
-            creatorId = 1,
-            ownerId = 1,
+            creatorId = principal.user.id,
+            ownerId = principal.user.id,
             createdAt = Clock.System.now(),
             lastModifiedAt = Clock.System.now(),
             metadata = null,
@@ -66,14 +65,11 @@ class CreateDocumentCommand(
             docId = doc.id,
             processId = 2, // TODO: Generate process ID
             userId = 1, // TODO: Get from context
-            sessionId = 1, // TODO: Get from context
-            clientId = 1, // TODO: Get from context
-            payload = InitSyncPayload()
+            windowId = 1, // TODO: Get from context
         )
 
-        withContext(Dispatchers.IO) {
-            documentEventProducer.sendEvent(doc.id, event)
-        }
+        documentEventProducer.sendEvent(doc.id, event)
+
         return doc.toDTO(root)
     }
 

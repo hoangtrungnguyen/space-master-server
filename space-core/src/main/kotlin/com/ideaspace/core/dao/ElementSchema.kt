@@ -6,6 +6,7 @@ import com.ideaspace.com.ideaspace.core.dao.CurrentTimestamp
 import com.ideaspace.core.models.Element
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.UUIDTable
@@ -23,9 +24,9 @@ object ElementTable: UUIDTable("elements", "uuid") {
     val docId = long("doc_id").references(DocumentTable.id)
     val parentUuid = uuid("parent_uuid").references(id, onDelete = ReferenceOption.CASCADE,
         onUpdate = ReferenceOption.CASCADE).nullable()
-    val metadata = jsonb<JsonElement>("metadata", Json, JsonElement.serializer()).nullable()
+    val metadata = jsonb<JsonObject>("metadata", Json, JsonObject.serializer()).nullable()
     val type = varchar("type", 255)
-    val value = jsonb<JsonElement>("value", Json, JsonElement.serializer())
+    val value = jsonb<JsonObject>("value", Json, JsonObject.serializer())
     val deletedAt = timestamp("deleted_at").nullable()
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp())
 }

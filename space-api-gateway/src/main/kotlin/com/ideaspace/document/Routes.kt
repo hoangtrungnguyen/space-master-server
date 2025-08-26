@@ -10,7 +10,9 @@ import com.ideaspace.core.models.Process
 import com.ideaspace.core.models.ProcessKey
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ProcessRepo
+import com.ideaspace.session.DocumentChannelInput
 import com.ideaspace.session.DocumentConnection
+import com.ideaspace.session.DocumentFlowUpChange
 import com.ideaspace.session.SessionManager
 import io.ktor.http.*
 import io.ktor.server.auth.*
@@ -32,9 +34,10 @@ fun Route.documentManagementRoutes() {
     authenticate("auth-session") {
 
         post("/api/documents/create") {
+            val principal = call.principal<AuthPrincipal>()!!
             val request = call.receive<CreateDocumentRequest>()
 
-            val command = CreateDocumentCommand(request)
+            val command = CreateDocumentCommand(principal, request)
             val result = command.execute(application.dependencies)
 
             call.respond(status = HttpStatusCode.OK, result)
@@ -146,15 +149,16 @@ fun Route.documentChangeRoutes() {
                     if (frame is Frame.Text) {
                         try {
                             val frameText = frame.readText()
-                            val event = Json.decodeFromString<DocumentSyncEventValue>(frameText)
-                            docEventProducer.sendEvent(doc.id, event)
-
+                            val event = Json.decodeFromString<DocumentChannelInput>(frameText)
+                            if (event is DocumentFlowUpChange) {
+                                 docEventProducer.sendEvent(doc.id, event.toDocumentSyncEventValue(process))
+                            }
                             send(
                                 Frame.Text(
                                     Json.encodeToString(
                                         mapOf(
                                             "type" to "success",
-                                            "message" to "Received event from process ${event.processId}"
+                                            "message" to "Received event ${event.messageType} from window ${process.windowId}"
                                         )
                                     )
                                 )

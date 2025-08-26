@@ -1,15 +1,11 @@
 package com.ideaspace.document
 
-import com.ideaspace.core.kafkaMessage.EditDocEventValue
-import com.ideaspace.core.kafkaMessage.MoveElementPayload
-import com.ideaspace.core.kafkaMessage.RemoveElementPayload
-import com.ideaspace.core.redis.toRedisDocumentEvent
+import com.ideaspace.core.kafkaMessage.MoveElementEventValue
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.core.utils.LogData
 import com.ideaspace.workers.DocumentStorage
 import com.ideaspace.workers.LogPublisher
-import io.lettuce.core.search.arguments.SugAddArgs.Builder.payload
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
@@ -20,7 +16,7 @@ import kotlin.time.ExperimentalTime
 // from element to different group or no-group
 @OptIn(ExperimentalTime::class)
 class MoveElementCommand(
-    val editDocEventValue: EditDocEventValue,
+    val editDocEventValue: MoveElementEventValue,
     val docId: Long,
     val processId: Long,
     val documentRedisPublisher: DocumentRedisPublisher,
@@ -31,8 +27,7 @@ class MoveElementCommand(
 ) : BaseDocCommand{
 
    override suspend fun execute() {
-        val removeElementPayload = editDocEventValue.payload as MoveElementPayload
-        val element = removeElementPayload.element
+        val element = editDocEventValue
         val document = documentStorage.documentsMap[docId]!!
 
         val prevElementRAM = document.searchElement(element.uuid)
@@ -71,7 +66,7 @@ class MoveElementCommand(
 
         //publish changes
         val redisEntryId =
-            documentRedisPublisher.publishEditDocEvent(docId, processId, editDocEventValue.toRedisDocumentEvent())
+            documentRedisPublisher.publishEditDocEvent(docId, processId, editDocEventValue)
         documentRepository.saveLatestRedisEntry(docId, redisEntryId)
 
         println("✅ Moved element ${element.uuid}")
