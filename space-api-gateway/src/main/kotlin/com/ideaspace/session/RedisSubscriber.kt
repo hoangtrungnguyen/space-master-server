@@ -86,7 +86,7 @@ class RedisSubscriber(
                         val entries = dataConnection.sync().xrevrange(streamKey, unbounded(), Limit.from(1))
                         val latestEntry = entries.firstOrNull()
                         if (latestEntry != null) {
-                            onMessage(StreamAddEntry(latestEntry.id))
+                            onMessage(StreamAddEntry(streamEntryId = latestEntry.id))
                         } else {
 
                         }

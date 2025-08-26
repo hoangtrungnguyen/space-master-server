@@ -40,12 +40,15 @@ enum class MessageType {
 @Serializable
 @JsonClassDiscriminator("messageType")
 sealed class DocumentChannelInput {
+    abstract val messageId: String
     abstract val messageType: MessageType
 }
 
 @Serializable
 @JsonClassDiscriminator("messageType")
-sealed class DocumentChannelOutput
+sealed class DocumentChannelOutput {
+    abstract val replyTo: String
+}
 
 // region Document Stream Api
 
@@ -57,6 +60,7 @@ sealed class DocumentFlowUpChange() : DocumentChannelInput() {
 @Serializable
 @SerialName("INIT_SYNC")
 class InitSyncInput(
+    override val messageId: String,
     @Transient
     override val messageType: MessageType = MessageType.INIT_SYNC
 ) : DocumentFlowUpChange() {
@@ -74,6 +78,7 @@ class InitSyncInput(
 @Serializable
 @SerialName("ADD_ELEMENT")
 data class AddElementInput (
+    override val messageId: String,
     @Transient
     override val messageType: MessageType = MessageType.ADD_ELEMENT,
     @Serializable(UUIDToString::class)
@@ -103,6 +108,7 @@ data class AddElementInput (
 @Serializable
 @SerialName("EDIT_ELEMENT")
 data class EditElementInput (
+    override val messageId: String,
     @Transient
     override val messageType: MessageType = MessageType.EDIT_ELEMENT,
     @Serializable(UUIDToString::class)
@@ -130,6 +136,7 @@ data class EditElementInput (
 @Serializable
 @SerialName("MOVE_ELEMENT")
 data class MoveElementInput (
+    override val messageId: String,
     @Transient
     override val messageType: MessageType = MessageType.MOVE_ELEMENT,
     @Serializable(UUIDToString::class)
@@ -153,6 +160,7 @@ data class MoveElementInput (
 @Serializable
 @SerialName("REMOVE_ELEMENT")
 data class RemoveElementInput (
+    override val messageId: String,
     @Transient
     override val messageType: MessageType = MessageType.REMOVE_ELEMENT,
     @Serializable(UUIDToString::class)
@@ -174,6 +182,7 @@ data class RemoveElementInput (
 @Serializable
 @SerialName("SAVE_DOC")
 class SaveDocInput(
+    override val messageId: String,
     @Transient
     override val messageType: MessageType = MessageType.SAVE_DOC
 ) : DocumentFlowUpChange() {
@@ -192,6 +201,7 @@ class SaveDocInput(
 @Serializable
 @SerialName("FINISH_SYNC")
 class FinishSyncInput(
+    override val messageId: String,
     @Transient
     override val messageType: MessageType = MessageType.FINISH_SYNC
 ) : DocumentFlowUpChange() {
@@ -209,6 +219,7 @@ class FinishSyncInput(
 @Serializable
 @SerialName("STREAM_ADD_ENTRY")
 data class StreamAddEntry(
+    override val replyTo: String = "NONE",
     @SerialName("seid")
     val streamEntryId: String
 ) : DocumentChannelOutput()
@@ -216,6 +227,7 @@ data class StreamAddEntry(
 @Serializable
 @SerialName("PULL_STREAM")
 data class PullStreamInput(
+    override val messageId: String,
     @Transient
     override val messageType: MessageType = MessageType.PULL_STREAM,
     @SerialName("seid")
@@ -226,7 +238,15 @@ data class PullStreamInput(
 @Serializable
 @SerialName("STREAM_ENTRIES")
 data class StreamEntriesOutput(
+    override val replyTo: String,
     val entries: List<DocumentSyncEventValue>
 ) : DocumentChannelOutput()
 
 // endregion
+
+@Serializable
+@SerialName("ACK")
+data class Acknowledgement(
+    override val replyTo: String,
+    val message: String
+) : DocumentChannelOutput()

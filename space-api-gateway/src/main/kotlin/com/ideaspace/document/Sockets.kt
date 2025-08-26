@@ -3,16 +3,19 @@
 package com.ideaspace.document
 
 import com.ideaspace.session.SessionManager
+import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.server.application.*
 import io.ktor.server.plugins.di.*
 import io.ktor.server.websocket.*
 import io.lettuce.core.RedisClient
+import kotlinx.serialization.json.Json
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
 
 suspend fun Application.configureSockets() {
     install(WebSockets) {
+        contentConverter = KotlinxWebsocketSerializationConverter(Json)
         pingPeriod = 15.seconds
         timeout = 15.seconds
         maxFrameSize = 64 * 1024 // 64KB max frame size for security

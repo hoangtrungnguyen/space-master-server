@@ -10,9 +10,12 @@ import com.ideaspace.core.models.Process
 import com.ideaspace.core.models.ProcessKey
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ProcessRepo
+import com.ideaspace.session.Acknowledgement
 import com.ideaspace.session.DocumentChannelInput
+import com.ideaspace.session.DocumentChannelOutput
 import com.ideaspace.session.DocumentConnection
 import com.ideaspace.session.DocumentFlowUpChange
+import com.ideaspace.session.PullStreamInput
 import com.ideaspace.session.SessionManager
 import io.ktor.http.*
 import io.ktor.server.auth.*
@@ -150,19 +153,19 @@ fun Route.documentChangeRoutes() {
                         try {
                             val frameText = frame.readText()
                             val event = Json.decodeFromString<DocumentChannelInput>(frameText)
-                            if (event is DocumentFlowUpChange) {
-                                 docEventProducer.sendEvent(doc.id, event.toDocumentSyncEventValue(process))
+                            when (event) {
+                                is DocumentFlowUpChange -> {
+                                    docEventProducer.sendEvent(doc.id, event.toDocumentSyncEventValue(process))
+                                    sendSerialized<DocumentChannelOutput>(Acknowledgement(
+                                        replyTo = event.messageId,
+                                        message = "Received event ${event.messageType} from window ${process.windowId}"
+                                    ))
+                                }
+
+                                is PullStreamInput -> {
+
+                                }
                             }
-                            send(
-                                Frame.Text(
-                                    Json.encodeToString(
-                                        mapOf(
-                                            "type" to "success",
-                                            "message" to "Received event ${event.messageType} from window ${process.windowId}"
-                                        )
-                                    )
-                                )
-                            )
 
                         } catch (e: Exception) {
                             e.printStackTrace()
