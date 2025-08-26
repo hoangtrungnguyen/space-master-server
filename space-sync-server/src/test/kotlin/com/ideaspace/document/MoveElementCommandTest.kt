@@ -2,6 +2,7 @@ package com.ideaspace.document
 
 import com.ideaspace.core.kafkaMessage.EditDocEventValue
 import com.ideaspace.core.kafkaMessage.MoveElement
+import com.ideaspace.core.kafkaMessage.MoveElementEventValue
 import com.ideaspace.core.kafkaMessage.MoveElementPayload
 import com.ideaspace.core.ram.DocumentRAM
 import com.ideaspace.core.ram.ElementRAM
@@ -54,14 +55,13 @@ class MoveElementCommandTest {
     fun `execute should log a warning if element not found`() = runTest {
         // Given
         val elementUuid = UUID.randomUUID()
-        val moveElement = MoveElement(uuid = elementUuid, parentUuid = null)
-        val moveElementPayload = MoveElementPayload(element = moveElement)
-        val editDocEventValue = EditDocEventValue(
+        val editDocEventValue = MoveElementEventValue(
             docId = docId,
             processId = processId,
             userId = 123L,
             windowId = 789L,
-            payload = moveElementPayload
+            uuid = elementUuid,
+            parentUuid = null
         )
 
         every { documentRam.searchElement(elementUuid) } returns null
@@ -96,20 +96,19 @@ class MoveElementCommandTest {
             val elementUuid = UUID.randomUUID()
             val newParentUuid = UUID.randomUUID()
 
-            val moveElement = MoveElement(uuid = elementUuid, parentUuid = newParentUuid)
-            val moveElementPayload = MoveElementPayload(element = moveElement)
-            val editDocEventValue = EditDocEventValue(
+            val editDocEventValue = MoveElementEventValue(
                 docId = docId,
                 processId = processId,
                 userId = 123L,
                 windowId = 789L,
-                payload = moveElementPayload
+                uuid = elementUuid,
+                parentUuid = newParentUuid
             )
 
             val elementToMove = ElementRAM(
                 uuid = elementUuid,
                 value = JsonNull,
-                metadata = JsonNull,
+                metadata = null,
                 type = "shape",
                 parentUuid = null,
                 element = null,
@@ -155,20 +154,19 @@ class MoveElementCommandTest {
             // Given
             val elementUuid = UUID.randomUUID()
 
-            val moveElement = MoveElement(uuid = elementUuid, parentUuid = null)
-            val moveElementPayload = MoveElementPayload(element = moveElement)
-            val editDocEventValue = EditDocEventValue(
+            val editDocEventValue = MoveElementEventValue(
                 docId = docId,
                 processId = processId,
                 userId = 123L,
                 windowId = 789L,
-                payload = moveElementPayload
+                uuid = elementUuid,
+                parentUuid = null
             )
 
             val elementToMove = ElementRAM(
                 uuid = elementUuid,
                 value = JsonNull,
-                metadata = JsonNull,
+                metadata = null,
                 type = "shape",
                 parentUuid = UUID.randomUUID(), // Assume it had a parent before
                 element = null,

@@ -1,6 +1,7 @@
 package com.ideaspace.document
 
 import com.ideaspace.core.kafkaMessage.AddElement
+import com.ideaspace.core.kafkaMessage.AddElementEventValue
 import com.ideaspace.core.kafkaMessage.AddElementPayload
 import com.ideaspace.core.kafkaMessage.EditDocEventValue
 import com.ideaspace.core.ram.DocumentRAM
@@ -12,6 +13,7 @@ import com.ideaspace.workers.LogPublisher
 import io.mockk.*
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -72,16 +74,17 @@ class AddElementCommandTest {
     fun `execute should log a warning and not add element if element uuid already exists`() = runTest {
             // Given
             val existingUuid = UUID.randomUUID()
-            val testEvent = createTestEvent(parentUuid = null).copy(
-                payload = AddElementPayload(
-                    element = AddElement(
-                        uuid = existingUuid,
-                        parentUuid = null,
-                        metadata = JsonNull,
-                        type = "shape",
-                        value = JsonNull
-                    )
-                )
+
+            val testEvent = AddElementEventValue(
+                docId = docId,
+                processId = processId,
+                userId = 1L,
+                windowId = 1L,
+                uuid = existingUuid,
+                parentUuid = null,
+                metadata = null,
+                type = "shape",
+                value = JsonObject(mapOf())
             )
 
         every { documentRam.exist(existingUuid) } returns true
@@ -113,7 +116,17 @@ class AddElementCommandTest {
         @Test
         fun `execute should add a root element when parentUuid is null`() = runTest {
             // Given
-            val testEvent = createTestEvent(parentUuid = null)
+            val testEvent = AddElementEventValue(
+                docId = docId,
+                processId = processId,
+                userId = 1L,
+                windowId = 1L,
+                uuid = UUID.randomUUID(),
+                parentUuid = null,
+                metadata = null,
+                type = "shape",
+                value = JsonObject(mapOf())
+            )
             val command = AddElementCommand(
                 testEvent, docId, processId,
                 documentRedisPublisher, elementRepo, documentStorage, logPublisher,
@@ -129,7 +142,7 @@ class AddElementCommandTest {
             coVerify(exactly = 1) { elementRepo.insert(any()) }
             coVerify(exactly = 1) { documentRedisPublisher.publishEditDocEvent(docId, processId, any()) }
             coVerify(exactly = 1) { docRepo.saveLatestRedisEntry(docId, "redis-entry-id") }
-            assertEquals((testEvent.payload as AddElementPayload).element.uuid, slot.captured.uuid)
+            assertEquals(testEvent.uuid, slot.captured.uuid)
         }
     }
 
@@ -141,23 +154,22 @@ class AddElementCommandTest {
         fun `execute should add a child element when parentUuid is not null`() = runTest {
             // Given
             val parentUuid = UUID.randomUUID()
-            val testEvent = createTestEvent(parentUuid = parentUuid)
+            val testEvent = AddElementEventValue(
+                docId = docId,
+                processId = processId,
+                userId = 1L,
+                windowId = 1L,
+                uuid = UUID.randomUUID(),
+                parentUuid = parentUuid,
+                metadata = null,
+                type = "shape",
+                value = JsonObject(mapOf())
+            )
             val command = AddElementCommand(
                 testEvent, docId, processId,
                 documentRedisPublisher, elementRepo, documentStorage, logPublisher, docRepo
             )
             val slot = slot<ElementRAM>()
-            val parentElement = ElementRAM(
-                uuid = parentUuid,
-                value = JsonNull,
-                metadata = JsonNull,
-                type = "shape",
-                parentUuid = null,
-                element = null,
-                children = LinkedHashMap(),
-                path = "",
-                deletedAt = null
-            )
             every { documentRam.exist(parentUuid) } returns true
             every { documentRam.addElement(any()) } returnsArgument 0
             // When
@@ -168,7 +180,7 @@ class AddElementCommandTest {
             coVerify(exactly = 1) { elementRepo.insert(any()) }
             coVerify(exactly = 1) { documentRedisPublisher.publishEditDocEvent(docId, processId, any()) }
             coVerify(exactly = 1) { docRepo.saveLatestRedisEntry(docId, "redis-entry-id") }
-            assertEquals((testEvent.payload as AddElementPayload).element.uuid, slot.captured.uuid)
+            assertEquals(testEvent.uuid, slot.captured.uuid)
             assertEquals(parentUuid, slot.captured.parentUuid)
         }
     }
