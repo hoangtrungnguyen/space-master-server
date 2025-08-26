@@ -18,7 +18,14 @@ fun Route.documentManagementRoutes() {
         post("/api/documents/create") {
             val request = call.receive<CreateDocumentRequest>()
 
-            val command = CreateDocumentCommand(request)
+            val principal = call.principal<AuthPrincipal>()!!
+            val user = principal.user
+
+            val command = CreateDocumentCommand(
+                request.copy(
+                    userId = user.id,
+                )
+            )
             val result = command.execute(application.dependencies)
 
             call.respond(status = HttpStatusCode.OK, result)

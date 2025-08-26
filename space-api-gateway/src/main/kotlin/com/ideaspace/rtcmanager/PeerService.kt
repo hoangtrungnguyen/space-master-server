@@ -9,39 +9,29 @@ import io.ktor.websocket.*
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
 
-@Serializable
-data class RTCData(
-    val peerCount: Int,
-    val setOfPeer: Set<Process>,
-    val removedPeer: Process? = null,
-    val newPeer: Process? = null,
-) {
-    val type get(): String = "RTCData"
-}
 
-interface RTCManager {
+interface RTCPeerManager {
     suspend fun publishPeer(process: Process)
     suspend fun removePeer(process: Process)
 }
 
 //TODO: Redis RTC Manager
 
-class InMemoryRTCManagerImpl(
+class InMemoryRTCPeerManagerImpl(
     val sessionManager: SessionManager
-) : RTCManager {
-    val rtcPool: MutableMap<Long, MutableSet<Process>> = HashMap()
+) : RTCPeerManager {
+    val peersPool: MutableMap<Long, MutableSet<Process>> = HashMap()
 
     override suspend fun publishPeer(process: Process) {
         val docId = process.docId
-        var setOfPeer = rtcPool[docId]
+        var setOfPeer = peersPool[docId]
         if (setOfPeer != null) {
             setOfPeer.add(process)
-            rtcPool[docId] = setOfPeer
+            peersPool[docId] = setOfPeer
         } else {
             val mutableSet = mutableSetOf<Process>(process)
-            rtcPool[docId] = mutableSet
+            peersPool[docId] = mutableSet
             setOfPeer = mutableSet
         }
 
@@ -50,34 +40,35 @@ class InMemoryRTCManagerImpl(
                 for (connection in connections) {
                     launch(connection.webSocket.coroutineContext) {
                         connection.send(
-                            RTCData(
+                            ListPeerDocEvent(
                                 setOfPeer.size,
-                                newPeer = process,
-                                setOfPeer = setOfPeer,
+                                newPeer = process.peerUuid,
+                                listPeer = setOfPeer.map { it.peerUuid.toString() }.toList(),
                             )
                         )
                     }
                 }
             }
         }
-        println("rtcPool.values.size ${rtcPool.values.size}")
+        println("rtcPool.values.size ${peersPool.values.size}")
     }
 
     override suspend fun removePeer(process: Process) {
+        println("⚠️ removing peer: $process")
         val docId = process.docId
-        val setOfPeer = rtcPool[docId]
+        val setOfPeer = peersPool[docId]
         if (setOfPeer != null) {
             setOfPeer.remove(process)
-            rtcPool[docId] = setOfPeer
+            peersPool[docId] = setOfPeer
             sessionManager.getConnections(docId)?.values?.let { connections ->
                 coroutineScope {
                     for (connection in connections) {
                         launch(connection.webSocket.coroutineContext) {
-                            connection.send<RTCData>(
-                                RTCData(
+                            connection.send<ListPeerDocEvent>(
+                                ListPeerDocEvent(
                                     setOfPeer.size,
-                                    removedPeer = process,
-                                    setOfPeer = setOfPeer,
+                                    removedPeer = process.peerUuid,
+                                    listPeer = setOfPeer.map { it.peerUuid.toString() }.toList(),
                                 )
                             )
                         }

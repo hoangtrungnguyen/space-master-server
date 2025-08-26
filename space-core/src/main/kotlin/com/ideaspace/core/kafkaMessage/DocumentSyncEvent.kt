@@ -2,6 +2,8 @@
 
 package com.ideaspace.core.kafkaMessage
 
+import com.ideaspace.core.dto.NullableUUIDSerializer
+import com.ideaspace.core.dto.PeerDTO
 import com.ideaspace.core.dto.UUIDToString
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
@@ -36,6 +38,17 @@ sealed class DocumentSyncEventValue : DocumentEvent() {
 }
 
 class UnknownDocEvent() : DocumentEvent()
+
+@Serializable
+data class ListPeerDocEvent(
+    val peerCount: Int,
+    @Serializable(with = UUIDToString::class)
+    val removedPeer: UUID? = null,
+    @Serializable(with = UUIDToString::class)
+    val newPeer: UUID? = null,
+    val listPeer: List<String>,
+    val type: String = "PEER_LIST"
+) : DocumentEvent(), PeerDTO
 
 @Serializable
 @SerialName("INIT_SYNC")
@@ -75,7 +88,6 @@ data class SaveDocEventValue(
 ) : DocumentSyncEventValue()
 
 
-
 @Serializable
 @SerialName("FINISH_SYNC")
 data class FinishSyncEventValue(
@@ -91,7 +103,10 @@ data class FinishSyncEventValue(
 sealed class DocumentSyncPayload
 
 @Serializable
-open class InitSyncPayload() : DocumentSyncPayload()
+open class InitSyncPayload(
+    @Serializable(with = NullableUUIDSerializer::class)
+    val peerUuid: UUID? = null,
+) : DocumentSyncPayload()
 
 @Serializable
 @JsonClassDiscriminator("element_op")
@@ -124,7 +139,7 @@ enum class ElementOp {
 @Serializable
 @SerialName("ADD_ELEMENT")
 data class AddElementPayload(
-    @Transient             override val elementOp: ElementOp = ElementOp.ADD_ELEMENT,
+    @Transient override val elementOp: ElementOp = ElementOp.ADD_ELEMENT,
     @SerialName("element") override val element: AddElement
 ) : EditDocPayload()
 
@@ -132,21 +147,21 @@ data class AddElementPayload(
 @Serializable
 @SerialName("EDIT_ELEMENT")
 data class EditElementPayload(
-    @Transient             override val elementOp: ElementOp = ElementOp.EDIT_ELEMENT,
+    @Transient override val elementOp: ElementOp = ElementOp.EDIT_ELEMENT,
     @SerialName("element") override val element: EditElement
 ) : EditDocPayload()
 
 @Serializable
 @SerialName("MOVE_ELEMENT")
 data class MoveElementPayload(
-    @Transient             override val elementOp: ElementOp = ElementOp.MOVE_ELEMENT,
+    @Transient override val elementOp: ElementOp = ElementOp.MOVE_ELEMENT,
     @SerialName("element") override val element: MoveElement
 ) : EditDocPayload()
 
 @Serializable
 @SerialName("REMOVE_ELEMENT")
 data class RemoveElementPayload(
-    @Transient             override val elementOp: ElementOp = ElementOp.REMOVE_ELEMENT,
+    @Transient override val elementOp: ElementOp = ElementOp.REMOVE_ELEMENT,
     @SerialName("element") override val element: RemoveElement
 ) : EditDocPayload()
 
@@ -160,7 +175,7 @@ sealed class Element {
 }
 
 @Serializable
-data class AddElement (
+data class AddElement(
     @Serializable(with = UUIDToString::class)
     override val uuid: UUID,
     @SerialName("parent_uuid") @Serializable(with = UUIDToString::class)
@@ -171,7 +186,7 @@ data class AddElement (
 ) : Element()
 
 @Serializable
-data class EditElement (
+data class EditElement(
     @Serializable(with = UUIDToString::class)
     override val uuid: UUID,
     val metadata: JsonElement = JsonObject(emptyMap()),
@@ -180,7 +195,7 @@ data class EditElement (
 ) : Element()
 
 @Serializable
-data class MoveElement (
+data class MoveElement(
     @Serializable(with = UUIDToString::class)
     override val uuid: UUID,
     @SerialName("parent_uuid") @Serializable(with = UUIDToString::class)
@@ -188,7 +203,7 @@ data class MoveElement (
 ) : Element()
 
 @Serializable
-data class RemoveElement (
+data class RemoveElement(
     @Serializable(with = UUIDToString::class)
     override val uuid: UUID,
 ) : Element()

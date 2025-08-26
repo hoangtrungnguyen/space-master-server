@@ -6,6 +6,7 @@ import com.ideaspace.document.configureSockets
 import com.ideaspace.document.documentManagementRoutes
 import com.ideaspace.document.documentWebSocketRoutes
 import com.ideaspace.rtcmanager.configureWebRTC
+import com.ideaspace.rtcmanager.peerSignaling
 import com.ideaspace.user.userManagementRoutes
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
@@ -29,5 +30,6 @@ suspend fun Application.module() {
         userManagementRoutes()
         documentManagementRoutes()
         documentWebSocketRoutes()
+        peerSignaling()
     }
 }

@@ -55,14 +55,15 @@ class CreateDocumentCommand(
             deletedAt = null
         ))
 
+        assert(request.userId > -1) {}
 
         val event = InitSyncEventValue(
             syncOp = SyncOperation.INIT_SYNC,
             docId = doc.id,
-            processId = request.processId,
+            processId = -1,
             userId = request.userId, // TODO: Get from context
-            sessionId = request.sessionId, // TODO: Get from context
-            clientId = request.clientId, // TODO: Get from context
+            sessionId = -1, // TODO: Get from context
+            clientId = -1, // TODO: Get from context
             payload = InitSyncPayload()
         )
 
@@ -78,8 +79,5 @@ class CreateDocumentCommand(
 data class CreateDocumentRequest(
     val title: String,
     val documentType: DocumentType,
-    val processId: Long,
-    val userId: Long,
-    val sessionId: Long,
-    val clientId: Long
+    val userId: Long = -1,
 )

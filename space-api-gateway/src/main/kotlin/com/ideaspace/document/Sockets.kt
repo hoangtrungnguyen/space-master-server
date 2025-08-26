@@ -5,12 +5,13 @@ package com.ideaspace.document
 import com.ideaspace.config.AuthPrincipal
 import com.ideaspace.core.kafkaMessage.DocumentEventProducer
 import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
+import com.ideaspace.core.kafkaMessage.InitSyncEventValue
 import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.models.Process
 import com.ideaspace.core.models.ProcessKey
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ProcessRepo
-import com.ideaspace.rtcmanager.RTCManager
+import com.ideaspace.rtcmanager.RTCPeerManager
 import com.ideaspace.session.DocumentConnection
 import com.ideaspace.session.SessionManager
 import io.ktor.server.application.*
@@ -64,7 +65,7 @@ fun Route.documentWebSocketRoutes() {
             val docEventProducer = d.resolve<DocumentEventProducer>()
             val docRepo = d.resolve<CrudDocumentRepository>()
             val processRepo = d.resolve<ProcessRepo>()
-            val rtcManager = d.resolve<RTCManager>()
+            val rtcPeerManager = d.resolve<RTCPeerManager>()
 
             // -----------------------------------------------
             // These setups happen once for every connection
@@ -98,7 +99,7 @@ fun Route.documentWebSocketRoutes() {
 
             // docId, userId, windowId
 
-            val process = processRepo.findByKey(processKey) ?: processRepo.create(
+            var process = processRepo.findByKey(processKey) ?: processRepo.create(
                 Process(
                     id = -1,
                     docId = doc.id,
@@ -117,8 +118,6 @@ fun Route.documentWebSocketRoutes() {
                 )
             )
 
-            rtcManager.publishPeer(process)
-
             // Send a welcome message to confirm successful connection
             send(
                 Frame.Text(
@@ -135,10 +134,21 @@ fun Route.documentWebSocketRoutes() {
             val messageFlow: Flow<Any> =
                 incoming.consumeAsFlow()
                     .filterIsInstance<Frame.Text>() // Process only text frames
-                    .map { frame ->
+                    .mapNotNull { frame ->
                         val frameText = frame.readText()
-                        val event = Json.decodeFromString<DocumentSyncEventValue>(frameText)
+                        var event = Json.decodeFromString<DocumentSyncEventValue>(frameText)
+                        if (event is InitSyncEventValue) {
+                            process = process.copy(
+                                peerUuid = event.payload.peerUuid
+                            )
+                            rtcPeerManager.publishPeer(process)
+                            event = event.copy(
+                                docId = doc.id,
+                                userId = userId,
+                            )
+                        }
                         docEventProducer.sendEvent(doc.id, event)
+//                        send(Frame.Text("Sending event $event"))
                         println("Sent event for $docUuid. Event: $event to REDIS")
                         event
                     }.catch { cause ->
@@ -159,6 +169,7 @@ fun Route.documentWebSocketRoutes() {
                                 println("Exception: ${cause.localizedMessage}")
                             }
                         } catch (t: Exception) {
+                            t.printStackTrace()
                             throw t
                         }
                     }.onCompletion { cause ->
@@ -169,7 +180,7 @@ fun Route.documentWebSocketRoutes() {
                             println("Reason: ${cause.localizedMessage}")
                         }
                         sessionManager.unregister(processKey)
-                        rtcManager.removePeer(process)
+                        rtcPeerManager.removePeer(process)
                         println("WebSocket cleanup finished for user: ${principal.user.loginName}")
                     }
 
@@ -177,5 +188,6 @@ fun Route.documentWebSocketRoutes() {
             closeReason.await()
         }
     }
+
 
 }
