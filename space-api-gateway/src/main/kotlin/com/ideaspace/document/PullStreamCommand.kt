@@ -15,9 +15,7 @@ import io.lettuce.core.Range.Boundary.unbounded
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 
@@ -27,7 +25,7 @@ class PullStreamContext(
 )
 
 class PullStreamCommand(
-    val process: Process,
+    val currentProcess: Process,
     input: PullStreamInput,
 ) {
     val messageId = input.messageId
@@ -35,7 +33,7 @@ class PullStreamCommand(
     val count = input.count
 
     fun execute(context: PullStreamContext) : Any {
-        val streamKey = redisDocSyncEventsKey(process.docId)
+        val streamKey = redisDocSyncEventsKey(currentProcess.docId)
         val range = Range.from(including(streamCursor), unbounded())
         val limit = Limit.from(count)
         val streamMessages = context.redis.sync().xrange(streamKey, range, limit)
@@ -47,10 +45,13 @@ class PullStreamCommand(
             val body: Map<String, ByteArray?> = message.body
             val bytes: ByteArray? = body["bytes"]
             if (bytes != null) {
-                val entry  = Json.decodeFromStream<DocumentSyncEventValue>(bytes.inputStream())
-                entry.entryId = message.id
-                return@mapNotNull entry
-            } else null
+                val entry = Json.decodeFromStream<DocumentSyncEventValue>(bytes.inputStream())
+                if (entry.processId != currentProcess.id) {
+                    entry.entryId = message.id
+                    return@mapNotNull entry
+                }
+            }
+            return@mapNotNull null
         }
 
         return StreamEntriesOutput(
