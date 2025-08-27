@@ -16,7 +16,9 @@ import kotlin.time.ExperimentalTime
 
 suspend fun Application.configureSockets() {
     install(WebSockets) {
-        contentConverter = KotlinxWebsocketSerializationConverter(Json)
+        contentConverter = KotlinxWebsocketSerializationConverter(Json {
+            encodeDefaults = true
+        })
         pingPeriod = 15.seconds
         timeout = 15.seconds
         maxFrameSize = 64 * 1024 // 64KB max frame size for security

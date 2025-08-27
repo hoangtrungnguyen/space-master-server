@@ -6,7 +6,6 @@ import io.ktor.websocket.CloseReason.*
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -83,10 +82,10 @@ class SessionManager(
     /**
      * Handle incoming sync events from Redis and broadcast to connected clients
      */
-    private suspend fun handleSyncEvent(docId: Long, documentMessage: DocumentChannelOutput) {
+    private suspend fun handleSyncEvent(docId: Long, streamAddEntry: StreamAddEntry) {
         val connections = doc2process[docId]
         if (connections != null) {
-            val eventText = Json.encodeToString(documentMessage)
+            val eventText = ChannelJson.encodeToString(streamAddEntry)
             connections.values.forEach { documentConnection ->
                 try {
                     documentConnection.webSocket.send(Frame.Text(eventText))
