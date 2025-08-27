@@ -77,7 +77,7 @@ class RedisPeerManagerImpl(
                     allPeers.addAll(notConnectedPeer)
                     // send to all socket
                     sessionManager.getConnections(docId)?.forEach { conn ->
-                        conn.value.send(allPeers)
+                        conn.value.send(allPeers.toSet())
                     }
                 }
             }
@@ -92,10 +92,30 @@ class RedisPeerManagerImpl(
 
             if (peersInThis[docId]!!.isEmpty()) {
 
+                peerRedisSubscriber.publishListPeerEvent(
+                    docId,
+                    ListPeerOut(
+                        peersInOthers[docId]!!.size,
+                        peerUuid,
+                        listPeer = peersInOthers[docId]!!.toList(),
+                    )
+                )
                 peersInOthers.remove(docId)
+                peersInThis.remove(docId)
                 peerRedisSubscriber.unsubscribeFromPeerGroup(docId)
             } else {
+                val allPeers = mutableListOf<UUID>()
+                allPeers.addAll(peersInOthers[docId]!!)
+                allPeers.addAll(peersInThis[docId]!!)
 
+                peerRedisSubscriber.publishListPeerEvent(
+                    docId,
+                    ListPeerOut(
+                        allPeers.size,
+                        peerUuid,
+                        listPeer = allPeers.toList(),
+                    )
+                )
             }
         }
     }
