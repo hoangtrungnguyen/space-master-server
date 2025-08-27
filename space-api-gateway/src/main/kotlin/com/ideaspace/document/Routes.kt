@@ -3,8 +3,6 @@
 package com.ideaspace.document
 
 import com.ideaspace.config.AuthPrincipal
-import com.ideaspace.core.kafkaMessage.DocumentEventProducer
-import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.models.Process
 import com.ideaspace.core.models.ProcessKey
@@ -23,24 +21,22 @@ import io.ktor.server.plugins.di.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.websocket.*
-import io.ktor.websocket.*
-import io.ktor.websocket.CloseReason.Codes.*
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.serialization.json.Json
-import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 fun Route.documentManagementRoutes() {
     authenticate("auth-session") {
 
         post("/api/documents/create") {
-            val principal = call.principal<AuthPrincipal>()!!
             val request = call.receive<CreateDocumentRequest>()
 
-            val command = CreateDocumentCommand(principal, request)
+            val principal = call.principal<AuthPrincipal>()!!
+            val user = principal.user
+
+            val command = CreateDocumentCommand(
+                request.copy(
+                    userId = user.id,
+                )
+            )
             val result = command.execute(application.dependencies)
 
             call.respond(status = HttpStatusCode.OK, result)

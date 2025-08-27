@@ -2,6 +2,7 @@ package com.ideaspace.document
 
 import com.ideaspace.config.AuthPrincipal
 import com.ideaspace.core.dto.DocumentDTO
+import com.ideaspace.core.dto.toDTO
 import com.ideaspace.core.kafkaMessage.DocumentEventProducer
 import com.ideaspace.core.kafkaMessage.InitSyncEventValue
 import com.ideaspace.core.kafkaMessage.InitSyncPayload
@@ -63,9 +64,9 @@ class CreateDocumentCommand(
         val event = InitSyncEventValue(
             syncOp = SyncOperation.INIT_SYNC,
             docId = doc.id,
-            processId = 2, // TODO: Generate process ID
-            userId = 1, // TODO: Get from context
-            windowId = 1, // TODO: Get from context
+            processId = -1, // TODO: Generate process ID
+            userId = principal.user.id, // TODO: Get from context
+            windowId = -1, // TODO: Get from context
         )
 
         documentEventProducer.sendEvent(doc.id, event)
