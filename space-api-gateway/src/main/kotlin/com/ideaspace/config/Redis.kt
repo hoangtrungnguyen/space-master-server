@@ -1,8 +1,11 @@
 package com.ideaspace.config
 
+import com.ideaspace.core.redis.StringByteArrayCodec
 import io.ktor.server.application.*
 import io.ktor.server.plugins.di.*
 import io.lettuce.core.RedisClient
+import io.lettuce.core.api.StatefulRedisConnection
+import io.lettuce.core.pubsub.StatefulRedisPubSubConnection
 import kotlinx.coroutines.runBlocking
 
 fun Application.configureRedis() {
@@ -12,6 +15,20 @@ fun Application.configureRedis() {
         provide<RedisClient> {
             redisClient
         }
+
+        provide<StatefulRedisConnection<String, String>>("redis-string-string-connection") {
+            redisClient.connect()
+        }
+
+        provide<StatefulRedisConnection<String, ByteArray>>("redis-string-bytes-connection") {
+            redisClient.connect(StringByteArrayCodec())
+        }
+
+        provide<StatefulRedisPubSubConnection<String, String>>("redis-pub-sub-connection") {
+            redisClient.connectPubSub()
+        }
+
+
     }
     
     monitor.subscribe(ApplicationStopping) {

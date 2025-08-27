@@ -35,6 +35,8 @@ enum class MessageType {
     STREAM_ADD_ENTRY,
     PULL_STREAM,
     STREAM_ENTRIES,
+
+    ACK,
 }
 
 @Serializable
@@ -45,8 +47,8 @@ sealed class DocumentChannelInput {
 }
 
 @Serializable
-@JsonClassDiscriminator("messageType")
-sealed class DocumentChannelOutput {
+abstract class DocumentChannelOutput {
+    abstract val messageType: MessageType
     abstract val replyTo: String
 }
 
@@ -217,8 +219,8 @@ class FinishSyncInput(
 }
 
 @Serializable
-@SerialName("STREAM_ADD_ENTRY")
 data class StreamAddEntry(
+    override val messageType: MessageType = MessageType.STREAM_ADD_ENTRY,
     override val replyTo: String = "NONE",
     @SerialName("seid")
     val streamEntryId: String
@@ -232,21 +234,14 @@ data class PullStreamInput(
     override val messageType: MessageType = MessageType.PULL_STREAM,
     @SerialName("seid")
     val streamEntryId: String,
-    val count: Int
+    val count: Long
 ) : DocumentChannelInput()
-
-@Serializable
-@SerialName("STREAM_ENTRIES")
-data class StreamEntriesOutput(
-    override val replyTo: String,
-    val entries: List<DocumentSyncEventValue>
-) : DocumentChannelOutput()
 
 // endregion
 
 @Serializable
-@SerialName("ACK")
 data class Acknowledgement(
+    override val messageType: MessageType = MessageType.ACK,
     override val replyTo: String,
     val message: String
 ) : DocumentChannelOutput()

@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalSerializationApi::class)
+
 package com.ideaspace.document
 
 import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
@@ -7,7 +9,9 @@ import com.ideaspace.core.redis.RedisManager
 import com.ideaspace.core.redis.redisDocKey
 import com.ideaspace.core.redis.redisDocSyncEventsKey
 import io.lettuce.core.api.sync.RedisCommands
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
+import java.io.ByteArrayOutputStream
 
 class DocumentRedisPublisher(
     private val streamMaxLen: Long = 10_000L
@@ -20,7 +24,7 @@ class DocumentRedisPublisher(
 
         val redisKey = redisDocSyncEventsKey(docId)
 
-        val syncCommands: RedisCommands<String, String> = RedisManager.connection.sync()
+        val syncCommands: RedisCommands<String, ByteArray> = RedisManager.connection.sync()
 
         return syncCommands.startXAdd(redisDocumentEvent, redisKey, processId)
     }
@@ -29,7 +33,7 @@ class DocumentRedisPublisher(
         redisDocumentEvent: FinishSyncEventValue
     ) {
         val redisKey = redisDocSyncEventsKey(redisDocumentEvent.docId)
-        val syncCommands: RedisCommands<String, String> = RedisManager.connection.sync()
+        val syncCommands: RedisCommands<String, ByteArray> = RedisManager.connection.sync()
         syncCommands.startXAdd(redisDocumentEvent, redisKey, redisDocumentEvent.processId)
     }
 
@@ -37,51 +41,32 @@ class DocumentRedisPublisher(
         redisDocumentEvent: SaveDocEventValue
     ) {
         val redisKey = redisDocSyncEventsKey(redisDocumentEvent.docId )
-        val syncCommands: RedisCommands<String, String> = RedisManager.connection.sync()
+        val syncCommands: RedisCommands<String, ByteArray> = RedisManager.connection.sync()
         syncCommands.startXAdd(redisDocumentEvent, redisKey, redisDocumentEvent.processId)
     }
 
-    private fun RedisCommands<String, String>.startXAdd(
+    private fun RedisCommands<String, ByteArray>.startXAdd(
         redisDocumentEvent: DocumentSyncEventValue,
         redisKey: String,
         processId: Long
     ): String {
-        val jsonElement = Json.encodeToJsonElement(redisDocumentEvent)
-        if (jsonElement is JsonObject) {
-            val redisMap: Map<String, String> = jsonElement.jsonObject.mapValues { (_, value) ->
-                if (value is JsonPrimitive) {
-                    value.content
-                } else {
-                    Json.encodeToString(JsonElement.serializer(), value)
-                }
-            }
-            val messageId = this.xadd(redisKey, redisMap)
-            return messageId.also {
-                println("✅ Saved operation ${processId} to Redis stream '$redisKey' with message ID $messageId")
-            }
-        } else {
-            throw Exception("The provided event did not serialize to a JSON object, cannot publish to Redis stream.")
+        val value = ByteArrayOutputStream().use { outputStream ->
+            Json.encodeToStream(redisDocumentEvent, outputStream)
+            outputStream.toByteArray()
+        }
 
+        val messageId = this.xadd(redisKey, mapOf("bytes" to value))
+        return messageId.also {
+            println("✅ Saved operation ${processId} to Redis stream '$redisKey' with message ID $messageId")
         }
     }
 
-    // TODO DO NOT do this in sync server
     suspend fun publishDocProcess(
         docId: Long,
         processId: Long,
     ) {
+        // TODO DO NOT do this in sync server
         // TODO List of active processes of a document should have a proper key like 'ideaspace:doc:$docId:processes:active'
-        val redisKey = redisDocKey(docId)
-
-        val syncCommands: RedisCommands<String, String> = RedisManager.connection.sync()
-        // 4. Use the XADD command to publish the message
-        // The "*" tells Redis to generate a unique ID for this entry automatically.
         // TODO Should not be a stream, but a REDIS LIST. See redis list API for add/remove item from list.
-        val messageId = syncCommands.xadd(
-            redisKey,
-            mapOf("processId" to processId.toString())
-        )
-
-        println("✅ Saved processId ${processId} to Redis stream '$redisKey' with message ID $messageId")
     }
 }

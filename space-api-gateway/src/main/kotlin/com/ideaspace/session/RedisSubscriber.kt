@@ -4,7 +4,6 @@ package com.ideaspace.session
 import com.ideaspace.core.redis.redisDocSyncEventsKey
 import io.lettuce.core.Limit
 import io.lettuce.core.Range.unbounded
-import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.pubsub.RedisPubSubListener
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection
@@ -22,20 +21,15 @@ val logger: Logger = LoggerFactory.getLogger("RedisSubscriber")
  * Listens for events on keys matching the pattern: ideaspace:doc:<docId>:sync-events
  */
 class RedisSubscriber(
-    private val redisClient: RedisClient,
-    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val redis: StatefulRedisConnection<String, ByteArray>,
+    private val redisPubSub: StatefulRedisPubSubConnection<String, String>
 ) {
 
+    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val subscriptions = ConcurrentHashMap<Long, DocumentSubscription>()
-    private val dataConnection: StatefulRedisConnection<String, String> by lazy {
-        redisClient.connect()
-    }
-    private val pubSubConnection: StatefulRedisPubSubConnection<String, String> by lazy {
-        redisClient.connectPubSub()
-    }
 
     init {
-        dataConnection.async().configGet("notify-keyspace-events").thenAccept { result ->
+        redis.async().configGet("notify-keyspace-events").thenAccept { result ->
             val keyspaceConf = result.get("notify-keyspace-events") ?: ""
             if (keyspaceConf.contains('K') && keyspaceConf.contains('t')) {
                 logger.info("Keyspace events (K) are available for stream commands (t). " +
@@ -83,7 +77,7 @@ class RedisSubscriber(
                     if (redisEvent == "xadd") {
                         // Query for the latest stream entry-id.
                         // Then we can craft a meaningful message for the subscribers
-                        val entries = dataConnection.sync().xrevrange(streamKey, unbounded(), Limit.from(1))
+                        val entries = redis.sync().xrevrange(streamKey, unbounded(), Limit.from(1))
                         val latestEntry = entries.firstOrNull()
                         if (latestEntry != null) {
                             onMessage(StreamAddEntry(streamEntryId = latestEntry.id))
@@ -100,7 +94,7 @@ class RedisSubscriber(
         subscriptions[docId] = DocumentSubscription(docId, redisEventChannel, job)
 
         // Set up the Redis pub/sub listener
-        pubSubConnection.addListener(object : RedisPubSubListener<String, String> {
+        redisPubSub.addListener(object : RedisPubSubListener<String, String> {
             override fun message(channel: String, message: String) {
                 if (channel == streamPattern) {
                     // Send the message to the document's channel
@@ -132,7 +126,7 @@ class RedisSubscriber(
         })
 
         // Subscribe to the specific key pattern
-        pubSubConnection.sync().subscribe(streamPattern)
+        redisPubSub.sync().subscribe(streamPattern)
         
         println("🔔 Started Redis keyspace notification subscription for document $docId")
     }
@@ -147,7 +141,7 @@ class RedisSubscriber(
             val streamPattern = "__keyspace@0__:${redisDocSyncEventsKey(docId)}"
 
             // Unsubscribe from Redis
-            pubSubConnection.sync().unsubscribe(streamPattern)
+            redisPubSub.sync().unsubscribe(streamPattern)
             
             // Close the channel and cancel the job
             subscription.channel.close()
@@ -182,8 +176,8 @@ class RedisSubscriber(
         }
         subscriptions.clear()
 
-        dataConnection.close()
-        pubSubConnection.close()
+        redis.close()
+        redisPubSub.close()
         
         // Cancel the coroutine scope
         coroutineScope.cancel()

@@ -2,6 +2,7 @@
 
 package com.ideaspace.core.kafkaMessage
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.ideaspace.core.dto.UUIDToString
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
@@ -27,6 +28,7 @@ enum class SyncOperation {
 @Serializable
 @JsonClassDiscriminator("sync_op")
 sealed class DocumentSyncEventValue {
+    var seid: String? = null
     abstract val syncOp: SyncOperation
     abstract val docId: Long
     abstract val processId: Long

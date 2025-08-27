@@ -70,7 +70,7 @@ class CreateDocumentCommand(
 
         documentEventProducer.sendEvent(doc.id, event)
 
-        return doc.toDTO(root)
+        return doc.toDTO(listOf(root))
     }
 
 }
