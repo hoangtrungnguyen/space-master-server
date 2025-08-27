@@ -1,10 +1,6 @@
 package com.ideaspace.document
 
-import com.ideaspace.core.kafkaMessage.EditDocEventValue
-import com.ideaspace.core.kafkaMessage.EditDocPayload
-import com.ideaspace.core.kafkaMessage.RemoveElementPayload
-import com.ideaspace.core.models.Element
-import com.ideaspace.core.redis.toRedisDocumentEvent
+import com.ideaspace.core.kafkaMessage.RemoveElementEventValue
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.core.utils.LogData
@@ -15,10 +11,9 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
-import kotlin.time.Clock
 
 class RemoveElementCommand(
-    val editDocEventValue: EditDocEventValue,
+    val editDocEventValue: RemoveElementEventValue,
     val docId: Long,
     val processId: Long,
     val documentRedisPublisher: DocumentRedisPublisher,
@@ -29,8 +24,7 @@ class RemoveElementCommand(
 ) : BaseDocCommand{
 
     override suspend fun execute() {
-        val removeElementPayload = editDocEventValue.payload as RemoveElementPayload
-        val element = removeElementPayload.element
+        val element = editDocEventValue
         val document = documentStorage.documentsMap[docId]!!
         val prevElementRAM = document.searchElement(element.uuid)
 
@@ -40,7 +34,7 @@ class RemoveElementCommand(
             val redisEntryId = documentRedisPublisher.publishEditDocEvent(
                 docId,
                 processId,
-                editDocEventValue.toRedisDocumentEvent()
+                editDocEventValue
             )
 
             documentRepository.saveLatestRedisEntry(docId, redisEntryId)

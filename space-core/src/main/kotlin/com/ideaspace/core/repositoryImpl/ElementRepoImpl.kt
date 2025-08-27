@@ -8,6 +8,7 @@ import com.ideaspace.core.models.Element
 import com.ideaspace.core.repository.ElementRepo
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.v1.dao.Entity
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -83,8 +84,8 @@ class ElementRepoImpl(val db: Database) : ElementRepo {
 
     override suspend fun updateEditedElement(
         uuid: UUID,
-        metadata: JsonElement,
-        value: JsonElement,
+        metadata: JsonObject?,
+        value: JsonObject,
         type: String
     ) = transaction(db) {
         ElementTable.update({ ElementTable.id eq uuid }) {

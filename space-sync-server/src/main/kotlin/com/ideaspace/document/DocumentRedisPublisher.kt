@@ -1,18 +1,13 @@
 package com.ideaspace.document
 
-import com.ideaspace.core.redis.RedisDocumentEvent
-import com.ideaspace.core.redis.RedisFinishSyncEvent
-import com.ideaspace.core.redis.RedisSaveDocEvent
-import com.ideaspace.core.redis.redisDocKey
+import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
+import com.ideaspace.core.kafkaMessage.FinishSyncEventValue
+import com.ideaspace.core.kafkaMessage.SaveDocEventValue
 import com.ideaspace.core.redis.RedisManager
+import com.ideaspace.core.redis.redisDocKey
 import com.ideaspace.core.redis.redisDocSyncEventsKey
 import io.lettuce.core.api.sync.RedisCommands
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.*
 
 class DocumentRedisPublisher(
     private val streamMaxLen: Long = 10_000L
@@ -20,7 +15,7 @@ class DocumentRedisPublisher(
     suspend fun publishEditDocEvent(
         docId: Long,
         processId: Long,
-        redisDocumentEvent: RedisDocumentEvent
+        redisDocumentEvent: DocumentSyncEventValue
     ): String {
 
         val redisKey = redisDocSyncEventsKey(docId)
@@ -31,7 +26,7 @@ class DocumentRedisPublisher(
     }
 
     suspend fun publishFinishSyncDocEvent(
-        redisDocumentEvent: RedisFinishSyncEvent
+        redisDocumentEvent: FinishSyncEventValue
     ) {
         val redisKey = redisDocSyncEventsKey(redisDocumentEvent.docId)
         val syncCommands: RedisCommands<String, String> = RedisManager.connection.sync()
@@ -39,7 +34,7 @@ class DocumentRedisPublisher(
     }
 
     suspend fun publishSaveDocEvent(
-        redisDocumentEvent: RedisSaveDocEvent
+        redisDocumentEvent: SaveDocEventValue
     ) {
         val redisKey = redisDocSyncEventsKey(redisDocumentEvent.docId )
         val syncCommands: RedisCommands<String, String> = RedisManager.connection.sync()
@@ -47,7 +42,7 @@ class DocumentRedisPublisher(
     }
 
     private fun RedisCommands<String, String>.startXAdd(
-        redisDocumentEvent: RedisDocumentEvent,
+        redisDocumentEvent: DocumentSyncEventValue,
         redisKey: String,
         processId: Long
     ): String {
@@ -70,15 +65,18 @@ class DocumentRedisPublisher(
         }
     }
 
+    // TODO DO NOT do this in sync server
     suspend fun publishDocProcess(
         docId: Long,
         processId: Long,
     ) {
+        // TODO List of active processes of a document should have a proper key like 'ideaspace:doc:$docId:processes:active'
         val redisKey = redisDocKey(docId)
 
         val syncCommands: RedisCommands<String, String> = RedisManager.connection.sync()
         // 4. Use the XADD command to publish the message
         // The "*" tells Redis to generate a unique ID for this entry automatically.
+        // TODO Should not be a stream, but a REDIS LIST. See redis list API for add/remove item from list.
         val messageId = syncCommands.xadd(
             redisKey,
             mapOf("processId" to processId.toString())

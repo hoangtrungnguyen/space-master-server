@@ -2,6 +2,7 @@ package com.ideaspace.document
 
 import com.ideaspace.core.kafkaMessage.EditDocEventValue
 import com.ideaspace.core.kafkaMessage.RemoveElement
+import com.ideaspace.core.kafkaMessage.RemoveElementEventValue
 import com.ideaspace.core.kafkaMessage.RemoveElementPayload
 import com.ideaspace.core.ram.DocumentRAM
 import com.ideaspace.core.ram.ElementRAM
@@ -54,15 +55,12 @@ class RemoveElementCommandTest {
     fun `execute should log a warning if element not found`() = runTest {
         // Given
         val elementUuid = UUID.randomUUID()
-        val removeElement = RemoveElement(uuid = elementUuid)
-        val removeElementPayload = RemoveElementPayload(element = removeElement)
-        val editDocEventValue = EditDocEventValue(
+        val editDocEventValue = RemoveElementEventValue(
             docId = docId,
             processId = processId,
             userId = 123L,
-            sessionId = 456L,
-            clientId = 789L,
-            payload = removeElementPayload
+            windowId = 789L,
+            uuid = elementUuid
         )
 
         every { documentRam.searchElement(elementUuid) } returns null
@@ -90,21 +88,18 @@ class RemoveElementCommandTest {
     fun `execute should remove an element`() = runTest {
         // Given
         val elementUuid = UUID.randomUUID()
-        val removeElement = RemoveElement(uuid = elementUuid)
-        val removeElementPayload = RemoveElementPayload(element = removeElement)
-        val editDocEventValue = EditDocEventValue(
+        val editDocEventValue = RemoveElementEventValue(
             docId = docId,
             processId = processId,
             userId = 123L,
-            sessionId = 456L,
-            clientId = 789L,
-            payload = removeElementPayload
+            windowId = 789L,
+            uuid = elementUuid
         )
 
         val elementToRemove = ElementRAM(
             uuid = elementUuid,
             value = JsonNull,
-            metadata = JsonNull,
+            metadata = null,
             type = "shape",
             parentUuid = null,
             element = null,

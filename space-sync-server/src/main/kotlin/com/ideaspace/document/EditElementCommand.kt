@@ -1,8 +1,6 @@
 package com.ideaspace.document
 
-import com.ideaspace.core.kafkaMessage.EditDocEventValue
-import com.ideaspace.core.kafkaMessage.EditElementPayload
-import com.ideaspace.core.redis.toRedisDocumentEvent
+import com.ideaspace.core.kafkaMessage.EditElementEventValue
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.core.utils.LogData
@@ -16,7 +14,7 @@ import kotlinx.serialization.json.encodeToJsonElement
 import kotlin.time.ExperimentalTime
 
 class EditElementCommand(
-    val editDocEventValue: EditDocEventValue,
+    val editDocEventValue: EditElementEventValue,
     val docId: Long,
     val processId: Long,
     val documentRedisPublisher: DocumentRedisPublisher,
@@ -28,10 +26,7 @@ class EditElementCommand(
 
     @OptIn(ExperimentalTime::class)
     override suspend fun execute() {
-
-        val editElementPayload = editDocEventValue.payload as EditElementPayload
-
-        val elementData = editElementPayload.element
+        val elementData = editDocEventValue
         val document = documentStorage.documentsMap[docId] ?: throw IllegalStateException("Document not found")
 
         val foundElement = document.searchElement(elementData.uuid)
@@ -61,8 +56,7 @@ class EditElementCommand(
             updatedElement,
         )
 
-        val payloadRedis = editDocEventValue.toRedisDocumentEvent()
-        val redisEntryId = documentRedisPublisher.publishEditDocEvent(docId, processId, payloadRedis)
+        val redisEntryId = documentRedisPublisher.publishEditDocEvent(docId, processId, editDocEventValue)
         super.saveLatestRedisEntry(docId, redisEntryId)
 
         println("✅ Updated element ${updatedElement.uuid}")

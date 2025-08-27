@@ -3,6 +3,7 @@ package com.ideaspace.core.repository
 import com.ideaspace.core.dao.ElementDAO
 import com.ideaspace.core.models.Element
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import java.util.UUID
 
 interface ElementRepo {
@@ -15,8 +16,8 @@ interface ElementRepo {
 
     suspend fun updateEditedElement(
         uuid: UUID,
-        metadata: JsonElement,
-        value: JsonElement,
+        metadata: JsonObject?,
+        value: JsonObject,
         type: String,
     ): Element
 

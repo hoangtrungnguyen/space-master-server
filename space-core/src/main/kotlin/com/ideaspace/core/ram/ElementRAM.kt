@@ -10,7 +10,7 @@ import kotlin.time.Instant
 data class ElementRAM @ExperimentalTime constructor(
     val uuid: UUID,
     val value: JsonElement,
-    val metadata: JsonElement,
+    val metadata: JsonObject?,
     val type: String,
     val parentUuid: UUID?,
     val element: ElementRAM?,

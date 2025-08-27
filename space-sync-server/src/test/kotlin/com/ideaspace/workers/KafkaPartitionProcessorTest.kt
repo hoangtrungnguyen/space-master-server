@@ -11,6 +11,8 @@ import io.ktor.server.plugins.di.DependencyRegistry
 import io.mockk.*
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -72,17 +74,20 @@ class KafkaPartitionProcessorTest {
         @DisplayName("should process AddElementPayload for EditDocEventValue")
         fun processAddElementPayload() = runTest {
             setupDependencies()
-            val addElementPayload =
-                AddElementPayload(element = AddElement(uuid = UUID.randomUUID(), type = "test", value = JsonNull))
-            val event = EditDocEventValue(
-                docId = 1L,
-                processId = 2L,
-                userId = 3L,
-                sessionId = 4L,
-                clientId = 5L,
-                payload = addElementPayload
+            val record = createConsumerRecord(1L,
+                AddElementEventValue(
+                    docId = 1L,
+                    processId = 2L,
+                    userId = 3L,
+                    windowId = 5L,
+                    uuid = UUID.randomUUID(),
+                    parentUuid = null,
+                    type = "textbox",
+                    value = buildJsonObject {
+                        "text" to "Hello World"
+                    }
+                )
             )
-            val record = createConsumerRecord(1L, event)
 
             every { documentStorage.documentsMap[1L] } returns mockk(relaxed = true) {
                 every { exist(any()) } returns false

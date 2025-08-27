@@ -2,6 +2,7 @@ package com.ideaspace.document
 
 import com.ideaspace.core.kafkaMessage.EditDocEventValue
 import com.ideaspace.core.kafkaMessage.EditElement
+import com.ideaspace.core.kafkaMessage.EditElementEventValue
 import com.ideaspace.core.kafkaMessage.EditElementPayload
 import com.ideaspace.core.ram.DocumentRAM
 import com.ideaspace.core.ram.ElementRAM
@@ -12,11 +13,10 @@ import com.ideaspace.workers.LogPublisher
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.runs
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.BeforeEach
@@ -55,20 +55,15 @@ class EditElementCommandTest {
     fun `execute should log a warning if element not found`() = runTest {
         // Given
         val elementUuid = UUID.randomUUID()
-        val editElement = EditElement(
-            uuid = elementUuid,
-            value = JsonNull,
-            metadata = JsonNull,
-            type = "shape"
-        )
-        val editElementPayload = EditElementPayload(element = editElement)
-        val editDocEventValue = EditDocEventValue(
+        val editDocEventValue = EditElementEventValue(
             docId = docId,
             processId = processId,
             userId = 123L,
-            sessionId = 456L,
-            clientId = 789L,
-            payload = editElementPayload
+            windowId = 789L,
+            uuid = elementUuid,
+            metadata = null,
+            value = JsonObject(mapOf()),
+            type = "shape"
         )
 
         every { documentRam.searchElement(elementUuid) } returns null
@@ -98,26 +93,21 @@ class EditElementCommandTest {
         val updatedMetadata = buildJsonObject { put("author", "test_user") }
         val updatedType = "text"
 
-        val editElement = EditElement(
+        val editDocEventValue = EditElementEventValue(
+            docId = docId,
+            processId = processId,
+            userId = 123L,
+            windowId = 789L,
             uuid = elementUuid,
             value = updatedValue,
             metadata = updatedMetadata,
             type = updatedType
         )
-        val editElementPayload = EditElementPayload(element = editElement)
-        val editDocEventValue = EditDocEventValue(
-            docId = docId,
-            processId = processId,
-            userId = 123L,
-            sessionId = 456L,
-            clientId = 789L,
-            payload = editElementPayload
-        )
 
         val originalElement = ElementRAM(
             uuid = elementUuid,
+            metadata = null,
             value = JsonNull,
-            metadata = JsonNull,
             type = "shape",
             parentUuid = null,
             element = null,

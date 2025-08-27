@@ -1,14 +1,9 @@
 package com.ideaspace.document
 
-import com.ideaspace.core.kafkaMessage.AddElementPayload
-import com.ideaspace.core.kafkaMessage.EditDocEventValue
-import com.ideaspace.core.kafkaMessage.EditElementPayload
-import com.ideaspace.core.kafkaMessage.MoveElementPayload
-import com.ideaspace.core.kafkaMessage.RemoveElementPayload
+import com.ideaspace.core.kafkaMessage.*
 import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
-import com.ideaspace.document.DocumentRedisPublisher
 import com.ideaspace.workers.DocumentStorage
 import com.ideaspace.workers.LogPublisher
 
@@ -34,10 +29,10 @@ class CommandFactory(
 ) {
 
     fun createCommand(
-        editDocValue: EditDocEventValue, doc: BusinessDocument, processId: Long
+        editDocValue: DocumentSyncEventValue, doc: BusinessDocument, processId: Long
     ): BaseDocCommand {
-        return when (editDocValue.payload) {
-            is AddElementPayload -> {
+        return when (editDocValue) {
+            is AddElementEventValue -> {
                 AddElementCommand(
                     editDocValue,
                     doc.id,
@@ -50,7 +45,7 @@ class CommandFactory(
                 )
             }
 
-            is EditElementPayload -> {
+            is EditElementEventValue -> {
                 EditElementCommand(
                     editDocValue,
                     doc.id,
@@ -63,7 +58,7 @@ class CommandFactory(
                 )
             }
 
-            is MoveElementPayload -> {
+            is MoveElementEventValue -> {
                 MoveElementCommand(
                     editDocValue,
                     doc.id,
@@ -76,7 +71,7 @@ class CommandFactory(
                 )
             }
 
-            is RemoveElementPayload -> {
+            is RemoveElementEventValue -> {
                 RemoveElementCommand(
                     editDocValue,
                     doc.id,
@@ -88,6 +83,7 @@ class CommandFactory(
                     documentRepository
                 )
             }
+            else -> throw RuntimeException("Missing handle for ${editDocValue.syncOp}")
         }
     }
 }

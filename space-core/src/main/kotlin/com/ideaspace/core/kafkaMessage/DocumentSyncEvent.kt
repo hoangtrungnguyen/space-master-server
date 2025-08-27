@@ -16,6 +16,10 @@ import kotlin.uuid.ExperimentalUuidApi
 enum class SyncOperation {
     INIT_SYNC,
     EDIT_DOC,
+    ADD_ELEMENT,
+    EDIT_ELEMENT,
+    MOVE_ELEMENT,
+    REMOVE_ELEMENT,
     SAVE_DOC,
     FINISH_SYNC
 }
@@ -27,60 +31,115 @@ sealed class DocumentSyncEventValue {
     abstract val docId: Long
     abstract val processId: Long
     abstract val userId: Long
-    abstract val sessionId: Long
-    abstract val clientId: Long
-    abstract val payload: DocumentSyncPayload
+    abstract val windowId: Long
 }
 
 @Serializable
 @SerialName("INIT_SYNC")
 data class InitSyncEventValue(
     @Transient override val syncOp: SyncOperation = SyncOperation.INIT_SYNC,
-    @SerialName("doc_id") override val docId: Long,
-    @SerialName("process_id") override val processId: Long,
-    @SerialName("user_id") override val userId: Long,
-    @SerialName("session_id") override val sessionId: Long,
-    @SerialName("client_id") override val clientId: Long,
-    @SerialName("payload") override val payload: InitSyncPayload
+    override val docId: Long,
+    override val processId: Long,
+    override val userId: Long,
+    override val windowId: Long
 ) : DocumentSyncEventValue()
 
 @Serializable
 @SerialName("EDIT_DOC")
 data class EditDocEventValue(
     @Transient override val syncOp: SyncOperation = SyncOperation.EDIT_DOC,
-    @SerialName("doc_id") override val docId: Long,
-    @SerialName("process_id") override val processId: Long,
-    @SerialName("user_id") override val userId: Long,
-    @SerialName("session_id") override val sessionId: Long,
-    @SerialName("client_id") override val clientId: Long,
-    @SerialName("payload") override val payload: EditDocPayload
+    override val docId: Long,
+    override val processId: Long,
+    override val userId: Long,
+    override val windowId: Long,
+    val payload: EditDocPayload
 ) : DocumentSyncEventValue()
 
+@Serializable
+@SerialName("ADD_ELEMENT")
+data class AddElementEventValue(
+    @Transient override val syncOp: SyncOperation = SyncOperation.ADD_ELEMENT,
+    override val docId: Long,
+    override val processId: Long,
+    override val userId: Long,
+    override val windowId: Long,
+
+    // Specific properties
+    @Serializable(UUIDToString::class)
+    val uuid: UUID,
+    @Serializable(UUIDToString::class)
+    val parentUuid: UUID? = null,
+    val metadata: JsonObject? = null,
+    val type: String,
+    val value: JsonObject
+) : DocumentSyncEventValue()
+
+@Serializable
+@SerialName("EDIT_ELEMENT")
+data class EditElementEventValue(
+    @Transient override val syncOp: SyncOperation = SyncOperation.EDIT_ELEMENT,
+    override val docId: Long,
+    override val processId: Long,
+    override val userId: Long,
+    override val windowId: Long,
+
+    // Specific properties
+    @Serializable(UUIDToString::class)
+    val uuid: UUID,
+    val metadata: JsonObject? = null,
+    val type: String,
+    val value: JsonObject
+) : DocumentSyncEventValue()
+
+@Serializable
+@SerialName("MOVE_ELEMENT")
+data class MoveElementEventValue (
+    @Transient override val syncOp: SyncOperation = SyncOperation.MOVE_ELEMENT,
+    override val docId: Long,
+    override val processId: Long,
+    override val userId: Long,
+    override val windowId: Long,
+
+    // Specific properties
+    @Serializable(UUIDToString::class)
+    val uuid: UUID,
+    @Serializable(UUIDToString::class)
+    val parentUuid: UUID? = null,
+) : DocumentSyncEventValue()
+
+
+@Serializable
+@SerialName("REMOVE_ELEMENT")
+data class RemoveElementEventValue (
+    @Transient override val syncOp: SyncOperation = SyncOperation.REMOVE_ELEMENT,
+    override val docId: Long,
+    override val processId: Long,
+    override val userId: Long,
+    override val windowId: Long,
+
+    @Serializable(UUIDToString::class)
+    val uuid: UUID,
+) : DocumentSyncEventValue()
 
 @Serializable
 @SerialName("SAVE_DOC")
 data class SaveDocEventValue(
     @Transient override val syncOp: SyncOperation = SyncOperation.SAVE_DOC,
-    @SerialName("doc_id") override val docId: Long,
-    @SerialName("process_id") override val processId: Long,
-    @SerialName("user_id") override val userId: Long,
-    @SerialName("session_id") override val sessionId: Long,
-    @SerialName("client_id") override val clientId: Long,
-    @SerialName("payload") override val payload: SaveDocPayload
+    override val docId: Long,
+    override val processId: Long,
+    override val userId: Long,
+    override val windowId: Long,
 ) : DocumentSyncEventValue()
-
 
 
 @Serializable
 @SerialName("FINISH_SYNC")
 data class FinishSyncEventValue(
     @Transient override val syncOp: SyncOperation = SyncOperation.FINISH_SYNC,
-    @SerialName("doc_id") override val docId: Long,
-    @SerialName("process_id") override val processId: Long,
-    @SerialName("user_id") override val userId: Long,
-    @SerialName("session_id") override val sessionId: Long,
-    @SerialName("client_id") override val clientId: Long,
-    @SerialName("payload") override val payload: FinishSyncPayload
+    override val docId: Long,
+    override val processId: Long,
+    override val userId: Long,
+    override val windowId: Long,
 ) : DocumentSyncEventValue()
 
 sealed class DocumentSyncPayload
@@ -93,16 +152,6 @@ open class InitSyncPayload() : DocumentSyncPayload()
 sealed class EditDocPayload : DocumentSyncPayload() {
     abstract val elementOp: ElementOp
     abstract val element: Element
-}
-
-@Serializable
-open class SaveDocPayload() : DocumentSyncPayload() {
-
-}
-
-@Serializable
-open class FinishSyncPayload() : DocumentSyncPayload() {
-
 }
 
 @Serializable
@@ -156,35 +205,35 @@ sealed class Element {
 
 @Serializable
 data class AddElement (
-    @Serializable(with = UUIDToString::class)
+    @Serializable(UUIDToString::class)
     override val uuid: UUID,
-    @SerialName("parent_uuid") @Serializable(with = UUIDToString::class)
+    @SerialName("parent_uuid") @Serializable(UUIDToString::class)
     val parentUuid: UUID? = null,
-    val metadata: JsonElement = JsonObject(emptyMap()),
+    val metadata: JsonElement? = null,
     val type: String,
     val value: JsonElement
 ) : Element()
 
 @Serializable
 data class EditElement (
-    @Serializable(with = UUIDToString::class)
+    @Serializable(UUIDToString::class)
     override val uuid: UUID,
-    val metadata: JsonElement = JsonObject(emptyMap()),
+    val metadata: JsonElement? = null,
     val type: String,
     val value: JsonElement
 ) : Element()
 
 @Serializable
 data class MoveElement (
-    @Serializable(with = UUIDToString::class)
+    @Serializable(UUIDToString::class)
     override val uuid: UUID,
-    @SerialName("parent_uuid") @Serializable(with = UUIDToString::class)
+    @SerialName("parent_uuid") @Serializable(UUIDToString::class)
     val parentUuid: UUID? = null,
 ) : Element()
 
 @Serializable
 data class RemoveElement (
-    @Serializable(with = UUIDToString::class)
+    @Serializable(UUIDToString::class)
     override val uuid: UUID,
 ) : Element()
 

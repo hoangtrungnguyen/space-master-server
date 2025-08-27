@@ -61,7 +61,7 @@ class RedisSubscriber(
      * @param docId The document ID to subscribe to
      * @param onMessage Callback function to handle sync events
      */
-    suspend fun subscribeToDocument(docId: Long, onMessage: suspend (DocumentMessage) -> Unit) {
+    suspend fun subscribeToDocument(docId: Long, onMessage: suspend (DocumentChannelOutput) -> Unit) {
         // Check if already subscribed
         if (subscriptions.containsKey(docId)) {
             println("Already subscribed to document $docId")
@@ -86,7 +86,7 @@ class RedisSubscriber(
                         val entries = dataConnection.sync().xrevrange(streamKey, unbounded(), Limit.from(1))
                         val latestEntry = entries.firstOrNull()
                         if (latestEntry != null) {
-                            onMessage(StreamAddEntry(latestEntry.id))
+                            onMessage(StreamAddEntry(streamEntryId = latestEntry.id))
                         } else {
 
                         }

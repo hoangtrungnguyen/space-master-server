@@ -1,6 +1,7 @@
 package com.ideaspace.core.models
 
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import java.util.*
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -10,9 +11,9 @@ class Element(
     var uuid: UUID,
     var docId: Long,
     var parentUuid: UUID?,
-    var metadata: JsonElement?,
+    var metadata: JsonObject?,
     var type: String,
-    var value: JsonElement,
+    var value: JsonObject,
     var deletedAt: Instant?
 )
 
