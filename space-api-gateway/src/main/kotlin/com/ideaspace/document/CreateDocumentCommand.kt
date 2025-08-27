@@ -2,16 +2,7 @@ package com.ideaspace.document
 
 import com.ideaspace.config.AuthPrincipal
 import com.ideaspace.core.dto.DocumentDTO
-import com.ideaspace.core.dto.toDTO
-import com.ideaspace.core.kafkaMessage.DocumentEventProducer
-import com.ideaspace.core.kafkaMessage.InitSyncEventValue
-import com.ideaspace.core.kafkaMessage.InitSyncPayload
-import com.ideaspace.core.kafkaMessage.SyncOperation
-import com.ideaspace.core.models.BusinessDocument
-import com.ideaspace.core.models.DocumentStatus
-import com.ideaspace.core.models.DocumentType
-import com.ideaspace.core.models.Element
-import com.ideaspace.core.models.toDTO
+import com.ideaspace.core.models.*
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import io.ktor.server.plugins.di.*
@@ -31,7 +22,6 @@ class CreateDocumentCommand(
     suspend fun execute(dependencies: DependencyRegistry): DocumentDTO {
         val docRepo = dependencies.resolve<CrudDocumentRepository>()
         val elementRepo = dependencies.resolve<ElementRepo>()
-        val documentEventProducer = dependencies.resolve<DocumentEventProducer>() // Resolve the producer
 
         val doc = docRepo.create(BusinessDocument(
             id = -1,
@@ -59,17 +49,6 @@ class CreateDocumentCommand(
             value = JsonObject(emptyMap()),
             deletedAt = null
         ))
-
-
-        val event = InitSyncEventValue(
-            syncOp = SyncOperation.INIT_SYNC,
-            docId = doc.id,
-            processId = -1, // TODO: Generate process ID
-            userId = principal.user.id, // TODO: Get from context
-            windowId = -1, // TODO: Get from context
-        )
-
-        documentEventProducer.sendEvent(doc.id, event)
 
         return doc.toDTO(root)
     }

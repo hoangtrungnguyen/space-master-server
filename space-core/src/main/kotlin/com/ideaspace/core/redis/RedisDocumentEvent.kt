@@ -9,7 +9,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
 import java.util.*
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -218,4 +217,8 @@ fun redisDocKey(docId: Long): String {
 
 fun redisDocSyncEventsKey(docId: Long): String {
     return "ideaspace:doc:$docId:stream"
+}
+
+fun redisPeer2PeerEventsKey(docId: Long): String {
+    return "ideaspace:doc:$docId:process:active"
 }

@@ -4,17 +4,15 @@ package com.ideaspace.document
 
 import com.ideaspace.config.AuthPrincipal
 import com.ideaspace.core.kafkaMessage.DocumentEventProducer
-import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
-import com.ideaspace.core.kafkaMessage.InitSyncEventValue
 import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.models.Process
 import com.ideaspace.core.models.ProcessKey
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ProcessRepo
-import com.ideaspace.rtcmanager.RTCPeerManager
-import com.ideaspace.session.DocumentConnection
-import com.ideaspace.session.SessionManager
-import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
+import com.ideaspace.peerManager.PeerData
+import com.ideaspace.peerManager.RTCPeerManager
+import com.ideaspace.session.*
+import io.ktor.serialization.kotlinx.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.plugins.di.*
@@ -23,7 +21,6 @@ import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import io.ktor.websocket.CloseReason.Codes.*
 import io.lettuce.core.RedisClient
-import kotlinx.serialization.json.Json
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -134,25 +131,46 @@ fun Route.documentWebSocketRoutes() {
                 )
             )
 
+            var peerData: PeerData? = null
             val messageFlow: Flow<Any> =
                 incoming.consumeAsFlow()
                     .filterIsInstance<Frame.Text>() // Process only text frames
                     .mapNotNull { frame ->
                         val frameText = frame.readText()
-                        var event = Json.decodeFromString<DocumentSyncEventValue>(frameText)
-                        if (event is InitSyncEventValue) {
-                            process = process.copy(
-                                peerUuid = event.payload.peerUuid
-                            )
-                            rtcPeerManager.publishPeer(process)
-                            event = event.copy(
-                                docId = doc.id,
-                                userId = userId,
-                            )
+                        val event = Json.decodeFromString<DocumentChannelInput>(frameText)
+                        when (event) {
+                            is DocumentFlowUpChange -> {
+
+                                if (event is InitSyncInput) {
+                                    if (event.peerUuid == null) {
+                                        println("⚠️ Process $processKey with event $event doesn't have peer uuid ")
+                                    } else {
+                                        peerData = rtcPeerManager.publishPeer(
+                                            PeerData(
+                                                peerUuid = event.peerUuid,
+                                                process = process,
+                                            )
+                                        )
+                                    }
+                                }
+
+                                val docEvent = event.toDocumentSyncEventValue(process)
+                                println(docEvent)
+                                docEventProducer.sendEvent(doc.id, docEvent)
+
+                                sendSerialized<DocumentChannelOutput>(
+                                    Acknowledgement(
+                                        replyTo = event.messageId,
+                                        message = "Received event ${event.messageType} from window ${process.windowId}"
+                                    )
+                                )
+                            }
+
+                            is PullStreamInput -> {
+
+                            }
                         }
-                        docEventProducer.sendEvent(doc.id, event)
-//                        send(Frame.Text("Sending event $event"))
-                        println("Sent event for $docUuid. Event: $event to REDIS")
+
                         event
                     }.catch { cause ->
                         try {
@@ -183,7 +201,9 @@ fun Route.documentWebSocketRoutes() {
                             println("Reason: ${cause.localizedMessage}")
                         }
                         sessionManager.unregister(processKey)
-                        rtcPeerManager.removePeer(process)
+                        peerData?.let {
+                            rtcPeerManager.removePeer(peerData)
+                        } ?: println("OnSocket Complete: Peer not found")
                         println("WebSocket cleanup finished for user: ${principal.user.loginName}")
                     }
 
@@ -192,5 +212,21 @@ fun Route.documentWebSocketRoutes() {
         }
     }
 
+}
 
+fun validateDocumentAccess(authPrincipal: AuthPrincipal, document: BusinessDocument): Boolean {
+
+    // TODO: Implement proper authorization logic
+    // Examples of checks you might want to add:
+    // - Is the user the owner of the document?
+    // - Is the user a member of the team/workspace that owns the document?
+    // - Does the user have specific permissions (read/write) for this document?
+    // - Is the document public or private?
+
+    // For now, return true if document exists and user is authenticated
+    // In production, implement your specific business logic here
+
+    println("Document access granted for user ${authPrincipal.user.loginName} to document")
+
+    return true
 }

@@ -5,8 +5,7 @@ import com.ideaspace.core.kafkaMessage.configureDocumentEventProducer
 import com.ideaspace.document.configureSockets
 import com.ideaspace.document.documentManagementRoutes
 import com.ideaspace.document.documentWebSocketRoutes
-import com.ideaspace.rtcmanager.configureWebRTC
-import com.ideaspace.rtcmanager.peerSignaling
+import com.ideaspace.peerManager.configureWebRTC
 import com.ideaspace.user.userManagementRoutes
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
@@ -30,6 +29,5 @@ suspend fun Application.module() {
         userManagementRoutes()
         documentManagementRoutes()
         documentWebSocketRoutes()
-        peerSignaling()
     }
 }

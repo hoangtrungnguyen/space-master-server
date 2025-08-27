@@ -3,7 +3,6 @@
 package com.ideaspace.core.kafkaMessage
 
 import com.ideaspace.core.dto.NullableUUIDSerializer
-import com.ideaspace.core.dto.PeerDTO
 import com.ideaspace.core.dto.UUIDToString
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
@@ -41,16 +40,6 @@ sealed class DocumentSyncEventValue : DocumentEvent() {
 
 class UnknownDocEvent() : DocumentEvent()
 
-@Serializable
-data class ListPeerDocEvent(
-    val peerCount: Int,
-    @Serializable(with = UUIDToString::class)
-    val removedPeer: UUID? = null,
-    @Serializable(with = UUIDToString::class)
-    val newPeer: UUID? = null,
-    val listPeer: List<String>,
-    val type: String = "PEER_LIST"
-) : DocumentEvent(), PeerDTO
 
 @Serializable
 @SerialName("INIT_SYNC")
@@ -59,7 +48,9 @@ data class InitSyncEventValue(
     override val docId: Long,
     override val processId: Long,
     override val userId: Long,
-    override val windowId: Long
+    override val windowId: Long,
+    @Serializable(with = NullableUUIDSerializer::class)
+    val peerUuid: UUID?,
 ) : DocumentSyncEventValue()
 
 @Serializable

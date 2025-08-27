@@ -2,16 +2,9 @@
 
 package com.ideaspace.session
 
+import com.ideaspace.core.dto.NullableUUIDSerializer
 import com.ideaspace.core.dto.UUIDToString
-import com.ideaspace.core.kafkaMessage.AddElementEventValue
-import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
-import com.ideaspace.core.kafkaMessage.EditElementEventValue
-import com.ideaspace.core.kafkaMessage.FinishSyncEventValue
-import com.ideaspace.core.kafkaMessage.InitSyncEventValue
-import com.ideaspace.core.kafkaMessage.MoveElementEventValue
-import com.ideaspace.core.kafkaMessage.RemoveElementEventValue
-import com.ideaspace.core.kafkaMessage.SaveDocEventValue
-import com.ideaspace.core.kafkaMessage.SyncOperation
+import com.ideaspace.core.kafkaMessage.*
 import com.ideaspace.core.models.Process
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
@@ -35,6 +28,8 @@ enum class MessageType {
     STREAM_ADD_ENTRY,
     PULL_STREAM,
     STREAM_ENTRIES,
+
+    LIST_PEER
 }
 
 @Serializable
@@ -62,7 +57,9 @@ sealed class DocumentFlowUpChange() : DocumentChannelInput() {
 class InitSyncInput(
     override val messageId: String,
     @Transient
-    override val messageType: MessageType = MessageType.INIT_SYNC
+    override val messageType: MessageType = MessageType.INIT_SYNC,
+    @Serializable(with = NullableUUIDSerializer::class)
+    val peerUuid: UUID?,
 ) : DocumentFlowUpChange() {
     override fun toDocumentSyncEventValue(process: Process): DocumentSyncEventValue {
         return InitSyncEventValue(
@@ -70,14 +67,15 @@ class InitSyncInput(
             docId = process.docId,
             processId = process.id,
             userId = process.userId,
-            windowId = process.windowId
+            windowId = process.windowId,
+            peerUuid = peerUuid
         )
     }
 }
 
 @Serializable
 @SerialName("ADD_ELEMENT")
-data class AddElementInput (
+data class AddElementInput(
     override val messageId: String,
     @Transient
     override val messageType: MessageType = MessageType.ADD_ELEMENT,
@@ -107,7 +105,7 @@ data class AddElementInput (
 
 @Serializable
 @SerialName("EDIT_ELEMENT")
-data class EditElementInput (
+data class EditElementInput(
     override val messageId: String,
     @Transient
     override val messageType: MessageType = MessageType.EDIT_ELEMENT,
@@ -135,7 +133,7 @@ data class EditElementInput (
 
 @Serializable
 @SerialName("MOVE_ELEMENT")
-data class MoveElementInput (
+data class MoveElementInput(
     override val messageId: String,
     @Transient
     override val messageType: MessageType = MessageType.MOVE_ELEMENT,
@@ -159,7 +157,7 @@ data class MoveElementInput (
 
 @Serializable
 @SerialName("REMOVE_ELEMENT")
-data class RemoveElementInput (
+data class RemoveElementInput(
     override val messageId: String,
     @Transient
     override val messageType: MessageType = MessageType.REMOVE_ELEMENT,
@@ -250,3 +248,23 @@ data class Acknowledgement(
     override val replyTo: String,
     val message: String
 ) : DocumentChannelOutput()
+
+
+//region Peer2Peer
+@Serializable
+data class ListPeerOut(
+    val peerCount: Int,
+    @Serializable(with = UUIDToString::class)
+    val removedPeer: UUID? = null,
+    @Serializable(with = UUIDToString::class)
+    val newPeer: UUID? = null,
+    val listPeer: List<@Serializable(with = UUIDToString::class) UUID>,
+) : DocumentChannelOutput() {
+    val messageType: MessageType
+        get() = MessageType.LIST_PEER
+    override val replyTo: String
+        get() = newPeer?.toString() ?: removedPeer?.toString() ?: "NONE"
+}
+
+
+//endregion

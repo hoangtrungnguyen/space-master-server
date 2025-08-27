@@ -1,4 +1,4 @@
-package com.ideaspace.rtcmanager
+package com.ideaspace.peerManager
 
 import io.ktor.server.application.*
 import io.ktor.server.plugins.di.*
