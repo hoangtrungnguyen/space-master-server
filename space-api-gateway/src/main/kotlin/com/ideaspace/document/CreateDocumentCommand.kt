@@ -2,6 +2,7 @@ package com.ideaspace.document
 
 import com.ideaspace.config.AuthPrincipal
 import com.ideaspace.core.dto.DocumentDTO
+import com.ideaspace.core.kafkaMessage.DocumentEventProducer
 import com.ideaspace.core.models.*
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
@@ -51,7 +52,7 @@ class CreateDocumentCommand(
             deletedAt = null
         ))
 
-        return doc.toDTO(root)
+        return doc.toDTO(listOf(root))
     }
 
 }

@@ -6,7 +6,6 @@ import com.ideaspace.core.dto.NullableUUIDSerializer
 import com.ideaspace.core.dto.UUIDToString
 import com.ideaspace.core.kafkaMessage.*
 import com.ideaspace.core.models.Process
-import com.ideaspace.document.StreamEntriesOutput
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -15,7 +14,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.contextual
 import kotlinx.serialization.modules.polymorphic
 import java.util.*
 
@@ -252,6 +250,7 @@ val ChannelJson = Json {
     serializersModule = SerializersModule {
         polymorphic(DocumentChannelOutput::class) {
             subclass(StreamAddEntry::class, StreamAddEntry.serializer())
+            subclass(Acknowledgement::class, Acknowledgement.serializer())
         }
     }
 }
@@ -267,7 +266,7 @@ data class ListPeerOut(
     val newPeer: UUID? = null,
     val listPeer: List<@Serializable(with = UUIDToString::class) UUID>,
 ) : DocumentChannelOutput() {
-    val messageType: MessageType
+    override val messageType: MessageType
         get() = MessageType.LIST_PEER
     override val replyTo: String
         get() = newPeer?.toString() ?: removedPeer?.toString() ?: "NONE"

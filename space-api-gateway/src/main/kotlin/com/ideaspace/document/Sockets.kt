@@ -20,11 +20,10 @@ import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import io.ktor.websocket.CloseReason.Codes.*
-import io.lettuce.core.RedisClient
-import kotlinx.coroutines.flow.*
-import kotlinx.serialization.SerializationException
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection
+import kotlinx.coroutines.flow.*
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlin.random.Random
 import kotlin.time.Clock
@@ -73,6 +72,7 @@ fun Route.documentWebSocketRoutes() {
             val docRepo = d.resolve<CrudDocumentRepository>()
             val processRepo = d.resolve<ProcessRepo>()
             val rtcPeerManager = d.resolve<RTCPeerManager>()
+            val pullStreamContext = d.resolve<PullStreamContext>()
 
             // -----------------------------------------------
             // These setups happen once for every connection
@@ -102,9 +102,6 @@ fun Route.documentWebSocketRoutes() {
 
             val userId = principal.user.id
             val processKey = ProcessKey(doc.id, userId, windowId)
-
-
-            // docId, userId, windowId
 
             var process = processRepo.findByKey(processKey) ?: processRepo.create(
                 Process(
@@ -144,43 +141,46 @@ fun Route.documentWebSocketRoutes() {
                     .filterIsInstance<Frame.Text>() // Process only text frames
                     .mapNotNull { frame ->
                         val frameText = frame.readText()
-                        val event = Json.decodeFromString<DocumentChannelInput>(frameText)
-                        when (event) {
+                        val input = Json.decodeFromString<DocumentChannelInput>(frameText)
+                        when (input) {
                             is DocumentFlowUpChange -> {
 
-                                if (event is InitSyncInput) {
-                                    if (event.peerUuid == null) {
-                                        println("⚠️ Process $processKey with event $event doesn't have peer uuid ")
+                                if (input is InitSyncInput) {
+                                    if (input.peerUuid == null) {
+                                        println("⚠️ Process $processKey with event $input doesn't have peer uuid ")
                                     } else {
                                         rtcPeerManager.registerPeerGroup(
                                             docId = processKey.docId,
-                                            peerUuid = event.peerUuid,
+                                            peerUuid = input.peerUuid,
                                         )
-                                        peerUuid = event.peerUuid
+                                        peerUuid = input.peerUuid
                                     }
                                 }
 
-                                val docEvent = event.toDocumentSyncEventValue(process)
+                                val docEvent = input.toDocumentSyncEventValue(process)
                                 println(docEvent)
                                 docEventProducer.sendEvent(doc.id, docEvent)
 
-                                sendSerialized<DocumentChannelOutput>(
+                                sendSerialized(
                                     Acknowledgement(
-                                        replyTo = event.messageId,
-                                        message = "Received event ${event.messageType} from window ${process.windowId}"
+                                        replyTo = input.messageId,
+                                        message = "Received event ${input.messageType} from window ${process.windowId}"
                                     )
                                 )
                             }
 
                             is PullStreamInput -> {
-
+                                val response = PullStreamCommand(process, input)
+                                    .execute(pullStreamContext)
+                                sendSerialized(response)
                             }
                         }
 
-                        event
+                        input
                     }.catch { cause ->
                         try {
                             if (cause is SerializationException) {
+                                cause.printStackTrace()
                                 send(
                                     Frame.Text(
                                         Json.encodeToString(

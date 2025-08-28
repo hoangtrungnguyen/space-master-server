@@ -2,7 +2,6 @@ package com.ideaspace.peerManager
 
 import com.ideaspace.core.redis.RedisManager
 import com.ideaspace.core.redis.redisDocSyncEventsKey
-import com.ideaspace.core.redis.redisPeer2PeerEventsKey
 import com.ideaspace.session.ListPeerOut
 import com.ideaspace.session.logger
 import com.ideaspace.session.toListPeerOut
@@ -17,6 +16,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.serialization.json.*
+import redisPeer2PeerEventsKey
 import java.util.concurrent.ConcurrentHashMap
 
 
@@ -148,7 +148,7 @@ class PeerRedisSubscriber(
     ): Long {
         val streamKey = redisPeer2PeerEventsKey(docId)
         val streamPatternKey = "__keyspace@0__:${streamKey}"
-        val syncCommands: RedisCommands<String, String> = RedisManager.connection.sync()
+        val syncCommands: RedisCommands<String, String> = RedisManager.connectionString.sync()
         return syncCommands.publishListPeer(listPeerOut, streamPatternKey)
     }
 
@@ -156,7 +156,7 @@ class PeerRedisSubscriber(
     suspend fun getLastest(docId: Long): ListPeerOut? {
         val streamKey = redisPeer2PeerEventsKey(docId)
         val streamPatternKey = "__keyspace@0__:${streamKey}"
-        val syncCommands: RedisCommands<String, String> = RedisManager.connection.sync()
+        val syncCommands: RedisCommands<String, String> = RedisManager.connectionString.sync()
         val messages = syncCommands.xrevrange(
             streamPatternKey,
             Range.create("+", "-"), // Range from newest (+) to oldest (-)

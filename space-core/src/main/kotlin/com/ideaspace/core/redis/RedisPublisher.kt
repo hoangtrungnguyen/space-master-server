@@ -11,9 +11,11 @@ object RedisManager {
     // Create a reusable connection
     val connection: StatefulRedisConnection<String, ByteArray> = client.connect(StringByteArrayCodec())
 
+    val connectionString: StatefulRedisConnection<String, String> = client.connect()
 
     fun close() {
         connection.close()
+        connectionString.close()
         client.shutdown()
     }
 }
