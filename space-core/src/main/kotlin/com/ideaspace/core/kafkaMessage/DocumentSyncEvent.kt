@@ -2,6 +2,7 @@
 
 package com.ideaspace.core.kafkaMessage
 
+import com.ideaspace.core.dto.NullableUUIDSerializer
 import com.ideaspace.core.dto.UUIDToString
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
@@ -22,6 +23,9 @@ enum class SyncOperation {
     FINISH_SYNC
 }
 
+
+sealed class DocumentEvent {}
+
 @Serializable
 @JsonClassDiscriminator("sync_op")
 sealed class DocumentSyncEventValue {
@@ -35,6 +39,9 @@ sealed class DocumentSyncEventValue {
     abstract val windowId: Long
 }
 
+class UnknownDocEvent() : DocumentEvent()
+
+
 @Serializable
 @SerialName("INIT_SYNC")
 data class InitSyncEventValue(
@@ -42,7 +49,9 @@ data class InitSyncEventValue(
     override val docId: Long,
     override val processId: Long,
     override val userId: Long,
-    override val windowId: Long
+    override val windowId: Long,
+    @Serializable(with = NullableUUIDSerializer::class)
+    val peerUuid: UUID?,
 ) : DocumentSyncEventValue()
 
 @Serializable

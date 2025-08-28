@@ -2,16 +2,9 @@
 
 package com.ideaspace.session
 
+import com.ideaspace.core.dto.NullableUUIDSerializer
 import com.ideaspace.core.dto.UUIDToString
-import com.ideaspace.core.kafkaMessage.AddElementEventValue
-import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
-import com.ideaspace.core.kafkaMessage.EditElementEventValue
-import com.ideaspace.core.kafkaMessage.FinishSyncEventValue
-import com.ideaspace.core.kafkaMessage.InitSyncEventValue
-import com.ideaspace.core.kafkaMessage.MoveElementEventValue
-import com.ideaspace.core.kafkaMessage.RemoveElementEventValue
-import com.ideaspace.core.kafkaMessage.SaveDocEventValue
-import com.ideaspace.core.kafkaMessage.SyncOperation
+import com.ideaspace.core.kafkaMessage.*
 import com.ideaspace.core.models.Process
 import com.ideaspace.document.StreamEntriesOutput
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -42,6 +35,8 @@ enum class MessageType {
     STREAM_ENTRIES,
 
     ACK,
+
+    LIST_PEER
 }
 
 @Serializable
@@ -69,7 +64,9 @@ sealed class DocumentFlowUpChange() : DocumentChannelInput() {
 class InitSyncInput(
     override val messageId: String,
     @Transient
-    override val messageType: MessageType = MessageType.INIT_SYNC
+    override val messageType: MessageType = MessageType.INIT_SYNC,
+    @Serializable(with = NullableUUIDSerializer::class)
+    val peerUuid: UUID?,
 ) : DocumentFlowUpChange() {
     override fun toDocumentSyncEventValue(process: Process): DocumentSyncEventValue {
         return InitSyncEventValue(
@@ -77,7 +74,8 @@ class InitSyncInput(
             docId = process.docId,
             processId = process.id,
             userId = process.userId,
-            windowId = process.windowId
+            windowId = process.windowId,
+            peerUuid = peerUuid
         )
     }
 }
@@ -257,3 +255,66 @@ val ChannelJson = Json {
         }
     }
 }
+
+
+//region Peer2Peer
+@Serializable
+data class ListPeerOut(
+    val peerCount: Int,
+    @Serializable(with = UUIDToString::class)
+    val removedPeer: UUID? = null,
+    @Serializable(with = UUIDToString::class)
+    val newPeer: UUID? = null,
+    val listPeer: List<@Serializable(with = UUIDToString::class) UUID>,
+) : DocumentChannelOutput() {
+    val messageType: MessageType
+        get() = MessageType.LIST_PEER
+    override val replyTo: String
+        get() = newPeer?.toString() ?: removedPeer?.toString() ?: "NONE"
+}
+
+
+/**
+ * Converts a Map<String, String> from a Redis Stream message
+ * into a ListPeerOut object.
+ *
+ * @param data The body of the StreamMessage.
+ * @return A ListPeerOut object.
+ * @throws IllegalArgumentException if required fields are missing or malformed.
+ */
+fun Map<String, String>.toListPeerOut(): ListPeerOut {
+    val data = this
+    try {
+        // 1. Parse Int
+        val peerCount = data["peerCount"]?.toInt()
+            ?: throw IllegalArgumentException("Missing or invalid 'peerCount'")
+
+        // 2. Parse nullable UUIDs
+        val removedPeer = data["removedPeer"]?.let { UUID.fromString(it) }
+        val newPeer = data["newPeer"]?.let { UUID.fromString(it) }
+
+        // 3. Parse the List<UUID>
+        // This assumes the list is stored as a single comma-separated string.
+        // e.g., "uuid1,uuid2,uuid3"
+        val listPeer = data["listPeer"]
+            ?.takeIf { it.isNotBlank() } // Handle empty string case
+            ?.split(',')                 // Split by comma
+            ?.map { it.trim() }          // Trim whitespace
+            ?.map { UUID.fromString(it) } // Convert each part to a UUID
+            ?: emptyList()               // Default to an empty list if the field is missing
+
+        // 4. Construct and return the object
+        return ListPeerOut(
+            peerCount = peerCount,
+            removedPeer = removedPeer,
+            newPeer = newPeer,
+            listPeer = listPeer
+        )
+    } catch (e: Exception) {
+        // Catch parsing errors (e.g., bad UUID format, non-integer)
+        println("Error converting Redis map to ListPeerOut: ${e.message}")
+        throw IllegalArgumentException("Failed to parse stream message body.", e)
+    }
+}
+
+//endregion

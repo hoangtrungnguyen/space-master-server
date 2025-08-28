@@ -26,11 +26,15 @@ class SessionManager(
         val oldConnection = process2connection.put(key, connection)
         if (oldConnection != null) {
             oldConnection.close(CloseReason(Codes.NORMAL, "Reconnect"))
-            println("User ${key.userId} re-connected to document ${key.docId} via window ${key.windowId}. " +
-                    "Total connections to this document: ${process2connection.size}.")
+            println(
+                "User ${key.userId} re-connected to document ${key.docId} via window ${key.windowId}. " +
+                        "Total connections to this document: ${process2connection.size}."
+            )
         } else {
-            println("User ${key.userId} connected to document ${key.docId} via window ${key.windowId}. " +
-                    "Total connections to this document: ${process2connection.size}.")
+            println(
+                "User ${key.userId} connected to document ${key.docId} via window ${key.windowId}. " +
+                        "Total connections to this document: ${process2connection.size}."
+            )
         }
     }
 
@@ -38,8 +42,10 @@ class SessionManager(
         doc2process[key.docId]?.let { process2connection ->
             val removedConnection = process2connection.remove(key)
             if (removedConnection != null) {
-                println("User ${key.userId} disconnected documented ${key.docId} on window ${key.windowId}. " +
-                        "Remaining connections: ${process2connection.size}")
+                println(
+                    "User ${key.userId} disconnected documented ${key.docId} on window ${key.windowId}. " +
+                            "Remaining connections: ${process2connection.size}"
+                )
             }
 
 
@@ -103,5 +109,6 @@ class SessionManager(
         redisSubscriber.close()
         redis.close()
     }
+
 }
 
