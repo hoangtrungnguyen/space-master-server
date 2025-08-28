@@ -1,9 +1,6 @@
 package com.ideaspace.document
 
-import com.ideaspace.core.kafkaMessage.EditDocEventValue
-import com.ideaspace.core.kafkaMessage.EditElement
 import com.ideaspace.core.kafkaMessage.EditElementEventValue
-import com.ideaspace.core.kafkaMessage.EditElementPayload
 import com.ideaspace.core.ram.DocumentRAM
 import com.ideaspace.core.ram.ElementRAM
 import com.ideaspace.core.repository.CrudDocumentRepository
@@ -22,7 +19,7 @@ import kotlinx.serialization.json.put
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import java.util.UUID
+import java.util.*
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)

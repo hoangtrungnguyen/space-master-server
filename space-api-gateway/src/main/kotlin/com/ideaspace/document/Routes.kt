@@ -4,11 +4,12 @@ package com.ideaspace.document
 
 import com.ideaspace.config.AuthPrincipal
 import com.ideaspace.core.kafkaMessage.DocumentEventProducer
-import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.models.Process
 import com.ideaspace.core.models.ProcessKey
+import com.ideaspace.core.models.toDTO
 import com.ideaspace.core.repository.CrudDocumentRepository
+import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.core.repository.ProcessRepo
 import com.ideaspace.session.Acknowledgement
 import com.ideaspace.session.DocumentChannelInput
@@ -34,6 +35,12 @@ import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 fun Route.documentManagementRoutes() {
+    application.dependencies.provide<GetDocumentContext> {
+        val docRepo = resolve<CrudDocumentRepository>()
+        val elementRepo = resolve<ElementRepo>()
+        GetDocumentContext(docRepo, elementRepo)
+    }
+
     authenticate("auth-session") {
 
         post("/api/documents/create") {
@@ -62,9 +69,7 @@ fun Route.documentManagementRoutes() {
             call.respond(status = HttpStatusCode.OK, result)
         }
 
-        get("/api/documents/{uuid}") {
-
-        }
+        get("/api/documents/{uuid}", RoutingContext::getDocumentQuery)
     }
 
 }
@@ -81,11 +86,14 @@ fun Route.documentChangeRoutes() {
     authenticate("auth-session") {
         val d = application.dependencies
 
+
         webSocket("/ws/documents/{uuid}") {
             val sessionManager = d.resolve<SessionManager>()
             val docEventProducer = d.resolve<DocumentEventProducer>()
             val docRepo = d.resolve<CrudDocumentRepository>()
             val processRepo = d.resolve<ProcessRepo>()
+            val pullStreamContext = d.resolve<PullStreamContext>()
+
 
             // -----------------------------------------------
             // These setups happen once for every connection
@@ -152,18 +160,20 @@ fun Route.documentChangeRoutes() {
                     if (frame is Frame.Text) {
                         try {
                             val frameText = frame.readText()
-                            val event = Json.decodeFromString<DocumentChannelInput>(frameText)
-                            when (event) {
+                            val input = Json.decodeFromString<DocumentChannelInput>(frameText)
+                            when (input) {
                                 is DocumentFlowUpChange -> {
-                                    docEventProducer.sendEvent(doc.id, event.toDocumentSyncEventValue(process))
-                                    sendSerialized<DocumentChannelOutput>(Acknowledgement(
-                                        replyTo = event.messageId,
-                                        message = "Received event ${event.messageType} from window ${process.windowId}"
+                                    docEventProducer.sendEvent(doc.id, input.toDocumentSyncEventValue(process))
+                                    sendSerialized(Acknowledgement(
+                                        replyTo = input.messageId,
+                                        message = "Received event ${input.messageType} from window ${process.windowId}"
                                     ))
                                 }
 
                                 is PullStreamInput -> {
-
+                                    val response = PullStreamCommand(process, input)
+                                        .execute(pullStreamContext)
+                                    sendSerialized(response)
                                 }
                             }
 

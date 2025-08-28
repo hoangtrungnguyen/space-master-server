@@ -13,12 +13,17 @@ import com.ideaspace.core.kafkaMessage.RemoveElementEventValue
 import com.ideaspace.core.kafkaMessage.SaveDocEventValue
 import com.ideaspace.core.kafkaMessage.SyncOperation
 import com.ideaspace.core.models.Process
+import com.ideaspace.document.StreamEntriesOutput
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.contextual
+import kotlinx.serialization.modules.polymorphic
 import java.util.*
 
 enum class MessageType {
@@ -35,6 +40,8 @@ enum class MessageType {
     STREAM_ADD_ENTRY,
     PULL_STREAM,
     STREAM_ENTRIES,
+
+    ACK,
 }
 
 @Serializable
@@ -45,9 +52,9 @@ sealed class DocumentChannelInput {
 }
 
 @Serializable
-@JsonClassDiscriminator("messageType")
-sealed class DocumentChannelOutput {
+abstract class DocumentChannelOutput {
     abstract val replyTo: String
+    abstract val messageType: MessageType
 }
 
 // region Document Stream Api
@@ -217,11 +224,10 @@ class FinishSyncInput(
 }
 
 @Serializable
-@SerialName("STREAM_ADD_ENTRY")
 data class StreamAddEntry(
     override val replyTo: String = "NONE",
-    @SerialName("seid")
-    val streamEntryId: String
+    override val messageType: MessageType = MessageType.STREAM_ADD_ENTRY,
+    val entryId: String
 ) : DocumentChannelOutput()
 
 @Serializable
@@ -230,23 +236,24 @@ data class PullStreamInput(
     override val messageId: String,
     @Transient
     override val messageType: MessageType = MessageType.PULL_STREAM,
-    @SerialName("seid")
-    val streamEntryId: String,
-    val count: Int
+    val streamCursor: String,
+    val count: Long
 ) : DocumentChannelInput()
-
-@Serializable
-@SerialName("STREAM_ENTRIES")
-data class StreamEntriesOutput(
-    override val replyTo: String,
-    val entries: List<DocumentSyncEventValue>
-) : DocumentChannelOutput()
 
 // endregion
 
 @Serializable
-@SerialName("ACK")
 data class Acknowledgement(
     override val replyTo: String,
+    override val messageType: MessageType = MessageType.ACK,
     val message: String
 ) : DocumentChannelOutput()
+
+val ChannelJson = Json {
+    encodeDefaults = true
+    serializersModule = SerializersModule {
+        polymorphic(DocumentChannelOutput::class) {
+            subclass(StreamAddEntry::class, StreamAddEntry.serializer())
+        }
+    }
+}

@@ -30,7 +30,8 @@ data class DocumentDTO(
     val metadata: JsonElement?,
     val documentType: DocumentType,
     val status: DocumentStatus,
-    val content: ElementDTO? = null
+    val streamCursor: String,
+    val elements: List<ElementDTO> = emptyList(),
 )
 
 fun DocumentDAO.toDTO(): DocumentDTO = DocumentDTO(
@@ -45,9 +46,10 @@ fun DocumentDAO.toDTO(): DocumentDTO = DocumentDTO(
     metadata = this.metadata,
     documentType = this.documentType,
     status = this.status,
+    streamCursor = this.latestRedisEntry ?: "-",
 )
 
-fun toDTO(document: DocumentDAO, root: Element): DocumentDTO = DocumentDTO(
+fun toDTO(document: DocumentDAO, root: List<Element>): DocumentDTO = DocumentDTO(
     id = document.id.value,
     uuid = document.uuid,
     revId = document.revId,
@@ -59,6 +61,7 @@ fun toDTO(document: DocumentDAO, root: Element): DocumentDTO = DocumentDTO(
     metadata = document.metadata,
     documentType = document.documentType,
     status = document.status,
-    content = root.toDTO()
+    streamCursor = document.latestRedisEntry ?: "-",
+    elements = root.map { it.toDTO() },
 )
 

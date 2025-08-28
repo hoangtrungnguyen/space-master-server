@@ -1,9 +1,6 @@
 package com.ideaspace.document
 
-import com.ideaspace.core.kafkaMessage.AddElement
 import com.ideaspace.core.kafkaMessage.AddElementEventValue
-import com.ideaspace.core.kafkaMessage.AddElementPayload
-import com.ideaspace.core.kafkaMessage.EditDocEventValue
 import com.ideaspace.core.ram.DocumentRAM
 import com.ideaspace.core.ram.ElementRAM
 import com.ideaspace.core.repository.CrudDocumentRepository
@@ -12,7 +9,6 @@ import com.ideaspace.workers.DocumentStorage
 import com.ideaspace.workers.LogPublisher
 import io.mockk.*
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -50,24 +46,6 @@ class AddElementCommandTest {
         every { documentStorage.documentsMap } returns mutableMapOf(docId to documentRam)
         every { documentStorage.documentsMap[docId] } returns documentRam
         every { logPublisher.warn(any(),any(), any()) } returns mockk()
-    }
-
-    private fun createTestEvent(parentUuid: UUID? = null): EditDocEventValue {
-        return EditDocEventValue(
-            docId = docId,
-            processId = processId,
-            userId = 1L,
-            windowId = 1L,
-            payload = AddElementPayload(
-                element = AddElement(
-                    uuid = UUID.randomUUID(),
-                    parentUuid = parentUuid,
-                    metadata = JsonNull,
-                    type = "shape",
-                    value = JsonNull
-                )
-            )
-        )
     }
 
     @Test

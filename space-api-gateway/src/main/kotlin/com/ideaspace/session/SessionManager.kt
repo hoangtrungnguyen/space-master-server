@@ -3,22 +3,18 @@ package com.ideaspace.session
 import com.ideaspace.core.models.ProcessKey
 import io.ktor.websocket.*
 import io.ktor.websocket.CloseReason.*
-import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import io.lettuce.core.pubsub.StatefulRedisPubSubConnection
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 class SessionManager(
-    redisClient: RedisClient
+    val redis: StatefulRedisConnection<String, ByteArray>,
+    val redisPubSub: StatefulRedisPubSubConnection<String, String>
 ) {
 
-    private val redis: StatefulRedisConnection<String, String> by lazy { redisClient.connect() }
-    private val redisSubscriber = RedisSubscriber(redisClient, CoroutineScope(Dispatchers.IO + SupervisorJob()))
+    private val redisSubscriber = RedisSubscriber(redis, redisPubSub)
     private val doc2process = ConcurrentHashMap<Long, ConcurrentHashMap<ProcessKey, DocumentConnection>>()
 
     suspend fun register(key: ProcessKey, connection: DocumentConnection) {
@@ -86,10 +82,10 @@ class SessionManager(
     /**
      * Handle incoming sync events from Redis and broadcast to connected clients
      */
-    private suspend fun handleSyncEvent(docId: Long, documentMessage: DocumentChannelOutput) {
+    private suspend fun handleSyncEvent(docId: Long, streamAddEntry: StreamAddEntry) {
         val connections = doc2process[docId]
         if (connections != null) {
-            val eventText = Json.encodeToString(documentMessage)
+            val eventText = ChannelJson.encodeToString(streamAddEntry)
             connections.values.forEach { documentConnection ->
                 try {
                     documentConnection.webSocket.send(Frame.Text(eventText))

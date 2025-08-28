@@ -2,7 +2,6 @@
 
 package com.ideaspace.core.models
 
-import com.ideaspace.core.dao.DocumentDAO
 import com.ideaspace.core.dto.DocumentDTO
 import com.ideaspace.core.dto.toDTO
 import kotlinx.serialization.Serializable
@@ -41,7 +40,8 @@ enum class DocumentStatus {
 enum class DocumentType {
     DOC, CANVAS
 }
-fun BusinessDocument.toDTO( root: Element): DocumentDTO = DocumentDTO(
+
+fun BusinessDocument.toDTO(elements: List<Element>): DocumentDTO = DocumentDTO(
     id = this.id,
     uuid = this.uuid,
     revId = this.revId,
@@ -53,5 +53,6 @@ fun BusinessDocument.toDTO( root: Element): DocumentDTO = DocumentDTO(
     metadata = this.metadata,
     documentType = this.documentType,
     status = this.status,
-    content = root.toDTO()
+    streamCursor = this.latestRedisEntry,
+    elements = elements.map { it.toDTO() }
 )

@@ -2,11 +2,14 @@ package com.ideaspace.core.repository
 
 import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.models.BusinessDocument
+import java.util.UUID
 
 interface CrudDocumentRepository {
     suspend fun create(request: BusinessDocument): BusinessDocument
 
     suspend fun findByUuid(uuid: String): BusinessDocument?
+
+    suspend fun findByUuid(uuid: UUID): BusinessDocument?
 
     suspend fun findAll(): List<BusinessDocument>
 

@@ -1,28 +1,20 @@
 package com.ideaspace.document
 
-import com.ideaspace.core.kafkaMessage.EditDocEventValue
-import com.ideaspace.core.kafkaMessage.MoveElement
 import com.ideaspace.core.kafkaMessage.MoveElementEventValue
-import com.ideaspace.core.kafkaMessage.MoveElementPayload
 import com.ideaspace.core.ram.DocumentRAM
 import com.ideaspace.core.ram.ElementRAM
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.workers.DocumentStorage
 import com.ideaspace.workers.LogPublisher
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.just
-import io.mockk.mockk
-import io.mockk.runs
+import io.mockk.*
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import java.util.UUID
+import java.util.*
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)

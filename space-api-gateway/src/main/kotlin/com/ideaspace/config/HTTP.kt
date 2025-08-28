@@ -32,7 +32,8 @@ fun Application.configureHttpServer() {
         anyHost() // @TODO: Don't do this in production if possible. Try to limit it.
     }
     install(ContentNegotiation) {
-        json(Json{
+        json(Json {
+            encodeDefaults = true
             ignoreUnknownKeys = true
         })
     }

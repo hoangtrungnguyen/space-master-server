@@ -4,13 +4,8 @@ import com.ideaspace.config.AuthPrincipal
 import com.ideaspace.core.dto.DocumentDTO
 import com.ideaspace.core.kafkaMessage.DocumentEventProducer
 import com.ideaspace.core.kafkaMessage.InitSyncEventValue
-import com.ideaspace.core.kafkaMessage.InitSyncPayload
 import com.ideaspace.core.kafkaMessage.SyncOperation
-import com.ideaspace.core.models.BusinessDocument
-import com.ideaspace.core.models.DocumentStatus
-import com.ideaspace.core.models.DocumentType
-import com.ideaspace.core.models.Element
-import com.ideaspace.core.models.toDTO
+import com.ideaspace.core.models.*
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import io.ktor.server.plugins.di.*
@@ -70,7 +65,7 @@ class CreateDocumentCommand(
 
         documentEventProducer.sendEvent(doc.id, event)
 
-        return doc.toDTO(root)
+        return doc.toDTO(listOf(root))
     }
 
 }
