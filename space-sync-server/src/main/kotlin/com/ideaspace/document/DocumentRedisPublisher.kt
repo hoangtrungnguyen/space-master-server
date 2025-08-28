@@ -6,11 +6,11 @@ import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.kafkaMessage.FinishSyncEventValue
 import com.ideaspace.core.kafkaMessage.SaveDocEventValue
 import com.ideaspace.core.redis.RedisManager
-import com.ideaspace.core.redis.redisDocKey
 import com.ideaspace.core.redis.redisDocSyncEventsKey
 import io.lettuce.core.api.sync.RedisCommands
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToStream
 import java.io.ByteArrayOutputStream
 
 class DocumentRedisPublisher(

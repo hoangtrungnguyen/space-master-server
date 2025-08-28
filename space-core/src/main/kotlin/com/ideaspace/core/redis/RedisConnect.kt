@@ -24,3 +24,7 @@ class StringByteArrayCodec : RedisCodec<String, ByteArray> {
         return ByteBuffer.wrap(value)
     }
 }
+
+fun redisDocSyncEventsKey(docId: Long): String {
+    return "ideaspace:doc:$docId:stream"
+}

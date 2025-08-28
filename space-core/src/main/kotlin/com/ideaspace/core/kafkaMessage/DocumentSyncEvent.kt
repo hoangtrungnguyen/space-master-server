@@ -8,14 +8,12 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonClassDiscriminator
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import java.util.*
 import kotlin.uuid.ExperimentalUuidApi
 
 enum class SyncOperation {
     INIT_SYNC,
-    EDIT_DOC,
     ADD_ELEMENT,
     EDIT_ELEMENT,
     MOVE_ELEMENT,
@@ -45,17 +43,6 @@ data class InitSyncEventValue(
     override val processId: Long,
     override val userId: Long,
     override val windowId: Long
-) : DocumentSyncEventValue()
-
-@Serializable
-@SerialName("EDIT_DOC")
-data class EditDocEventValue(
-    @Transient override val syncOp: SyncOperation = SyncOperation.EDIT_DOC,
-    override val docId: Long,
-    override val processId: Long,
-    override val userId: Long,
-    override val windowId: Long,
-    val payload: EditDocPayload
 ) : DocumentSyncEventValue()
 
 @Serializable
@@ -144,100 +131,3 @@ data class FinishSyncEventValue(
     override val userId: Long,
     override val windowId: Long,
 ) : DocumentSyncEventValue()
-
-sealed class DocumentSyncPayload
-
-@Serializable
-open class InitSyncPayload() : DocumentSyncPayload()
-
-@Serializable
-@JsonClassDiscriminator("element_op")
-sealed class EditDocPayload : DocumentSyncPayload() {
-    abstract val elementOp: ElementOp
-    abstract val element: Element
-}
-
-@Serializable
-enum class ElementOp {
-    ADD_ELEMENT,
-    EDIT_ELEMENT,
-    MOVE_ELEMENT,
-    REMOVE_ELEMENT
-}
-
-// region Element Payload
-
-
-@Serializable
-@SerialName("ADD_ELEMENT")
-data class AddElementPayload(
-    @Transient             override val elementOp: ElementOp = ElementOp.ADD_ELEMENT,
-    @SerialName("element") override val element: AddElement
-) : EditDocPayload()
-
-
-@Serializable
-@SerialName("EDIT_ELEMENT")
-data class EditElementPayload(
-    @Transient             override val elementOp: ElementOp = ElementOp.EDIT_ELEMENT,
-    @SerialName("element") override val element: EditElement
-) : EditDocPayload()
-
-@Serializable
-@SerialName("MOVE_ELEMENT")
-data class MoveElementPayload(
-    @Transient             override val elementOp: ElementOp = ElementOp.MOVE_ELEMENT,
-    @SerialName("element") override val element: MoveElement
-) : EditDocPayload()
-
-@Serializable
-@SerialName("REMOVE_ELEMENT")
-data class RemoveElementPayload(
-    @Transient             override val elementOp: ElementOp = ElementOp.REMOVE_ELEMENT,
-    @SerialName("element") override val element: RemoveElement
-) : EditDocPayload()
-
-// endregion
-
-// region Element Body
-
-@Serializable
-sealed class Element {
-    abstract val uuid: UUID
-}
-
-@Serializable
-data class AddElement (
-    @Serializable(UUIDToString::class)
-    override val uuid: UUID,
-    @SerialName("parent_uuid") @Serializable(UUIDToString::class)
-    val parentUuid: UUID? = null,
-    val metadata: JsonElement? = null,
-    val type: String,
-    val value: JsonElement
-) : Element()
-
-@Serializable
-data class EditElement (
-    @Serializable(UUIDToString::class)
-    override val uuid: UUID,
-    val metadata: JsonElement? = null,
-    val type: String,
-    val value: JsonElement
-) : Element()
-
-@Serializable
-data class MoveElement (
-    @Serializable(UUIDToString::class)
-    override val uuid: UUID,
-    @SerialName("parent_uuid") @Serializable(UUIDToString::class)
-    val parentUuid: UUID? = null,
-) : Element()
-
-@Serializable
-data class RemoveElement (
-    @Serializable(UUIDToString::class)
-    override val uuid: UUID,
-) : Element()
-
-// endregion
