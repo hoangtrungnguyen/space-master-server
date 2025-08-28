@@ -52,6 +52,10 @@ class CrudDocumentRepositoryImpl(val db: Database ) : CrudDocumentRepository {
         DocumentDAO.find { DocumentTable.uuid eq UUID.fromString(uuid) }.firstOrNull()?.toModel()
     }
 
+    override suspend fun findByUuid(uuid: UUID): BusinessDocument? = transaction(db) {
+        DocumentDAO.find { DocumentTable.uuid eq uuid }.firstOrNull()?.toModel()
+    }
+
     @OptIn(ExperimentalTime::class)
     override suspend fun findAll(): List<BusinessDocument> = transaction(db) {
         DocumentDAO.all().orderBy(

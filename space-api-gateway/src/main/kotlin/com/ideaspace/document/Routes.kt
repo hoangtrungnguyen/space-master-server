@@ -9,6 +9,7 @@ import com.ideaspace.core.models.Process
 import com.ideaspace.core.models.ProcessKey
 import com.ideaspace.core.models.toDTO
 import com.ideaspace.core.repository.CrudDocumentRepository
+import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.core.repository.ProcessRepo
 import com.ideaspace.session.Acknowledgement
 import com.ideaspace.session.DocumentChannelInput
@@ -34,6 +35,12 @@ import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 fun Route.documentManagementRoutes() {
+    application.dependencies.provide<GetDocumentContext> {
+        val docRepo = resolve<CrudDocumentRepository>()
+        val elementRepo = resolve<ElementRepo>()
+        GetDocumentContext(docRepo, elementRepo)
+    }
+
     authenticate("auth-session") {
 
         post("/api/documents/create") {
@@ -62,12 +69,7 @@ fun Route.documentManagementRoutes() {
             call.respond(status = HttpStatusCode.OK, result)
         }
 
-        get("/api/documents/{uuid}") {
-            val docRepo = application.dependencies.resolve<CrudDocumentRepository>()
-            val uuid = call.parameters["uuid"] ?: ""
-            val doc = docRepo.findByUuid(uuid) ?: return@get call.respond(HttpStatusCode.NotFound)
-            call.respond(status = HttpStatusCode.OK, doc.toDTO(emptyList()))
-        }
+        get("/api/documents/{uuid}", RoutingContext::getDocumentQuery)
     }
 
 }
