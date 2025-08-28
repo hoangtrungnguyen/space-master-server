@@ -5,6 +5,9 @@ import com.ideaspace.core.redis.redisDocSyncEventsKey
 import com.ideaspace.core.redis.redisPeer2PeerEventsKey
 import com.ideaspace.session.ListPeerOut
 import com.ideaspace.session.logger
+import com.ideaspace.session.toListPeerOut
+import io.lettuce.core.Limit
+import io.lettuce.core.Range
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.api.sync.RedisCommands
@@ -62,7 +65,7 @@ class PeerRedisSubscriber(
         }
 
         val streamKey = redisPeer2PeerEventsKey(docId)
-        val streamPattern = "__keyspace@0__:${streamKey}"
+        val streamPatternKey = "__keyspace@0__:${streamKey}"
         val redisEventChannel = Channel<ListPeerOut>(Channel.UNLIMITED)
 
         val job = coroutineScope.launch {
@@ -80,7 +83,7 @@ class PeerRedisSubscriber(
 
         pubSubConnection.addListener(object : RedisPubSubListener<String, String> {
             override fun message(channel: String, message: String) {
-                if (channel == streamPattern) {
+                if (channel == streamPatternKey) {
                     try {
                         val listPeer = Json.decodeFromString<ListPeerOut>(message)
                         subscriptions[docId]?.channel?.trySend(listPeer)
@@ -91,7 +94,7 @@ class PeerRedisSubscriber(
             }
 
             override fun message(pattern: String, channel: String, message: String) {
-                if (channel == streamPattern) {
+                if (channel == streamPatternKey) {
                     try {
                         val listPeer = Json.decodeFromString<ListPeerOut>(message)
                         subscriptions[docId]?.channel?.trySend(listPeer)
@@ -118,9 +121,9 @@ class PeerRedisSubscriber(
             }
         })
 
-        pubSubConnection.sync().subscribe(streamPattern)
+        pubSubConnection.sync().subscribe(streamPatternKey)
 
-        println("[PeerRedisSubscriber] 🔔 Started Redis keyspace notification subscription for document $docId")
+        println("[PeerRedisSubscriber] 🔔 Started Redis keyspace notification subscription for document $docId with key: $streamPatternKey")
 
     }
 
@@ -142,11 +145,56 @@ class PeerRedisSubscriber(
     suspend fun publishListPeerEvent(
         docId: Long,
         listPeerOut: ListPeerOut
-    ): String {
+    ): Long {
         val streamKey = redisPeer2PeerEventsKey(docId)
-        val streamPattern = "__keyspace@0__:${streamKey}"
+        val streamPatternKey = "__keyspace@0__:${streamKey}"
         val syncCommands: RedisCommands<String, String> = RedisManager.connection.sync()
-        return syncCommands.startXAdd(listPeerOut, streamPattern)
+        return syncCommands.publishListPeer(listPeerOut, streamPatternKey)
+    }
+
+
+    suspend fun getLastest(docId: Long): ListPeerOut? {
+        val streamKey = redisPeer2PeerEventsKey(docId)
+        val streamPatternKey = "__keyspace@0__:${streamKey}"
+        val syncCommands: RedisCommands<String, String> = RedisManager.connection.sync()
+        val messages = syncCommands.xrevrange(
+            streamPatternKey,
+            Range.create("+", "-"), // Range from newest (+) to oldest (-)
+            Limit.from(1)             // Limit to just 1 result
+        )
+
+        // 4. Process the result
+        if (messages.isNotEmpty()) {
+            val latestMessage = messages.first()
+            println("✅ Success! Found latest message:")
+            println("   ID: ${latestMessage.id}")
+            println("   Body: ${latestMessage.body}")
+            return latestMessage.body.toListPeerOut()
+        } else {
+            println("❌ Stream '$streamPatternKey' is empty or does not exist.")
+            return null
+        }
+    }
+
+
+    /**
+     * Close all subscriptions and cleanup resources
+     */
+    suspend fun close() {
+        // Cancel all subscription jobs and close channels
+        subscriptions.values.forEach { subscription ->
+            subscription.channel.close()
+            subscription.job.cancel()
+        }
+        subscriptions.clear()
+
+        dataConnection.close()
+        pubSubConnection.close()
+
+        // Cancel the coroutine scope
+        coroutineScope.cancel()
+
+        println("🔐 Closed all Redis keyspace notification subscriptions")
     }
 
 
@@ -173,4 +221,13 @@ private fun RedisCommands<String, String>.startXAdd(
         throw Exception("The provided event did not serialize to a JSON object, cannot publish to Redis stream.")
 
     }
+}
+
+
+private fun RedisCommands<String, String>.publishListPeer(
+    listPeerOut: ListPeerOut,
+    redisKey: String,
+): Long {
+    val messageId = this.publish(redisKey, Json.encodeToString(listPeerOut))
+    return messageId
 }

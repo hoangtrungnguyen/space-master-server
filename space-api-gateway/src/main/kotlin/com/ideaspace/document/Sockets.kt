@@ -9,7 +9,7 @@ import com.ideaspace.core.models.Process
 import com.ideaspace.core.models.ProcessKey
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ProcessRepo
-import com.ideaspace.peerManager.PeerData
+import com.ideaspace.peerManager.PeerUuid
 import com.ideaspace.peerManager.RTCPeerManager
 import com.ideaspace.session.*
 import io.ktor.serialization.kotlinx.*
@@ -131,7 +131,7 @@ fun Route.documentWebSocketRoutes() {
                 )
             )
 
-            var peerData: PeerData? = null
+            var peerUuid: PeerUuid? = null
             val messageFlow: Flow<Any> =
                 incoming.consumeAsFlow()
                     .filterIsInstance<Frame.Text>() // Process only text frames
@@ -145,12 +145,11 @@ fun Route.documentWebSocketRoutes() {
                                     if (event.peerUuid == null) {
                                         println("⚠️ Process $processKey with event $event doesn't have peer uuid ")
                                     } else {
-                                        peerData = rtcPeerManager.publishPeer(
-                                            PeerData(
-                                                peerUuid = event.peerUuid,
-                                                process = process,
-                                            )
+                                        rtcPeerManager.registerPeerGroup(
+                                            docId = processKey.docId,
+                                            peerUuid = event.peerUuid,
                                         )
+                                        peerUuid = event.peerUuid
                                     }
                                 }
 
@@ -201,8 +200,8 @@ fun Route.documentWebSocketRoutes() {
                             println("Reason: ${cause.localizedMessage}")
                         }
                         sessionManager.unregister(processKey)
-                        peerData?.let {
-                            rtcPeerManager.removePeer(peerData)
+                        peerUuid?.let {
+                            rtcPeerManager.unregisterPeerGroup(processKey.docId, it)
                         } ?: println("OnSocket Complete: Peer not found")
                         println("WebSocket cleanup finished for user: ${principal.user.loginName}")
                     }

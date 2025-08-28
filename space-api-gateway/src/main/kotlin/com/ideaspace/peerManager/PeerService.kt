@@ -4,10 +4,8 @@ import com.ideaspace.core.dto.UUIDToString
 import com.ideaspace.core.models.Process
 import com.ideaspace.session.ListPeerOut
 import com.ideaspace.session.SessionManager
+import io.lettuce.core.RedisClient
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.util.*
 
@@ -22,14 +20,18 @@ typealias PeerUuid = UUID
 
 interface RTCPeerManager {
     suspend fun registerPeerGroup(docId: Long, peerUuid: PeerUuid)
+    suspend fun unregisterPeerGroup(docId: Long, peerUuid: PeerUuid)
+    suspend fun close()
 }
 
 
 class RedisPeerManagerImpl(
     private val sessionManager: SessionManager,
-    private val peerRedisSubscriber: PeerRedisSubscriber,
-    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val redisClient: RedisClient,
+    private val scope: CoroutineScope,
 ) : RTCPeerManager {
+
+    private val peerRedisSubscriber = PeerRedisSubscriber(redisClient, scope)
 
     val peersInOthers: MutableMap<Long, MutableSet<PeerUuid>> = HashMap()
 
@@ -43,50 +45,66 @@ class RedisPeerManagerImpl(
         if (peersInThis.containsKey(docId)) {
             peersInThis[docId]!!.add(peerUuid)
             val listPeer = mutableSetOf<UUID>()
-            listPeer.addAll(peersInOthers[docId]!!)
+            listPeer.addAll(peersInOthers[docId] ?: emptyList())
             listPeer.addAll(peersInThis[docId]!!)
 
             peerRedisSubscriber.publishListPeerEvent(
                 docId = docId,
                 listPeerOut = ListPeerOut(
-                    peersInOthers[docId]!!.size,
+                    listPeer.size,
                     listPeer = listPeer.toList(),
                     newPeer = peerUuid
                 )
             )
 
-            // s
-            peersInOthers[docId]!!.add(peerUuid)
         } else {
             peersInThis[docId] = mutableSetOf(
                 peerUuid
             )
 
-            coroutineScope.launch {
-                peerRedisSubscriber.subscribeToPeerGroup(docId) { listPeerOut ->
+            peerRedisSubscriber.subscribeToPeerGroup(docId) { listPeerOut ->
 
-                    val allPeers = listPeerOut.listPeer.toMutableSet()
+                val allPeers = listPeerOut.listPeer.toMutableSet()
 
-                    val thisPeersNow = peersInThis[docId]!!
+                val thisPeersNow = peersInThis[docId]!!
 
-                    val peersInOthersNow = allPeers.subtract(thisPeersNow)
+                val peersInOthersNow = allPeers.subtract(thisPeersNow)
 
-                    peersInOthers[docId] = peersInOthersNow.toMutableSet()
+                peersInOthers[docId] = peersInOthersNow.toMutableSet()
 
-                    val notConnectedPeer = thisPeersNow.subtract(allPeers)
-                    allPeers.addAll(notConnectedPeer)
-                    // send to all socket
-                    sessionManager.getConnections(docId)?.forEach { conn ->
-                        conn.value.send(allPeers.toSet())
-                    }
+                val notConnectedPeer = thisPeersNow.subtract(allPeers)
+                allPeers.addAll(notConnectedPeer)
+                // send to all socket
+                sessionManager.getConnections(docId)?.forEach { conn ->
+                    conn.value.send(
+                        ListPeerOut(
+                            peerCount = allPeers.size,
+                            listPeer = allPeers.toList(),
+                        )
+                    )
                 }
             }
+
+
+            val allPeer = mutableSetOf<UUID>()
+            peerRedisSubscriber.getLastest(docId)?.listPeer?.let {
+                allPeer.addAll(it)
+            }
+            allPeer.add(peerUuid)
+            peerRedisSubscriber.publishListPeerEvent(
+                docId = docId,
+                listPeerOut = ListPeerOut(
+                    allPeer.size,
+                    listPeer = allPeer.toList(),
+                    newPeer = peerUuid
+                )
+            )
 
 
         }
     }
 
-    suspend fun unregisterPeerGroup(docId: Long, peerUuid: PeerUuid) {
+    override suspend fun unregisterPeerGroup(docId: Long, peerUuid: PeerUuid) {
         peersInThis[docId]?.let {
             peersInThis[docId]!!.remove(peerUuid)
 
@@ -95,9 +113,9 @@ class RedisPeerManagerImpl(
                 peerRedisSubscriber.publishListPeerEvent(
                     docId,
                     ListPeerOut(
-                        peersInOthers[docId]!!.size,
+                        peersInOthers[docId]?.size ?: 0,
                         peerUuid,
-                        listPeer = peersInOthers[docId]!!.toList(),
+                        listPeer = peersInOthers[docId]?.toList() ?: emptyList(),
                     )
                 )
                 peersInOthers.remove(docId)
@@ -105,7 +123,7 @@ class RedisPeerManagerImpl(
                 peerRedisSubscriber.unsubscribeFromPeerGroup(docId)
             } else {
                 val allPeers = mutableListOf<UUID>()
-                allPeers.addAll(peersInOthers[docId]!!)
+                allPeers.addAll(peersInOthers[docId] ?: emptyList())
                 allPeers.addAll(peersInThis[docId]!!)
 
                 peerRedisSubscriber.publishListPeerEvent(
@@ -120,5 +138,9 @@ class RedisPeerManagerImpl(
         }
     }
 
+
+    override suspend fun close() {
+        peerRedisSubscriber.close()
+    }
 
 }
