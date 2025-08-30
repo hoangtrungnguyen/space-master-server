@@ -15,9 +15,9 @@ fun Application.configureErrorHandling() {
             call.respond(
                 HttpStatusCode.BadRequest,
                 ErrorResponse(
-                    error = "Invalid JSON format",
-                    message = cause.message ?: "Unable to parse request body",
-                    details = "Please check your JSON syntax and ensure all required fields are present",
+                    error = "INVALID_JSON_FORMAT",
+                    message = "Unable to parse request body",
+                    details = cause.message,
                     timestamp = System.currentTimeMillis()
                 )
             )
@@ -28,9 +28,9 @@ fun Application.configureErrorHandling() {
             call.respond(
                 HttpStatusCode.BadRequest,
                 ErrorResponse(
-                    error = "Invalid request data",
-                    message = cause.message ?: "Invalid argument provided",
-                    details = null,
+                    error = "INVALID_REQUEST_DATA",
+                    message = "Invalid argument provided",
+                    details = cause.message,
                     timestamp = System.currentTimeMillis()
                 )
             )
@@ -43,9 +43,9 @@ fun Application.configureErrorHandling() {
                     call.respond(
                         HttpStatusCode.BadRequest,
                         ErrorResponse(
-                            error = "Content transformation failed",
-                            message = cause.message ?: "Unable to process request content",
-                            details = "Check Content-Type header and request body format",
+                            error = "CONTENT_TRANSFORMATION_FAILED",
+                            message = "Unable to process request content",
+                            details = cause.message,
                             timestamp = System.currentTimeMillis()
                         )
                     )
@@ -55,7 +55,7 @@ fun Application.configureErrorHandling() {
                     call.respond(
                         HttpStatusCode.InternalServerError,
                         ErrorResponse(
-                            error = "Internal server error",
+                            error = "INTERNAL_SERVER_ERROR",
                             message = "An unexpected error occurred",
                             details = "${cause::class.simpleName}: ${cause.message ?: "No additional details available"}",
                             timestamp = System.currentTimeMillis()

@@ -44,28 +44,7 @@ class CreateDocumentCommand(
             latestRedisEntry = ""
         ))
 
-        val root = elementRepo.create(Element(
-            uuid = UUID(0, 0),
-            docId = doc.id,
-            parentUuid = null,
-            metadata = null,
-            type = "#root",
-            value = JsonObject(emptyMap()),
-            deletedAt = null
-        ))
-
-
-        val event = InitSyncEventValue(
-            syncOp = SyncOperation.INIT_SYNC,
-            docId = doc.id,
-            processId = 2, // TODO: Generate process ID
-            userId = 1, // TODO: Get from context
-            windowId = 1, // TODO: Get from context
-        )
-
-        documentEventProducer.sendEvent(doc.id, event)
-
-        return doc.toDTO(listOf(root))
+        return doc.toDTO(listOf())
     }
 
 }
