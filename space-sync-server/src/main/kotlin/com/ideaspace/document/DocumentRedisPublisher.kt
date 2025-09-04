@@ -6,6 +6,7 @@ import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.kafkaMessage.FinishSyncEventValue
 import com.ideaspace.core.kafkaMessage.SaveDocEventValue
 import com.ideaspace.core.redis.RedisManager
+import com.ideaspace.core.redis.toBytes
 import com.ideaspace.core.redis.redisDocSyncEventsKey
 import io.lettuce.core.api.sync.RedisCommands
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -55,7 +56,10 @@ class DocumentRedisPublisher(
             outputStream.toByteArray()
         }
 
-        val messageId = this.xadd(redisKey, mapOf("bytes" to value))
+        val messageId = this.xadd(redisKey, mapOf(
+            "sourceProcessId" to redisDocumentEvent.processId.toBytes(),
+            "bytes" to value
+        ))
         return messageId.also {
             println("✅ Saved operation ${processId} to Redis stream '$redisKey' with message ID $messageId")
         }

@@ -6,6 +6,7 @@ import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.workers.DocumentStorage
 import com.ideaspace.workers.LogPublisher
+import kotlin.reflect.typeOf
 
 
 interface BaseDocCommand {
@@ -83,7 +84,7 @@ class CommandFactory(
                     documentRepository
                 )
             }
-            else -> throw RuntimeException("Missing handle for ${editDocValue.syncOp}")
+            else -> throw RuntimeException("Missing handle for ${editDocValue.javaClass.simpleName}")
         }
     }
 }

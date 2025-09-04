@@ -14,7 +14,6 @@ import com.ideaspace.core.kafkaMessage.RemoveElementEventValue
 import com.ideaspace.core.kafkaMessage.SaveDocEventValue
 import com.ideaspace.core.kafkaMessage.SyncOperation
 import com.ideaspace.core.models.Process
-import com.ideaspace.document.StreamEntriesOutput
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -23,7 +22,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.contextual
 import kotlinx.serialization.modules.polymorphic
 import java.util.*
 
@@ -77,7 +75,6 @@ class InitSyncInput(
 ) : DocumentFlowUpChange() {
     override fun toDocumentSyncEventValue(process: Process): DocumentSyncEventValue {
         return InitSyncEventValue(
-            syncOp = SyncOperation.INIT_SYNC,
             docId = process.docId,
             processId = process.id,
             userId = process.userId,
@@ -102,7 +99,6 @@ data class AddElementInput (
 ) : DocumentFlowUpChange() {
     override fun toDocumentSyncEventValue(process: Process): DocumentSyncEventValue {
         return AddElementEventValue(
-            syncOp = SyncOperation.ADD_ELEMENT,
             docId = process.docId,
             processId = process.id,
             userId = process.userId,
@@ -132,7 +128,6 @@ data class EditElementInput (
 ) : DocumentFlowUpChange() {
     override fun toDocumentSyncEventValue(process: Process): DocumentSyncEventValue {
         return EditElementEventValue(
-            syncOp = SyncOperation.EDIT_ELEMENT,
             docId = process.docId,
             processId = process.id,
             userId = process.userId,
@@ -159,7 +154,6 @@ data class MoveElementInput (
 ) : DocumentFlowUpChange() {
     override fun toDocumentSyncEventValue(process: Process): DocumentSyncEventValue {
         return MoveElementEventValue(
-            syncOp = SyncOperation.MOVE_ELEMENT,
             docId = process.docId,
             processId = process.id,
             userId = process.userId,
@@ -181,7 +175,6 @@ data class RemoveElementInput (
 ) : DocumentFlowUpChange() {
     override fun toDocumentSyncEventValue(process: Process): DocumentSyncEventValue {
         return RemoveElementEventValue(
-            syncOp = SyncOperation.REMOVE_ELEMENT,
             docId = process.docId,
             processId = process.id,
             userId = process.userId,
@@ -201,7 +194,6 @@ class SaveDocInput(
 ) : DocumentFlowUpChange() {
     override fun toDocumentSyncEventValue(process: Process): DocumentSyncEventValue {
         return SaveDocEventValue(
-            syncOp = SyncOperation.SAVE_DOC,
             docId = process.docId,
             processId = process.id,
             userId = process.userId,
@@ -220,7 +212,6 @@ class FinishSyncInput(
 ) : DocumentFlowUpChange() {
     override fun toDocumentSyncEventValue(process: Process): DocumentSyncEventValue {
         return FinishSyncEventValue(
-            syncOp = SyncOperation.FINISH_SYNC,
             docId = process.docId,
             processId = process.id,
             userId = process.userId,
@@ -233,7 +224,9 @@ class FinishSyncInput(
 data class StreamAddEntry(
     override val replyTo: String = "NONE",
     override val messageType: MessageType = MessageType.STREAM_ADD_ENTRY,
-    val entryId: String
+    val entryId: String,
+    @Transient
+    val sourceProcessId: Long = -1,
 ) : DocumentChannelOutput()
 
 @Serializable

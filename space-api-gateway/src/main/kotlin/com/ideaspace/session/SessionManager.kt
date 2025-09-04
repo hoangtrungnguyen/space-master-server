@@ -86,9 +86,10 @@ class SessionManager(
         val connections = doc2process[docId]
         if (connections != null) {
             val eventText = ChannelJson.encodeToString(streamAddEntry)
-            connections.values.forEach { documentConnection ->
+            for (target in connections.values) {
+                if (target.process.id == streamAddEntry.sourceProcessId) continue
                 try {
-                    documentConnection.webSocket.send(Frame.Text(eventText))
+                    target.webSocket.send(Frame.Text(eventText))
                 } catch (e: Exception) {
                     println("❌ Failed to send sync event to connection: ${e.message}")
                 }

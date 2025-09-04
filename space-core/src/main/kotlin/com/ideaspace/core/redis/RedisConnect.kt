@@ -28,3 +28,11 @@ class StringByteArrayCodec : RedisCodec<String, ByteArray> {
 fun redisDocSyncEventsKey(docId: Long): String {
     return "ideaspace:doc:$docId:stream"
 }
+
+fun Long.toBytes(): ByteArray {
+    return ByteBuffer.allocate(Long.SIZE_BYTES).putLong(this).array()
+}
+
+fun ByteArray.toLong(): Long {
+    return ByteBuffer.wrap(this).long
+}

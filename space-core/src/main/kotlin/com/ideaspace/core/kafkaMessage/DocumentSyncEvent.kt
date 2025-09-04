@@ -23,22 +23,24 @@ enum class SyncOperation {
 }
 
 @Serializable
-@JsonClassDiscriminator("sync_op")
+@JsonClassDiscriminator("syncOp")
 sealed class DocumentSyncEventValue {
     //// NOTE: This field is only used when returning to process as stream entries
     var entryId: String? = null
     //// END OF NOTE
-    abstract val syncOp: SyncOperation
     abstract val docId: Long
+
+    /** Process that initiates this event */
     abstract val processId: Long
+    /** User that initiates this event */
     abstract val userId: Long
+    /** Window that initiates this event */
     abstract val windowId: Long
 }
 
 @Serializable
 @SerialName("INIT_SYNC")
 data class InitSyncEventValue(
-    @Transient override val syncOp: SyncOperation = SyncOperation.INIT_SYNC,
     override val docId: Long,
     override val processId: Long,
     override val userId: Long,
@@ -48,7 +50,6 @@ data class InitSyncEventValue(
 @Serializable
 @SerialName("ADD_ELEMENT")
 data class AddElementEventValue(
-    @Transient override val syncOp: SyncOperation = SyncOperation.ADD_ELEMENT,
     override val docId: Long,
     override val processId: Long,
     override val userId: Long,
@@ -67,7 +68,6 @@ data class AddElementEventValue(
 @Serializable
 @SerialName("EDIT_ELEMENT")
 data class EditElementEventValue(
-    @Transient override val syncOp: SyncOperation = SyncOperation.EDIT_ELEMENT,
     override val docId: Long,
     override val processId: Long,
     override val userId: Long,
@@ -84,7 +84,6 @@ data class EditElementEventValue(
 @Serializable
 @SerialName("MOVE_ELEMENT")
 data class MoveElementEventValue (
-    @Transient override val syncOp: SyncOperation = SyncOperation.MOVE_ELEMENT,
     override val docId: Long,
     override val processId: Long,
     override val userId: Long,
@@ -101,7 +100,6 @@ data class MoveElementEventValue (
 @Serializable
 @SerialName("REMOVE_ELEMENT")
 data class RemoveElementEventValue (
-    @Transient override val syncOp: SyncOperation = SyncOperation.REMOVE_ELEMENT,
     override val docId: Long,
     override val processId: Long,
     override val userId: Long,
@@ -114,7 +112,6 @@ data class RemoveElementEventValue (
 @Serializable
 @SerialName("SAVE_DOC")
 data class SaveDocEventValue(
-    @Transient override val syncOp: SyncOperation = SyncOperation.SAVE_DOC,
     override val docId: Long,
     override val processId: Long,
     override val userId: Long,
@@ -125,7 +122,6 @@ data class SaveDocEventValue(
 @Serializable
 @SerialName("FINISH_SYNC")
 data class FinishSyncEventValue(
-    @Transient override val syncOp: SyncOperation = SyncOperation.FINISH_SYNC,
     override val docId: Long,
     override val processId: Long,
     override val userId: Long,

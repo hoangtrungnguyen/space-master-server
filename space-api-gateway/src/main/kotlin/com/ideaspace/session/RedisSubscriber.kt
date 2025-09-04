@@ -1,6 +1,8 @@
+@file:OptIn(ExperimentalSerializationApi::class)
 
 package com.ideaspace.session
 
+import com.ideaspace.core.redis.toLong
 import com.ideaspace.core.redis.redisDocSyncEventsKey
 import io.lettuce.core.Limit
 import io.lettuce.core.Range.unbounded
@@ -10,6 +12,7 @@ import io.lettuce.core.pubsub.StatefulRedisPubSubConnection
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.serialization.ExperimentalSerializationApi
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
@@ -79,10 +82,9 @@ class RedisSubscriber(
                         // Then we can craft a meaningful message for the subscribers
                         val entries = redis.sync().xrevrange(streamKey, unbounded(), Limit.from(1))
                         val latestEntry = entries.firstOrNull()
-                        if (latestEntry != null) {
-                            onMessage(StreamAddEntry(entryId = latestEntry.id))
-                        } else {
-
+                        val sourceProcessId = latestEntry?.body?.get("sourceProcessId")?.toLong()
+                        if (sourceProcessId != null) {
+                            onMessage(StreamAddEntry(entryId = latestEntry.id, sourceProcessId = sourceProcessId))
                         }
                     }
                 } catch (e: Exception) {
