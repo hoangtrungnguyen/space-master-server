@@ -17,7 +17,7 @@ suspend fun RoutingContext.getDocumentQuery() {
         uuid = UUID.fromString(rawUuid)
     } catch (e : IllegalArgumentException) {
         return call.respond(HttpStatusCode.BadRequest, ErrorResponse(
-            error = "INVALID_DOCUMENT_UUID",
+            code = "INVALID_DOCUMENT_UUID",
             message = "Invalid document UUID",
             details = null,
             timestamp = System.currentTimeMillis(),
@@ -32,7 +32,7 @@ suspend fun RoutingContext.getDocumentQuery() {
 
     val doc = context.docRepo.findByUuid(uuid)
         ?: return call.respond(HttpStatusCode.NotFound, ErrorResponse(
-            error = "DOCUMENT_NOT_FOUND",
+            code = "DOCUMENT_NOT_FOUND",
             message = "Document not found",
             details = null,
             timestamp = System.currentTimeMillis()

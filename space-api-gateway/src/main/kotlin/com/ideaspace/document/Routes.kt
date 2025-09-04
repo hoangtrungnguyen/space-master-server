@@ -3,6 +3,7 @@
 package com.ideaspace.document
 
 import com.ideaspace.config.AuthPrincipal
+import com.ideaspace.config.ErrorResponse
 import com.ideaspace.core.kafkaMessage.DocumentEventProducer
 import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.models.Process
@@ -24,8 +25,12 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.serialization.json.Json
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+
+val logger: Logger = LoggerFactory.getLogger("documentManagementRoutes")
 
 fun Route.documentManagementRoutes() {
     application.dependencies.provide<GetDocumentContext> {
@@ -137,23 +142,22 @@ fun Route.documentChangeRoutes() {
 
             try {
                 // Send a welcome message to confirm successful connection
-                send(
-                    Frame.Text(
-                        Json.encodeToString(
-                            mapOf(
-                                "type" to "connection_established",
-                                "message" to "Successfully connected to document $docUuid",
-                                "loginName" to principal.user.loginName
-                            )
-                        )
-                    )
-                )
+                sendSerialized(ConnectedOutput(
+                    replyTo = "NONE",
+                    message = "Successfully connected to document $docUuid",
+                    loginName = principal.user.loginName
+                ))
 
                 incoming.consumeAsFlow().mapNotNull { frame ->
                     if (frame is Frame.Text) {
+                        var fallbackMessageId: String? = null
+                        var fallbackMessageType: String? = null
+
                         try {
                             val frameText = frame.readText()
-                            val input = Json.decodeFromString<DocumentChannelInput>(frameText)
+                            fallbackMessageId = extractMessageId(frameText)
+                            fallbackMessageType = extractMessageType(frameText)
+                            val input = ChannelJson.decodeFromString<DocumentChannelInput>(frameText)
                             when (input) {
                                 is DocumentFlowUpChange -> {
                                     docEventProducer.sendEvent(doc.id, input.toDocumentSyncEventValue(process))
@@ -169,22 +173,20 @@ fun Route.documentChangeRoutes() {
                                     sendSerialized(response)
                                 }
                             }
-
-                        } catch (e: Exception) {
-                            e.printStackTrace()
+                        } catch (consumeError: Exception) {
+                            logger.error("Failed to consume message ${fallbackMessageId} type ${fallbackMessageType}", consumeError)
                             try {
-                                send(
-                                    Frame.Text(
-                                        Json.encodeToString(
-                                            mapOf(
-                                                "type" to "error",
-                                                "message" to "Failed to process message: ${e.localizedMessage}"
-                                            )
-                                        )
+                                sendSerialized(ErrorOutput(
+                                    replyTo = fallbackMessageId ?: "NONE",
+                                    error = ErrorResponse(
+                                        code = "INVALID_JSON_FORMAT",
+                                        message = "Unable to parse request body",
+                                        details = consumeError.message,
+                                        timestamp = System.currentTimeMillis()
                                     )
-                                )
-                            } catch (sendError: Exception) {
-                                println("Failed to send error response: ${sendError.localizedMessage}")
+                                ))
+                            } catch (replyError: Exception) {
+                                logger.error("Failed to send error response", replyError)
                             }
                         }
                     }
@@ -192,15 +194,24 @@ fun Route.documentChangeRoutes() {
 
 
             } catch (e: Exception) {
-                println("WebSocket connection error for user $userId: ${e.localizedMessage}")
+                logger.error("WebSocket connection error for user $userId: ${e.localizedMessage}", e)
             } finally {
                 sessionManager.unregister(processKey)
-                println("WebSocket connection closed for user: ${principal.user.loginName} (ID: $userId)")
+                logger.info("WebSocket connection closed for user: ${principal.user.loginName} (ID: $userId)")
             }
         }
     }
 }
 
+fun extractMessageId(json: String): String? {
+    val regex = """"messageId"\s*:\s*"([^"]*)"""".toRegex()
+    return regex.find(json)?.groupValues?.get(1)
+}
+
+fun extractMessageType(json: String): String? {
+    val regex = """"messageType"\s*:\s*"([^"]*)"""".toRegex()
+    return regex.find(json)?.groupValues?.get(1)
+}
 
 /**
  * Validates that a user has permission to access a specific document
