@@ -3,6 +3,7 @@
 package com.ideaspace.document
 
 import com.ideaspace.config.AuthPrincipal
+import com.ideaspace.config.ErrorResponse
 import com.ideaspace.core.kafkaMessage.DocumentEventProducer
 import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.models.Process
@@ -123,17 +124,11 @@ fun Route.documentWebSocketRoutes() {
             )
 
             // Send a welcome message to confirm successful connection
-            send(
-                Frame.Text(
-                    Json.encodeToString(
-                        mapOf(
-                            "type" to "connection_established",
-                            "message" to "Successfully connected to document $docUuid",
-                            "loginName" to principal.user.loginName
-                        )
-                    )
-                )
-            )
+            sendSerialized(ConnectedOutput(
+                replyTo = "NONE",
+                message = "Successfully connected to document $docUuid",
+                loginName = principal.user.loginName
+            ))
 
             var peerUuid: PeerUuid? = null
             val messageFlow: Flow<Any> =
@@ -141,7 +136,7 @@ fun Route.documentWebSocketRoutes() {
                     .filterIsInstance<Frame.Text>() // Process only text frames
                     .mapNotNull { frame ->
                         val frameText = frame.readText()
-                        val input = Json.decodeFromString<DocumentChannelInput>(frameText)
+                        val input = ChannelJson.decodeFromString<DocumentChannelInput>(frameText)
                         when (input) {
                             is DocumentFlowUpChange -> {
 
@@ -178,26 +173,19 @@ fun Route.documentWebSocketRoutes() {
 
                         input
                     }.catch { cause ->
+                        logger.error("Failed to consume message", cause)
                         try {
-                            if (cause is SerializationException) {
-                                cause.printStackTrace()
-                                send(
-                                    Frame.Text(
-                                        Json.encodeToString(
-                                            mapOf(
-                                                "type" to "error",
-                                                "message" to "Failed to process message: ${cause.localizedMessage}"
-                                            )
-                                        )
-                                    )
+                            sendSerialized(ErrorOutput(
+                                replyTo = "NONE",
+                                error = ErrorResponse(
+                                    code = "INVALID_JSON_FORMAT",
+                                    message = "Unable to parse request body",
+                                    details = cause.message,
+                                    timestamp = System.currentTimeMillis()
                                 )
-                            } else {
-                                cause.printStackTrace()
-                                println("Exception: ${cause.localizedMessage}")
-                            }
-                        } catch (t: Exception) {
-                            t.printStackTrace()
-                            throw t
+                            ))
+                        } catch (replyError: Exception) {
+                            logger.error("Failed to send error response", replyError)
                         }
                     }.onCompletion { cause ->
                         // This block executes when the flow is complete for any reason.

@@ -40,7 +40,6 @@ object InstantToISODateTime : KSerializer<Instant> {
     }
 }
 
-
 object NullableUUIDSerializer : KSerializer<UUID?> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("NullableUUID", PrimitiveKind.STRING)
 

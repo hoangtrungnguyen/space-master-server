@@ -3,15 +3,28 @@
 package com.ideaspace.document
 
 import com.ideaspace.config.AuthPrincipal
+import com.ideaspace.core.repository.CrudDocumentRepository
+import com.ideaspace.core.repository.ElementRepo
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.plugins.di.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import kotlin.time.ExperimentalTime
 
+val logger: Logger = LoggerFactory.getLogger("documentManagementRoutes")
+
 fun Route.documentManagementRoutes() {
+
+    application.dependencies.provide<GetDocumentContext> {
+        val docRepo = resolve<CrudDocumentRepository>()
+        val elementRepo = resolve<ElementRepo>()
+        GetDocumentContext(docRepo, elementRepo)
+    }
+
     authenticate("auth-session") {
 
         post("/api/documents/create") {
@@ -40,9 +53,7 @@ fun Route.documentManagementRoutes() {
             call.respond(status = HttpStatusCode.OK, result)
         }
 
-        get("/api/documents/{uuid}") {
-
-        }
+        get("/api/documents/{uuid}", RoutingContext::getDocumentQuery)
     }
 
 }

@@ -2,6 +2,7 @@
 
 package com.ideaspace.session
 
+import com.ideaspace.config.ErrorResponse
 import com.ideaspace.core.dto.NullableUUIDSerializer
 import com.ideaspace.core.dto.UUIDToString
 import com.ideaspace.core.kafkaMessage.*
@@ -18,7 +19,7 @@ import kotlinx.serialization.modules.polymorphic
 import java.util.*
 
 enum class MessageType {
-    // Document Stream Api
+    // InputMessageType
 
     INIT_SYNC,
     ADD_ELEMENT,
@@ -28,10 +29,13 @@ enum class MessageType {
     SAVE_DOC,
     FINISH_SYNC,
 
+    // OutputMessageType
     STREAM_ADD_ENTRY,
     PULL_STREAM,
     STREAM_ENTRIES,
 
+    CONNECTED,
+    ERROR,
     ACK,
 
     LIST_PEER
@@ -64,11 +68,10 @@ class InitSyncInput(
     @Transient
     override val messageType: MessageType = MessageType.INIT_SYNC,
     @Serializable(with = NullableUUIDSerializer::class)
-    val peerUuid: UUID?,
+    val peerUuid: UUID? = null,
 ) : DocumentFlowUpChange() {
     override fun toDocumentSyncEventValue(process: Process): DocumentSyncEventValue {
         return InitSyncEventValue(
-            syncOp = SyncOperation.INIT_SYNC,
             docId = process.docId,
             processId = process.id,
             userId = process.userId,
@@ -94,7 +97,6 @@ data class AddElementInput (
 ) : DocumentFlowUpChange() {
     override fun toDocumentSyncEventValue(process: Process): DocumentSyncEventValue {
         return AddElementEventValue(
-            syncOp = SyncOperation.ADD_ELEMENT,
             docId = process.docId,
             processId = process.id,
             userId = process.userId,
@@ -116,13 +118,14 @@ data class EditElementInput (
     override val messageType: MessageType = MessageType.EDIT_ELEMENT,
     @Serializable(UUIDToString::class)
     val uuid: UUID,
+    @Serializable(UUIDToString::class)
+    val parentUuid: UUID? = null,
     val metadata: JsonObject? = null,
     val type: String,
     val value: JsonObject
 ) : DocumentFlowUpChange() {
     override fun toDocumentSyncEventValue(process: Process): DocumentSyncEventValue {
         return EditElementEventValue(
-            syncOp = SyncOperation.EDIT_ELEMENT,
             docId = process.docId,
             processId = process.id,
             userId = process.userId,
@@ -149,7 +152,6 @@ data class MoveElementInput (
 ) : DocumentFlowUpChange() {
     override fun toDocumentSyncEventValue(process: Process): DocumentSyncEventValue {
         return MoveElementEventValue(
-            syncOp = SyncOperation.MOVE_ELEMENT,
             docId = process.docId,
             processId = process.id,
             userId = process.userId,
@@ -171,7 +173,6 @@ data class RemoveElementInput (
 ) : DocumentFlowUpChange() {
     override fun toDocumentSyncEventValue(process: Process): DocumentSyncEventValue {
         return RemoveElementEventValue(
-            syncOp = SyncOperation.REMOVE_ELEMENT,
             docId = process.docId,
             processId = process.id,
             userId = process.userId,
@@ -191,7 +192,6 @@ class SaveDocInput(
 ) : DocumentFlowUpChange() {
     override fun toDocumentSyncEventValue(process: Process): DocumentSyncEventValue {
         return SaveDocEventValue(
-            syncOp = SyncOperation.SAVE_DOC,
             docId = process.docId,
             processId = process.id,
             userId = process.userId,
@@ -210,7 +210,6 @@ class FinishSyncInput(
 ) : DocumentFlowUpChange() {
     override fun toDocumentSyncEventValue(process: Process): DocumentSyncEventValue {
         return FinishSyncEventValue(
-            syncOp = SyncOperation.FINISH_SYNC,
             docId = process.docId,
             processId = process.id,
             userId = process.userId,
@@ -223,7 +222,9 @@ class FinishSyncInput(
 data class StreamAddEntry(
     override val replyTo: String = "NONE",
     override val messageType: MessageType = MessageType.STREAM_ADD_ENTRY,
-    val entryId: String
+    val entryId: String,
+    @Transient
+    val sourceProcessId: Long = -1,
 ) : DocumentChannelOutput()
 
 @Serializable
@@ -239,6 +240,22 @@ data class PullStreamInput(
 // endregion
 
 @Serializable
+data class ConnectedOutput(
+    override val replyTo: String,
+    override val messageType: MessageType = MessageType.CONNECTED,
+    val message: String,
+    val loginName: String,
+) : DocumentChannelOutput()
+
+
+@Serializable
+data class ErrorOutput(
+    override val replyTo: String,
+    override val messageType: MessageType = MessageType.ERROR,
+    val error: ErrorResponse
+) : DocumentChannelOutput()
+
+@Serializable
 data class Acknowledgement(
     override val replyTo: String,
     override val messageType: MessageType = MessageType.ACK,
@@ -247,6 +264,8 @@ data class Acknowledgement(
 
 val ChannelJson = Json {
     encodeDefaults = true
+    ignoreUnknownKeys = true
+
     serializersModule = SerializersModule {
         polymorphic(DocumentChannelOutput::class) {
             subclass(StreamAddEntry::class, StreamAddEntry.serializer())

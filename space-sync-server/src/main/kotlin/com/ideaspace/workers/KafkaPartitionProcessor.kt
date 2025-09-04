@@ -71,7 +71,7 @@ class KafkaPartitionProcessor() {
                     registry.finish(doc, docEventVale)
                 }
 
-                else -> throw RuntimeException("Missing handle for ${docEventVale.syncOp}")
+                else -> throw RuntimeException("Missing handle for ${docEventVale.javaClass.simpleName}")
             }
 
 

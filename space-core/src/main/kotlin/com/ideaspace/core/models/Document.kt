@@ -53,6 +53,6 @@ fun BusinessDocument.toDTO(elements: List<Element>): DocumentDTO = DocumentDTO(
     metadata = this.metadata,
     documentType = this.documentType,
     status = this.status,
-    streamCursor = this.latestRedisEntry,
+    streamCursor = "(" + this.latestRedisEntry,
     elements = elements.map { it.toDTO() }
 )

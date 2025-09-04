@@ -2,13 +2,13 @@ package com.ideaspace.document
 
 import com.ideaspace.config.AuthPrincipal
 import com.ideaspace.core.dto.DocumentDTO
-import com.ideaspace.core.kafkaMessage.DocumentEventProducer
-import com.ideaspace.core.models.*
+import com.ideaspace.core.models.BusinessDocument
+import com.ideaspace.core.models.DocumentStatus
+import com.ideaspace.core.models.DocumentType
+import com.ideaspace.core.models.toDTO
 import com.ideaspace.core.repository.CrudDocumentRepository
-import com.ideaspace.core.repository.ElementRepo
 import io.ktor.server.plugins.di.*
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
 import java.util.*
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -22,8 +22,6 @@ class CreateDocumentCommand(
 
     suspend fun execute(dependencies: DependencyRegistry): DocumentDTO {
         val docRepo = dependencies.resolve<CrudDocumentRepository>()
-        val elementRepo = dependencies.resolve<ElementRepo>()
-        val documentEventProducer = dependencies.resolve<DocumentEventProducer>() // Resolve the producer
 
         val doc = docRepo.create(BusinessDocument(
             id = -1,
@@ -42,17 +40,7 @@ class CreateDocumentCommand(
             latestRedisEntry = ""
         ))
 
-        val root = elementRepo.create(Element(
-            uuid = UUID(0, 0),
-            docId = doc.id,
-            parentUuid = null,
-            metadata = null,
-            type = "#root",
-            value = JsonObject(emptyMap()),
-            deletedAt = null
-        ))
-
-        return doc.toDTO(listOf(root))
+        return doc.toDTO(listOf())
     }
 
 }
