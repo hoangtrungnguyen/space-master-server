@@ -3,8 +3,6 @@ package com.ideaspace.document
 import com.ideaspace.config.AuthPrincipal
 import com.ideaspace.core.dto.DocumentDTO
 import com.ideaspace.core.kafkaMessage.DocumentEventProducer
-import com.ideaspace.core.kafkaMessage.InitSyncEventValue
-import com.ideaspace.core.kafkaMessage.SyncOperation
 import com.ideaspace.core.models.*
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
@@ -53,17 +51,6 @@ class CreateDocumentCommand(
             value = JsonObject(emptyMap()),
             deletedAt = null
         ))
-
-
-        val event = InitSyncEventValue(
-            syncOp = SyncOperation.INIT_SYNC,
-            docId = doc.id,
-            processId = 2, // TODO: Generate process ID
-            userId = 1, // TODO: Get from context
-            windowId = 1, // TODO: Get from context
-        )
-
-        documentEventProducer.sendEvent(doc.id, event)
 
         return doc.toDTO(listOf(root))
     }

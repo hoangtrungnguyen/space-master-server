@@ -39,3 +39,25 @@ object InstantToISODateTime : KSerializer<Instant> {
         return Instant.parse(decoder.decodeString())
     }
 }
+
+
+object NullableUUIDSerializer : KSerializer<UUID?> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("NullableUUID", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: UUID?) {
+        if (value != null) {
+            encoder.encodeString(value.toString())
+        } else {
+            encoder.encodeString("") // or encode null
+        }
+    }
+
+    override fun deserialize(decoder: Decoder): UUID? {
+        val stringValue = decoder.decodeString()
+        return if (stringValue.isEmpty()) {
+            null
+        } else {
+            UUID.fromString(stringValue)
+        }
+    }
+}
