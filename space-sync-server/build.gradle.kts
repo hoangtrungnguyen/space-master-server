@@ -49,7 +49,7 @@ dependencies {
     //---- UTILS ----
 
     //datetime
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2") // Use the latest version
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
 
 
     //---- KAFKA ----

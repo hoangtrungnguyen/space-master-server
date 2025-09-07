@@ -24,7 +24,6 @@ import io.ktor.websocket.CloseReason.Codes.*
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection
 import kotlinx.coroutines.flow.*
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlin.random.Random
 import kotlin.time.Clock
@@ -153,7 +152,7 @@ fun Route.documentWebSocketRoutes() {
                                 }
 
                                 val docEvent = input.toDocumentSyncEventValue(process)
-                                println(docEvent)
+                                println("⬆️ [Process -> Server]: windowId:${process.windowId} ${docEvent}")
                                 docEventProducer.sendEvent(doc.id, docEvent)
 
                                 sendSerialized(
