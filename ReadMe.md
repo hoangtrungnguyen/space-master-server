@@ -26,6 +26,13 @@ REDIS works as Down flow
 Architect front-end using React
 Design pattern Combination of various lib (mobx, jsx) to ensure code readability, scalability, maintainability
 
+# DOCUMENTS for A.I agents
+
+- 3 types of documents
+    - Requirements: What we want to do ()
+    - Architecture: Overall strategy and plan (Modules, components interactions, )
+    - Implementation: Detail implementation (Tech, algorithms, classes, interfaces)
+
 # REFERENCES
 
 Techstack

@@ -1,6 +1,8 @@
 package com.space.transform
 
 
+import com.space.core.DocumentStore
+import com.space.core.OperationHandler
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
