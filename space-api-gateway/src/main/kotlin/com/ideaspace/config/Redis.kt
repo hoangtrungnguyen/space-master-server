@@ -1,6 +1,7 @@
 package com.ideaspace.config
 
 import com.ideaspace.core.redis.StringByteArrayCodec
+import com.ideaspace.session.RedisSubscriber
 import io.ktor.server.application.*
 import io.ktor.server.plugins.di.*
 import io.lettuce.core.RedisClient
@@ -33,6 +34,7 @@ fun Application.configureRedis() {
     
     monitor.subscribe(ApplicationStopping) {
         runBlocking {
+            dependencies.resolve<RedisSubscriber>().close()
             redisClient.shutdown()
         }
     }

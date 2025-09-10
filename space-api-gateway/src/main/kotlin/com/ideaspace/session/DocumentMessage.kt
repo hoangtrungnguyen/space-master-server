@@ -38,6 +38,9 @@ enum class MessageType {
     ERROR,
     ACK,
 
+
+    ACK_TRANSFORMED,
+
     LIST_PEER
 }
 

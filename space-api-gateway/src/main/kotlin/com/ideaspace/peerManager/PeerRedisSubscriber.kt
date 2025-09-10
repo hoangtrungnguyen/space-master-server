@@ -1,7 +1,7 @@
 package com.ideaspace.peerManager
 
 import com.ideaspace.core.redis.RedisManager
-import com.ideaspace.core.redis.redisDocSyncEventsKey
+import com.ideaspace.core.redis.redisDocKeyPattern
 import com.ideaspace.session.ListPeerOut
 import com.ideaspace.session.logger
 import com.ideaspace.session.toListPeerOut
@@ -130,7 +130,7 @@ class PeerRedisSubscriber(
     suspend fun unsubscribeFromPeerGroup(docId: Long) {
         val subscription = subscriptions.remove(docId)
         if (subscription != null) {
-            val streamPattern = "__keyspace@0__:${redisDocSyncEventsKey(docId)}"
+            val streamPattern = redisDocKeyPattern(docId)
 
             // Unsubscribe from Redis
             pubSubConnection.sync().unsubscribe(streamPattern)

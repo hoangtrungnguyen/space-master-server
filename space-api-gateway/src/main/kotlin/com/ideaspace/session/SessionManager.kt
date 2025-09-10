@@ -96,6 +96,7 @@ class SessionManager(
                 if (target.process.id == streamAddEntry.sourceProcessId) continue
                 try {
                     target.webSocket.send(Frame.Text(eventText))
+                    println("✅ [DOWN FLOW] Redis -> Socket -> Connections: $eventText")
                 } catch (e: Exception) {
                     println("❌ Failed to send sync event to connection: ${e.message}")
                 }

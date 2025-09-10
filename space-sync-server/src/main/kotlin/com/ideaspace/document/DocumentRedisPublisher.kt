@@ -6,8 +6,8 @@ import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.kafkaMessage.FinishSyncEventValue
 import com.ideaspace.core.kafkaMessage.SaveDocEventValue
 import com.ideaspace.core.redis.RedisManager
+import com.ideaspace.core.redis.redisDocKeyPattern
 import com.ideaspace.core.redis.toBytes
-import com.ideaspace.core.redis.redisDocSyncEventsKey
 import io.lettuce.core.api.sync.RedisCommands
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -23,7 +23,7 @@ class DocumentRedisPublisher(
         redisDocumentEvent: DocumentSyncEventValue
     ): String {
 
-        val redisKey = redisDocSyncEventsKey(docId)
+        val redisKey = redisDocKeyPattern(docId)
 
         val syncCommands: RedisCommands<String, ByteArray> = RedisManager.connection.sync()
 
@@ -33,7 +33,7 @@ class DocumentRedisPublisher(
     suspend fun publishFinishSyncDocEvent(
         redisDocumentEvent: FinishSyncEventValue
     ) {
-        val redisKey = redisDocSyncEventsKey(redisDocumentEvent.docId)
+        val redisKey = redisDocKeyPattern(redisDocumentEvent.docId)
         val syncCommands: RedisCommands<String, ByteArray> = RedisManager.connection.sync()
         syncCommands.startXAdd(redisDocumentEvent, redisKey, redisDocumentEvent.processId)
     }
@@ -41,7 +41,7 @@ class DocumentRedisPublisher(
     suspend fun publishSaveDocEvent(
         redisDocumentEvent: SaveDocEventValue
     ) {
-        val redisKey = redisDocSyncEventsKey(redisDocumentEvent.docId )
+        val redisKey = redisDocKeyPattern(redisDocumentEvent.docId)
         val syncCommands: RedisCommands<String, ByteArray> = RedisManager.connection.sync()
         syncCommands.startXAdd(redisDocumentEvent, redisKey, redisDocumentEvent.processId)
     }

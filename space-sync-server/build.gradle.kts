@@ -27,7 +27,9 @@ repositories {
 
 dependencies {
     implementation(platform ("io.ktor:ktor-bom:${ktor_version}"))
+
     implementation(project(":space-core"))
+    implementation(project(":space-experiment"))
 
     //---- KTOR client ----
     implementation("io.ktor:ktor-client-core")

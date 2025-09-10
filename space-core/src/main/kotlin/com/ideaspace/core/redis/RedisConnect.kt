@@ -28,7 +28,10 @@ class StringByteArrayCodec : RedisCodec<String, ByteArray> {
 fun redisDocSyncEventsKey(docId: Long): String {
     return "ideaspace:doc:$docId:stream"
 }
-
+fun redisDocKeyPattern(docId: Long, clusterId: Long = 0): String {
+    val streamPattern = "__keyspace@${clusterId}__:${redisDocSyncEventsKey(docId)}"
+    return streamPattern
+}
 fun Long.toBytes(): ByteArray {
     return ByteBuffer.allocate(Long.SIZE_BYTES).putLong(this).array()
 }

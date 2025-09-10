@@ -7,7 +7,6 @@ import com.ideaspace.core.dto.UUIDToString
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.JsonObject
 import java.util.*
@@ -81,7 +80,7 @@ data class EditElementEventValue(
     override val processId: Long,
     override val userId: Long,
     override val windowId: Long,
-
+    val revision: Long = -1,
     // Specific properties
     @Serializable(UUIDToString::class)
     val uuid: UUID,

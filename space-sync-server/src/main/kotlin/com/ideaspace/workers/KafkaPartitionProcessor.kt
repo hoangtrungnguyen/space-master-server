@@ -5,6 +5,7 @@ import com.ideaspace.core.models.BusinessDocument
 import com.ideaspace.core.repository.CrudDocumentRepository
 import com.ideaspace.core.repository.ElementRepo
 import com.ideaspace.document.*
+import com.space.experiment.services.OperationLog
 import io.ktor.server.plugins.di.*
 import kotlinx.coroutines.*
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -27,6 +28,8 @@ class KafkaPartitionProcessor() {
     private val messageCounter = ConcurrentHashMap<Long, Int>()
     private val kafkaLogger = LoggerFactory.getLogger("kafka-consumer")
 
+    private val transformProcessorPool = ConcurrentHashMap<Long, OperationLog>()
+
     suspend fun submit(registry: DependencyRegistry, record: ConsumerRecord<Long, DocumentSyncEventValue>) {
 
         kafkaLogger.info("[SUBMIT TO WORKER] Received record ${record.value()} from topic ${record.topic()}")
@@ -45,6 +48,8 @@ class KafkaPartitionProcessor() {
         val processId = record.value().processId
 
         partitionScope.launch {
+//            val transformProcessor =
+
             val doc = registry.resolve<CrudDocumentRepository>().findById(key)!!
 
             when (val docEventVale: DocumentSyncEventValue = record.value()) {

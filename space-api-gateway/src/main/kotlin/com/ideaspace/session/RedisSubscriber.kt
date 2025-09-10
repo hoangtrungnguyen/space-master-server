@@ -2,8 +2,9 @@
 
 package com.ideaspace.session
 
-import com.ideaspace.core.redis.toLong
+import com.ideaspace.core.redis.redisDocKeyPattern
 import com.ideaspace.core.redis.redisDocSyncEventsKey
+import com.ideaspace.core.redis.toLong
 import io.lettuce.core.Limit
 import io.lettuce.core.Range.unbounded
 import io.lettuce.core.api.StatefulRedisConnection
@@ -66,7 +67,7 @@ class RedisSubscriber(
         }
 
         val streamKey = redisDocSyncEventsKey(docId)
-        val streamPattern = "__keyspace@0__:${streamKey}"
+        val streamPattern = redisDocKeyPattern(docId)
         val redisEventChannel = Channel<String>(Channel.UNLIMITED)
         
         // Create a job to process events for this document
@@ -99,7 +100,6 @@ class RedisSubscriber(
         redisPubSub.addListener(object : RedisPubSubListener<String, String> {
             override fun message(channel: String, message: String) {
                 if (channel == streamPattern) {
-                    // Send the message to the document's channel
                     subscriptions[docId]?.channel?.trySend(message)
                 }
             }
@@ -129,7 +129,8 @@ class RedisSubscriber(
 
         // Subscribe to the specific key pattern
         redisPubSub.sync().subscribe(streamPattern)
-        
+
+        println("[RedisSubscriber] - subscriptions - size ${subscriptions.size}")
         println("🔔 Started Redis keyspace notification subscription for document $docId")
     }
 
