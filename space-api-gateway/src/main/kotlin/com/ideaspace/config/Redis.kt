@@ -28,6 +28,9 @@ fun Application.configureRedis() {
         provide<StatefulRedisPubSubConnection<String, String>>("redis-pub-sub-connection") {
             redisClient.connectPubSub()
         }
+        provide<StatefulRedisPubSubConnection<String, ByteArray>>("redis-pub-sub-bytes-connection") {
+            redisClient.connectPubSub(StringByteArrayCodec())
+        }
 
 
     }

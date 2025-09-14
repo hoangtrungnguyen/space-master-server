@@ -3,7 +3,6 @@ package com.ideaspace.peerManager
 import com.ideaspace.core.redis.RedisManager
 import com.ideaspace.core.redis.redisDocKeyPattern
 import com.ideaspace.session.ListPeerOut
-import com.ideaspace.session.logger
 import com.ideaspace.session.toListPeerOut
 import io.lettuce.core.Limit
 import io.lettuce.core.Range
@@ -36,17 +35,17 @@ class PeerRedisSubscriber(
 
     init {
         dataConnection.async().configGet("peer-keyspace-events").thenAccept { result ->
-            val keyspaceConf = result.get("notify-keyspace-events") ?: ""
+            val keyspaceConf = result.get("peer-keyspace-events") ?: ""
             if (keyspaceConf.contains('K') && keyspaceConf.contains('t')) {
-                logger.info(
-                    "Keyspace events (K) are available for stream commands (t). " +
-                            "Current 'notify-keyspace-events'='$keyspaceConf'."
-                )
+//                logger.info(
+//                    "Keyspace events (K) are available for stream commands (t). " +
+//                            "Current 'peer-keyspace-events'='$keyspaceConf'."
+//                )
             } else {
-                logger.error(
-                    "Keyspace events (K) are NOT available for stream commands (t). " +
-                            "Current 'notify-keyspace-events'='$keyspaceConf'."
-                )
+//                logger.error(
+//                    "Keyspace events (K) are NOT available for stream commands (t). " +
+//                            "Current 'peer-keyspace-events'='$keyspaceConf'."
+//                )
             }
         }
     }

@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 class SessionManager(
     val redis: StatefulRedisConnection<String, ByteArray>,
-    val redisPubSub: StatefulRedisPubSubConnection<String, String>
+    val redisPubSub: StatefulRedisPubSubConnection<String, ByteArray>
 ) {
 
     private val redisSubscriber = RedisSubscriber(redis, redisPubSub)
@@ -48,7 +48,6 @@ class SessionManager(
                 )
             }
 
-
             if (process2connection.isEmpty()) {
                 doc2process.remove(key.docId)
 
@@ -69,10 +68,15 @@ class SessionManager(
      */
     private fun subscribeToDocumentSyncEvents(docId: Long) {
         runBlocking {
-            redisSubscriber.subscribeToDocument(docId) { syncEvent ->
-                // Handle sync event - broadcast to all connections for this document
-                handleSyncEvent(docId, syncEvent)
-            }
+            redisSubscriber.subscribeToDocument(
+                docId, onMessage = { entry ->
+                    // Handle sync event - broadcast to all connections for this document
+                    handleSyncEvent(docId, entry)
+                },
+                onSyncEvent = { syncEvent ->
+
+                }
+            )
         }
     }
 

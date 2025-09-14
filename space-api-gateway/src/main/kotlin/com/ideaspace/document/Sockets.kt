@@ -45,9 +45,11 @@ suspend fun Application.configureSockets() {
     val redis = dependencies.resolve<StatefulRedisConnection<String, String>>("redis-string-string-connection")
     val redisStringBytes = dependencies.resolve<StatefulRedisConnection<String, ByteArray>>("redis-string-bytes-connection")
     val redisPubSub = dependencies.resolve<StatefulRedisPubSubConnection<String, String>>("redis-pub-sub-connection")
+    val redisPubSubByteArray =
+        dependencies.resolve<StatefulRedisPubSubConnection<String, ByteArray>>("redis-pub-sub-bytes-connection")
 
     dependencies {
-        provide<SessionManager> { SessionManager(redisStringBytes, redisPubSub) }
+        provide<SessionManager> { SessionManager(redisStringBytes, redisPubSubByteArray) }
         provide<PullStreamContext> { PullStreamContext(redisStringBytes, redisPubSub) }
     }
 
@@ -152,7 +154,7 @@ fun Route.documentWebSocketRoutes() {
                                 }
 
                                 val docEvent = input.toDocumentSyncEventValue(process)
-                                println("⬆️ [Process -> Server]: windowId:${process.windowId} ${docEvent}")
+//                                println("⬆️ [Process -> Server]: windowId:${process.windowId} ${docEvent}")
                                 docEventProducer.sendEvent(doc.id, docEvent)
 
                                 sendSerialized(
@@ -197,7 +199,6 @@ fun Route.documentWebSocketRoutes() {
                         peerUuid?.let {
                             rtcPeerManager.unregisterPeerGroup(processKey.docId, it)
                         } ?: println("OnSocket Complete: Peer not found")
-                        println("WebSocket cleanup finished for user: ${principal.user.loginName}")
                     }
 
             messageFlow.launchIn(this)
