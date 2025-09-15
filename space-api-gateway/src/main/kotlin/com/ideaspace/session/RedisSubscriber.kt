@@ -6,6 +6,7 @@ import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.redis.redisDocKeyPattern
 import com.ideaspace.core.redis.redisDocSyncEventsKey
 import com.ideaspace.core.redis.toLong
+import com.ideaspace.document.StreamEntriesOutput
 import io.lettuce.core.Limit
 import io.lettuce.core.Range.unbounded
 import io.lettuce.core.api.StatefulRedisConnection
@@ -66,7 +67,7 @@ class RedisSubscriber(
      */
     suspend fun subscribeToDocument(
         docId: Long, onMessage: suspend (StreamAddEntry) -> Unit,
-        onSyncEvent: suspend (DocumentSyncEventValue) -> Unit
+        onSyncEvent: suspend (Long, StreamEntriesOutput) -> Unit
     ) {
         // Check if already subscribed
         if (subscriptions.containsKey(docId)) {
@@ -87,14 +88,39 @@ class RedisSubscriber(
             redisEventChannel.consumeEach { redisEvent ->
                 try {
                     if (redisEvent == "xadd") {
-                        // Query for the latest stream entry-id.
-                        // Then we can craft a meaningful message for the subscribers
+
                         val entries = redis.sync().xrevrange(streamKey, unbounded(), Limit.from(1))
                         val latestEntry = entries.firstOrNull()
                         val sourceProcessId = latestEntry?.body?.get("sourceProcessId")?.toLong()
+
                         if (sourceProcessId != null) {
-                            latestEntry.body["bytes"]!!.decodeToString()
-                            onMessage(StreamAddEntry(entryId = latestEntry.id, sourceProcessId = sourceProcessId))
+
+                            onMessage(
+                                StreamAddEntry(
+                                    entryId = latestEntry.id,
+                                    sourceProcessId = sourceProcessId,
+                                )
+                            )
+
+                            val events = entries.map {
+                                it.body?.get("bytes") as ByteArray
+                            }.map {
+                                ChannelJson.decodeFromString<DocumentSyncEventValue>(it.decodeToString())
+                            }
+
+                            // Exclude last stream entry by prefixing REDIS STREAM range operator "("
+                            val lastEntryId = entries.lastOrNull()?.id
+                            val nextCursor = "($lastEntryId"
+
+                            onSyncEvent(
+                                sourceProcessId,
+                                StreamEntriesOutput(
+                                    replyTo = "NONE",
+                                    nextCursor = nextCursor,
+                                    endOfStream = true,
+                                    entries = events
+                                )
+                            )
                         }
                     }
                 } catch (e: Exception) {

@@ -1,6 +1,7 @@
 package com.ideaspace.session
 
 import com.ideaspace.core.models.ProcessKey
+import com.ideaspace.document.StreamEntriesOutput
 import io.ktor.websocket.*
 import io.ktor.websocket.CloseReason.*
 import io.lettuce.core.api.StatefulRedisConnection
@@ -71,10 +72,13 @@ class SessionManager(
             redisSubscriber.subscribeToDocument(
                 docId, onMessage = { entry ->
                     // Handle sync event - broadcast to all connections for this document
-                    handleSyncEvent(docId, entry)
+                    handleStreamEntry(docId, entry)
                 },
-                onSyncEvent = { syncEvent ->
-
+                onSyncEvent = { sourceProcessId, docEvent ->
+                    handleDocSyncEvent(
+                        docId, docEvent,
+                        sourceProcessId = sourceProcessId
+                    )
                 }
             )
         }
@@ -92,7 +96,7 @@ class SessionManager(
     /**
      * Handle incoming sync events from Redis and broadcast to connected clients
      */
-    private suspend fun handleSyncEvent(docId: Long, streamAddEntry: StreamAddEntry) {
+    private suspend fun handleStreamEntry(docId: Long, streamAddEntry: StreamAddEntry) {
         val connections = doc2process[docId]
         if (connections != null) {
             val eventText = ChannelJson.encodeToString(streamAddEntry)
@@ -100,7 +104,30 @@ class SessionManager(
                 if (target.process.id == streamAddEntry.sourceProcessId) continue
                 try {
                     target.webSocket.send(Frame.Text(eventText))
-                    println("✅ [DOWN FLOW] Redis -> Socket -> Connections: $eventText")
+                    println("✅ `handleStreamEntry` [DOWN FLOW] Redis -> Socket -> Connections: $eventText")
+                } catch (e: Exception) {
+                    println("❌ Failed to send sync event to connection: ${e.message}")
+                }
+            }
+        }
+    }
+
+    /**
+     * Handle incoming sync events from Redis and broadcast to connected clients
+     */
+    private suspend fun handleDocSyncEvent(
+        docId: Long,
+        docEvent: StreamEntriesOutput,
+        sourceProcessId: Long
+    ) {
+        val connections = doc2process[docId]
+        if (connections != null) {
+            val eventText = ChannelJson.encodeToString(docEvent)
+            for (target in connections.values) {
+                if (target.process.id == sourceProcessId) continue
+                try {
+                    target.webSocket.send(Frame.Text(eventText))
+                    println("✅ `handleDocSyncEvent` [DOWN FLOW] Redis -> Socket -> Connections: $eventText")
                 } catch (e: Exception) {
                     println("❌ Failed to send sync event to connection: ${e.message}")
                 }
