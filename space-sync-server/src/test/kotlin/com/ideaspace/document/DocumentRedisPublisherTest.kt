@@ -94,14 +94,6 @@ class DocumentRedisPublisherTest {
             -3L
         )
 
-//        syncCommands.xadd(
-//            notificationChannel,
-//            mapOf<String, ByteArray>(
-//                "sourceProcessId" to 12324L.toBytes(),
-//                "bytes" to 1233L.toBytes(),
-//            )
-//        )
-
         val expectedMessage = "xadd".toByteArray()
         val receivedMessage = futureNotification.get(3, TimeUnit.SECONDS)
 

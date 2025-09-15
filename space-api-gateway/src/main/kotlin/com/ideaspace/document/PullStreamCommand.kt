@@ -4,7 +4,7 @@ package com.ideaspace.document
 
 import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.models.Process
-import com.ideaspace.core.redis.redisDocKeyPattern
+import com.ideaspace.core.redis.redisDocSyncEventsKey
 import com.ideaspace.session.DocumentChannelOutput
 import com.ideaspace.session.MessageType
 import com.ideaspace.session.PullStreamInput
@@ -33,7 +33,7 @@ class PullStreamCommand(
     val count = input.count
 
     fun execute(context: PullStreamContext): Any {
-        val streamKey = redisDocKeyPattern(currentProcess.docId)
+        val streamKey = redisDocSyncEventsKey(currentProcess.docId)
         val range = Range.from(including(streamCursor), unbounded())
         val limit = Limit.from(count)
         val streamMessages = try {
@@ -45,7 +45,7 @@ class PullStreamCommand(
 
         // Exclude last stream entry by prefixing REDIS STREAM range operator "("
         val lastEntryId = streamMessages.lastOrNull()?.id
-        val nextCursor = if (lastEntryId != null) "($lastEntryId" else streamCursor
+        val nextCursor = lastEntryId ?: streamCursor
         val entries = streamMessages.filterNotNull().mapNotNull { message ->
             val body: Map<String, ByteArray?> = message.body
             val bytes: ByteArray? = body["bytes"]

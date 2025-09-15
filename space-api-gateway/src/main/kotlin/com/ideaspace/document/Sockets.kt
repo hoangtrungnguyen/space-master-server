@@ -138,6 +138,7 @@ fun Route.documentWebSocketRoutes() {
                     .mapNotNull { frame ->
                         val frameText = frame.readText()
                         val input = ChannelJson.decodeFromString<DocumentChannelInput>(frameText)
+                        println("🆙 [UP Flow] Input: $input")
                         when (input) {
                             is DocumentFlowUpChange -> {
 

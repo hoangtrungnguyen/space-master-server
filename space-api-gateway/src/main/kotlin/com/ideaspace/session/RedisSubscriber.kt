@@ -2,7 +2,6 @@
 
 package com.ideaspace.session
 
-import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.redis.redisDocKeyPattern
 import com.ideaspace.core.redis.redisDocSyncEventsKey
 import com.ideaspace.core.redis.toLong
@@ -102,25 +101,18 @@ class RedisSubscriber(
                                 )
                             )
 
-                            val events = entries.map {
-                                it.body?.get("bytes") as ByteArray
-                            }.map {
-                                ChannelJson.decodeFromString<DocumentSyncEventValue>(it.decodeToString())
-                            }
-
                             // Exclude last stream entry by prefixing REDIS STREAM range operator "("
                             val lastEntryId = entries.lastOrNull()?.id
-                            val nextCursor = "($lastEntryId"
 
-                            onSyncEvent(
-                                sourceProcessId,
-                                StreamEntriesOutput(
-                                    replyTo = "NONE",
-                                    nextCursor = nextCursor,
-                                    endOfStream = true,
-                                    entries = events
-                                )
-                            )
+//                            onSyncEvent(
+//                                sourceProcessId,
+//                                StreamEntriesOutput(
+//                                    replyTo = "NONE",
+//                                    nextCursor = nextCursor,
+//                                    endOfStream = true,
+//                                    entries = events
+//                                )
+//                            )
                         }
                     }
                 } catch (e: Exception) {
