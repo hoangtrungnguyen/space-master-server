@@ -45,7 +45,7 @@ class PullStreamCommand(
 
         // Exclude last stream entry by prefixing REDIS STREAM range operator "("
         val lastEntryId = streamMessages.lastOrNull()?.id
-        val nextCursor = lastEntryId ?: streamCursor
+        val nextCursor = if (lastEntryId != null) "($lastEntryId" else streamCursor
         val entries = streamMessages.filterNotNull().mapNotNull { message ->
             val body: Map<String, ByteArray?> = message.body
             val bytes: ByteArray? = body["bytes"]

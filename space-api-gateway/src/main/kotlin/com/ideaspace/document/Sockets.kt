@@ -170,6 +170,7 @@ fun Route.documentWebSocketRoutes() {
                                 val response = PullStreamCommand(process, input)
                                     .execute(pullStreamContext)
                                 sendSerialized(response)
+                                println("✅ PullStreamInput is executed. Id:${response}")
                             }
                         }
 
