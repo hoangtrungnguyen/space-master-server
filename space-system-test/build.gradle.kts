@@ -24,6 +24,9 @@ dependencies {
     testImplementation("org.testcontainers:postgresql:1.19.0")
     testImplementation("org.testcontainers:junit-jupiter:1.19.0")
 
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+    implementation("io.lettuce:lettuce-core:6.3.2.RELEASE")
+
 }
 
 tasks.test {

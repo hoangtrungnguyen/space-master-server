@@ -2,8 +2,10 @@
 
 package com.ideaspace.session
 
-import com.ideaspace.core.redis.toLong
+import com.ideaspace.core.redis.redisDocKeyPattern
 import com.ideaspace.core.redis.redisDocSyncEventsKey
+import com.ideaspace.core.redis.toLong
+import com.ideaspace.document.StreamEntriesOutput
 import io.lettuce.core.Limit
 import io.lettuce.core.Range.unbounded
 import io.lettuce.core.api.StatefulRedisConnection
@@ -25,7 +27,7 @@ val logger: Logger = LoggerFactory.getLogger("RedisSubscriber")
  */
 class RedisSubscriber(
     private val redis: StatefulRedisConnection<String, ByteArray>,
-    private val redisPubSub: StatefulRedisPubSubConnection<String, String>
+    private val redisPubSub: StatefulRedisPubSubConnection<String, ByteArray>
 ) {
 
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -35,11 +37,15 @@ class RedisSubscriber(
         redis.async().configGet("notify-keyspace-events").thenAccept { result ->
             val keyspaceConf = result.get("notify-keyspace-events") ?: ""
             if (keyspaceConf.contains('K') && keyspaceConf.contains('t')) {
-                logger.info("Keyspace events (K) are available for stream commands (t). " +
-                        "Current 'notify-keyspace-events'='$keyspaceConf'.")
+                logger.info(
+                    "Keyspace events (K) are available for stream commands (t). " +
+                            "Current 'notify-keyspace-events'='$keyspaceConf'."
+                )
             } else {
-                logger.error("Keyspace events (K) are NOT available for stream commands (t). " +
-                        "Current 'notify-keyspace-events'='$keyspaceConf'.")
+                logger.error(
+                    "Keyspace events (K) are NOT available for stream commands (t). " +
+                            "Current 'notify-keyspace-events'='$keyspaceConf'."
+                )
             }
         }
     }
@@ -58,7 +64,10 @@ class RedisSubscriber(
      * @param docId The document ID to subscribe to
      * @param onMessage Callback function to handle sync events
      */
-    suspend fun subscribeToDocument(docId: Long, onMessage: suspend (StreamAddEntry) -> Unit) {
+    suspend fun subscribeToDocument(
+        docId: Long, onMessage: suspend (StreamAddEntry) -> Unit,
+        onSyncEvent: suspend (Long, StreamEntriesOutput) -> Unit
+    ) {
         // Check if already subscribed
         if (subscriptions.containsKey(docId)) {
             println("Already subscribed to document $docId")
@@ -66,9 +75,9 @@ class RedisSubscriber(
         }
 
         val streamKey = redisDocSyncEventsKey(docId)
-        val streamPattern = "__keyspace@0__:${streamKey}"
+        val streamPattern = redisDocKeyPattern(docId)
         val redisEventChannel = Channel<String>(Channel.UNLIMITED)
-        
+
         // Create a job to process events for this document
         val job = coroutineScope.launch {
             // TODO Wait for maximum 200ms between sends.
@@ -78,13 +87,32 @@ class RedisSubscriber(
             redisEventChannel.consumeEach { redisEvent ->
                 try {
                     if (redisEvent == "xadd") {
-                        // Query for the latest stream entry-id.
-                        // Then we can craft a meaningful message for the subscribers
+
                         val entries = redis.sync().xrevrange(streamKey, unbounded(), Limit.from(1))
                         val latestEntry = entries.firstOrNull()
                         val sourceProcessId = latestEntry?.body?.get("sourceProcessId")?.toLong()
+
                         if (sourceProcessId != null) {
-                            onMessage(StreamAddEntry(entryId = latestEntry.id, sourceProcessId = sourceProcessId))
+
+                            onMessage(
+                                StreamAddEntry(
+                                    entryId = latestEntry.id,
+                                    sourceProcessId = sourceProcessId,
+                                )
+                            )
+
+                            // Exclude last stream entry by prefixing REDIS STREAM range operator "("
+                            val lastEntryId = entries.lastOrNull()?.id
+
+//                            onSyncEvent(
+//                                sourceProcessId,
+//                                StreamEntriesOutput(
+//                                    replyTo = "NONE",
+//                                    nextCursor = nextCursor,
+//                                    endOfStream = true,
+//                                    entries = events
+//                                )
+//                            )
                         }
                     }
                 } catch (e: Exception) {
@@ -96,17 +124,16 @@ class RedisSubscriber(
         subscriptions[docId] = DocumentSubscription(docId, redisEventChannel, job)
 
         // Set up the Redis pub/sub listener
-        redisPubSub.addListener(object : RedisPubSubListener<String, String> {
-            override fun message(channel: String, message: String) {
+        redisPubSub.addListener(object : RedisPubSubListener<String, ByteArray> {
+            override fun message(channel: String, message: ByteArray) {
                 if (channel == streamPattern) {
-                    // Send the message to the document's channel
-                    subscriptions[docId]?.channel?.trySend(message)
+                    subscriptions[docId]?.channel?.trySend(message.decodeToString())
                 }
             }
 
-            override fun message(pattern: String, channel: String, message: String) {
+            override fun message(pattern: String, channel: String, message: ByteArray) {
                 if (pattern == streamPattern) {
-                    subscriptions[docId]?.channel?.trySend(message)
+                    subscriptions[docId]?.channel?.trySend(message.decodeToString())
                 }
             }
 
@@ -129,7 +156,8 @@ class RedisSubscriber(
 
         // Subscribe to the specific key pattern
         redisPubSub.sync().subscribe(streamPattern)
-        
+
+        println("[RedisSubscriber] - subscriptions - size ${subscriptions.size}")
         println("🔔 Started Redis keyspace notification subscription for document $docId")
     }
 
@@ -143,12 +171,12 @@ class RedisSubscriber(
             val streamPattern = "__keyspace@0__:${redisDocSyncEventsKey(docId)}"
 
             // Unsubscribe from Redis
-            redisPubSub.sync().unsubscribe(streamPattern)
-            
+            redisPubSub.sync().punsubscribe(streamPattern)
+
             // Close the channel and cancel the job
             subscription.channel.close()
             subscription.job.cancel()
-            
+
             println("🔕 Stopped Redis keyspace notification subscription for document $docId")
         }
     }
@@ -180,10 +208,10 @@ class RedisSubscriber(
 
         redis.close()
         redisPubSub.close()
-        
+
         // Cancel the coroutine scope
         coroutineScope.cancel()
-        
+
         println("🔐 Closed all Redis keyspace notification subscriptions")
     }
 }

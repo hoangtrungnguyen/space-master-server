@@ -27,7 +27,9 @@ repositories {
 
 dependencies {
     implementation(platform ("io.ktor:ktor-bom:${ktor_version}"))
+
     implementation(project(":space-core"))
+    implementation(project(":space-experiment"))
 
     //---- KTOR client ----
     implementation("io.ktor:ktor-client-core")
@@ -49,7 +51,7 @@ dependencies {
     //---- UTILS ----
 
     //datetime
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2") // Use the latest version
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
 
 
     //---- KAFKA ----

@@ -32,11 +32,16 @@ class PullStreamCommand(
     val streamCursor = input.streamCursor
     val count = input.count
 
-    fun execute(context: PullStreamContext) : Any {
+    fun execute(context: PullStreamContext): Any {
         val streamKey = redisDocSyncEventsKey(currentProcess.docId)
         val range = Range.from(including(streamCursor), unbounded())
         val limit = Limit.from(count)
-        val streamMessages = context.redis.sync().xrange(streamKey, range, limit)
+        val streamMessages = try {
+            context.redis.sync().xrange(streamKey, range, limit)
+        } catch (e: Exception) {
+            println("⚠️ [PullStreamCommand] : ${e.message}")
+            emptyList()
+        }
 
         // Exclude last stream entry by prefixing REDIS STREAM range operator "("
         val lastEntryId = streamMessages.lastOrNull()?.id

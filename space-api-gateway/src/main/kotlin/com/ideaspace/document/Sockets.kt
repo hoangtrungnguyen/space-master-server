@@ -24,7 +24,6 @@ import io.ktor.websocket.CloseReason.Codes.*
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection
 import kotlinx.coroutines.flow.*
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlin.random.Random
 import kotlin.time.Clock
@@ -46,9 +45,11 @@ suspend fun Application.configureSockets() {
     val redis = dependencies.resolve<StatefulRedisConnection<String, String>>("redis-string-string-connection")
     val redisStringBytes = dependencies.resolve<StatefulRedisConnection<String, ByteArray>>("redis-string-bytes-connection")
     val redisPubSub = dependencies.resolve<StatefulRedisPubSubConnection<String, String>>("redis-pub-sub-connection")
+    val redisPubSubByteArray =
+        dependencies.resolve<StatefulRedisPubSubConnection<String, ByteArray>>("redis-pub-sub-bytes-connection")
 
     dependencies {
-        provide<SessionManager> { SessionManager(redisStringBytes, redisPubSub) }
+        provide<SessionManager> { SessionManager(redisStringBytes, redisPubSubByteArray) }
         provide<PullStreamContext> { PullStreamContext(redisStringBytes, redisPubSub) }
     }
 
@@ -137,6 +138,7 @@ fun Route.documentWebSocketRoutes() {
                     .mapNotNull { frame ->
                         val frameText = frame.readText()
                         val input = ChannelJson.decodeFromString<DocumentChannelInput>(frameText)
+                        println("🆙 [UP Flow] Input: $input")
                         when (input) {
                             is DocumentFlowUpChange -> {
 
@@ -153,7 +155,7 @@ fun Route.documentWebSocketRoutes() {
                                 }
 
                                 val docEvent = input.toDocumentSyncEventValue(process)
-                                println(docEvent)
+//                                println("⬆️ [Process -> Server]: windowId:${process.windowId} ${docEvent}")
                                 docEventProducer.sendEvent(doc.id, docEvent)
 
                                 sendSerialized(
@@ -168,6 +170,7 @@ fun Route.documentWebSocketRoutes() {
                                 val response = PullStreamCommand(process, input)
                                     .execute(pullStreamContext)
                                 sendSerialized(response)
+                                println("✅ PullStreamInput is executed. Id:${response}")
                             }
                         }
 
@@ -198,7 +201,6 @@ fun Route.documentWebSocketRoutes() {
                         peerUuid?.let {
                             rtcPeerManager.unregisterPeerGroup(processKey.docId, it)
                         } ?: println("OnSocket Complete: Peer not found")
-                        println("WebSocket cleanup finished for user: ${principal.user.loginName}")
                     }
 
             messageFlow.launchIn(this)

@@ -1,6 +1,7 @@
 package com.ideaspace.config
 
 import com.ideaspace.core.redis.StringByteArrayCodec
+import com.ideaspace.session.RedisSubscriber
 import io.ktor.server.application.*
 import io.ktor.server.plugins.di.*
 import io.lettuce.core.RedisClient
@@ -27,12 +28,16 @@ fun Application.configureRedis() {
         provide<StatefulRedisPubSubConnection<String, String>>("redis-pub-sub-connection") {
             redisClient.connectPubSub()
         }
+        provide<StatefulRedisPubSubConnection<String, ByteArray>>("redis-pub-sub-bytes-connection") {
+            redisClient.connectPubSub(StringByteArrayCodec())
+        }
 
 
     }
     
     monitor.subscribe(ApplicationStopping) {
         runBlocking {
+            dependencies.resolve<RedisSubscriber>().close()
             redisClient.shutdown()
         }
     }

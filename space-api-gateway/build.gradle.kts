@@ -25,6 +25,7 @@ dependencies {
     implementation(platform ("io.ktor:ktor-bom:${ktor_version}"))
 
     implementation(project(":space-core"))
+    implementation(project(":space-experiment"))
 
     // --- SERVER ---
     implementation("io.ktor:ktor-server-core")

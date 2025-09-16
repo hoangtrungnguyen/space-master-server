@@ -77,6 +77,7 @@ class AddElementCommand(
         }
 
         val redisEntry = documentRedisPublisher.publishEditDocEvent(docId, processId, editDocEventValue)
+
         super.saveLatestRedisEntry(docId, redisEntry)
 
         withContext(currentCoroutineContext() + Dispatchers.IO) {
