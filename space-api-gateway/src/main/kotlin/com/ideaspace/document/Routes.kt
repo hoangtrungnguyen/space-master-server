@@ -49,6 +49,7 @@ fun Route.documentManagementRoutes() {
                 user.id,
                 application.dependencies.resolve()
             )
+
             val result = command.execute()
             call.respond(status = HttpStatusCode.OK, result)
         }

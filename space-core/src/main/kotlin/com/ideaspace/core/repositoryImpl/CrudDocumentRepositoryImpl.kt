@@ -14,7 +14,7 @@ import org.jetbrains.exposed.v1.jdbc.update
 import java.util.*
 import kotlin.time.ExperimentalTime
 
-class CrudDocumentRepositoryImpl(val db: Database ) : CrudDocumentRepository {
+class CrudDocumentRepositoryImpl(val db: Database) : CrudDocumentRepository {
 
     init {
         runBlocking {
@@ -23,7 +23,7 @@ class CrudDocumentRepositoryImpl(val db: Database ) : CrudDocumentRepository {
 
                 val missingColStatements = SchemaUtils.addMissingColumnsStatements(
                     DocumentTable,
-                    withLogs= true
+                    withLogs = true
                 )
 
                 missingColStatements.forEach {
@@ -63,7 +63,7 @@ class CrudDocumentRepositoryImpl(val db: Database ) : CrudDocumentRepository {
         ).map { it.toModel() }.toList()
     }
 
-    override suspend fun findById(id: Long): BusinessDocument? = transaction(db){
+    override suspend fun findById(id: Long): BusinessDocument? = transaction(db) {
         DocumentDAO.findById(id)?.toModel()
     }
 
@@ -84,9 +84,9 @@ class CrudDocumentRepositoryImpl(val db: Database ) : CrudDocumentRepository {
     override suspend fun updateOffset(uuid: String, offset: Long) {
         val parsedUuid = runCatching { UUID.fromString(uuid) }.getOrNull() ?: return
         transaction(db) {
-                DocumentTable.update({ DocumentTable.uuid eq parsedUuid }) {
-                    it[kafkaOffset] = offset
-                }
+            DocumentTable.update({ DocumentTable.uuid eq parsedUuid }) {
+                it[kafkaOffset] = offset
+            }
         }
     }
 
@@ -96,5 +96,12 @@ class CrudDocumentRepositoryImpl(val db: Database ) : CrudDocumentRepository {
                 it[latestRedisEntry] = entryId
             }
         }
+    }
+
+    @OptIn(ExperimentalTime::class)
+    override suspend fun findAllByOwnerId(ownerId: Long): List<BusinessDocument> = transaction(db) {
+        DocumentDAO.all().orderBy(DocumentTable.createdAt to SortOrder.DESC).filter {
+            it.ownerId == ownerId
+        }.map { it.toModel() }.toList()
     }
 }

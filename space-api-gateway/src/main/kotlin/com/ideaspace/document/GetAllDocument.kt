@@ -6,12 +6,11 @@ import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
 class GetAllDocument(
-    val userId: Long,
+    val ownerId: Long,
     val documentRepo: CrudDocumentRepository
 ) {
     suspend fun execute(): List<DocumentDashboardItemDTO> {
-        val data = documentRepo.findAll()
-
+        val data = documentRepo.findAllByOwnerId(ownerId)
         return data.map {
             DocumentDashboardItemDTO(
                 it.uuid,
@@ -19,6 +18,5 @@ class GetAllDocument(
                 it.createdAt
             )
         }.toList()
-
     }
 }

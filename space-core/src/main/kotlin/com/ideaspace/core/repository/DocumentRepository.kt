@@ -1,8 +1,7 @@
 package com.ideaspace.core.repository
 
-import com.ideaspace.core.kafkaMessage.DocumentSyncEventValue
 import com.ideaspace.core.models.BusinessDocument
-import java.util.UUID
+import java.util.*
 
 interface CrudDocumentRepository {
     suspend fun create(request: BusinessDocument): BusinessDocument
@@ -22,4 +21,6 @@ interface CrudDocumentRepository {
     suspend fun updateOffset(uuid: String, offset: Long)
 
     suspend fun saveLatestRedisEntry(id: Long, entryId: String)
+
+    suspend fun findAllByOwnerId(ownerId: Long): List<BusinessDocument>
 }

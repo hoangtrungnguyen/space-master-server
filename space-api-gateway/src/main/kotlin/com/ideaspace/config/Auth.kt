@@ -49,7 +49,7 @@ const val accessTokenName: String = "access_token"
 /**
  * Generates a JWT token for the given user
  */
-private fun ApplicationCall.generateJwtToken(user: User): String {
+internal fun ApplicationCall.generateJwtToken(user: User): String {
     val secret = application.environment.config.property("jwt.secret").getString()
     val issuer = application.environment.config.property("jwt.issuer").getString()
     val audience = application.environment.config.property("jwt.audience").getString()
@@ -133,20 +133,6 @@ fun Route.authRoutes() {
     }
 
 
-    post("/api/users/logout") {
-        call.sessions.clear(accessTokenName)
-        call.respond(HttpStatusCode.OK, "Successfully logged out")
-    }
-
-    get("/api/user/verify-session") {
-        // Access the cookie value directly
-        val myCookie = call.request.cookies[accessTokenName]
-        if (myCookie != null) {
-            call.respondText(status = HttpStatusCode.OK, text = "Successfully verified session")
-        } else {
-            call.respondText(status = HttpStatusCode.Unauthorized, text = "Unauthorized")
-        }
-    }
 }
 
 suspend fun Application.configureSecurity() {
