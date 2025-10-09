@@ -1,10 +1,13 @@
 package com.space.subadmin.products
 
+import com.space.subadmin.brand.BrandRepository
+import com.space.subadmin.category.CategoryRepository
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.*
+import java.util.*
 
 /**
  * REST controller for managing products.
@@ -68,7 +71,12 @@ class ProductController(private val productRepository: ProductRepository) {
  */
 @Controller
 @RequestMapping("/products") // Base path for web-related product pages
-class ProductWebController(private val productRepository: ProductRepository) {
+class ProductWebController(
+    private val productRepository: ProductRepository,
+    private val productService: ProductService,
+    private val brandRepository: BrandRepository,
+    private val categoryRepository: CategoryRepository
+) {
 
     /**
      * Displays the form to add a new product.
@@ -79,8 +87,10 @@ class ProductWebController(private val productRepository: ProductRepository) {
      */
     @GetMapping("/add")
     fun showAddProductForm(model: Model): String {
-        // Add an empty Product object to the model to bind form data
-        model.addAttribute("product", Product(name = "", price = 0.0))
+        // Use a DTO to represent the form's data structure
+        model.addAttribute("productForm", ProductFormDTO())
+        model.addAttribute("allBrands", brandRepository.findAll())
+        model.addAttribute("allCategories", categoryRepository.findAll())
         return "add-product" // This corresponds to 'src/main/resources/templates/add-product.html'
     }
 
@@ -88,12 +98,12 @@ class ProductWebController(private val productRepository: ProductRepository) {
      * Processes the submission of the add product form.
      * Responds to POST requests at /products/add
      *
-     * @param product The Product object populated with form data.
+     * @param productForm The DTO populated with form data.
      * @return A redirect instruction to the product list page.
      */
     @PostMapping("/add")
-    fun addProduct(@ModelAttribute product: Product): String {
-        productRepository.save(product)
+    fun addProduct(@ModelAttribute("productForm") productForm: ProductFormDTO): String {
+        productService.createProductWithVariant(productForm)
         return "redirect:/products/list" // Redirect to the product list page after saving
     }
 
@@ -106,7 +116,7 @@ class ProductWebController(private val productRepository: ProductRepository) {
      */
     @GetMapping("/list")
     fun showProductList(model: Model): String {
-        model.addAttribute("products", productRepository.findAll())
+        model.addAttribute("products", productRepository.findAllWithDetails())
         return "products-list" // This corresponds to 'src/main/resources/templates/products-list.html'
     }
 
@@ -122,7 +132,26 @@ class ProductWebController(private val productRepository: ProductRepository) {
     fun showEditProductForm(@PathVariable id: Long, model: Model): String {
         return productRepository.findById(id)
             .map { product ->
-                model.addAttribute("product", product)
+                // For simplicity, we edit the first variant. A real app might need a way to select which variant to edit.
+                val variant = product.variants.firstOrNull()
+
+                // Create and populate the DTO from the entity
+                val productForm = ProductEditDTO(
+                    productId = product.id,
+                    variantId = variant?.id,
+                    name = product.name,
+                    description = product.description,
+                    brandId = product.brand?.id?.toString(),
+                    categoryId = product.category?.id?.toString(),
+                    sku = variant?.sku ?: "",
+                    price = variant?.price ?: java.math.BigDecimal.ZERO,
+                    costPrice = variant?.costPrice,
+                    weight = variant?.weight
+                )
+
+                model.addAttribute("productForm", productForm)
+                model.addAttribute("allBrands", brandRepository.findAll())
+                model.addAttribute("allCategories", categoryRepository.findAll())
                 "edit-product" // Renders 'src/main/resources/templates/edit-product.html'
             }
             .orElse("redirect:/products/list") // Redirect if product not found
@@ -133,12 +162,12 @@ class ProductWebController(private val productRepository: ProductRepository) {
      * Responds to POST requests at /products/edit/{id}
      *
      * @param id The ID of the product being updated.
-     * @param product The Product object populated with form data.
+     * @param productForm The DTO populated with form data.
      * @return A redirect instruction to the product list page.
      */
     @PostMapping("/edit/{id}")
-    fun updateProduct(@PathVariable id: Long, @ModelAttribute product: Product): String {
-        productRepository.save(product) // Spring Data JPA handles create vs. update based on the ID
+    fun updateProduct(@PathVariable id: UUID, @ModelAttribute("productForm") productForm: ProductEditDTO): String {
+        productService.updateProductWithVariant(productForm)
         return "redirect:/products/list"
     }
 }

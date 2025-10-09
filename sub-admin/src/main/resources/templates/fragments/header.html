@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<!--/*
+    This fragment defines the common <head> section for all pages.
+    It includes metadata, Tailwind CSS, and the Vietnamese-supporting font.
+    It accepts a 'titleKey' parameter for the page title.
+*/-->
+<head th:fragment="common_header(titleKey)">
+    <meta charset="UTF-8">
+    <title th:text="#{__${titleKey}__}">Default Title</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+</html>

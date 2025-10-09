@@ -1,46 +1,58 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Order List</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 font-sans">
+
+<head th:replace="~{fragments/header :: common_header(titleKey='order.list.title')}"></head>
+
+<body class="bg-gray-100">
 
 <div th:replace="~{fragments/navigation :: navbar}"></div>
 
 <div class="container mx-auto p-8">
     <div class="bg-white p-8 rounded-lg shadow-lg">
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-800">Order List</h1>
+            <h1 class="text-2xl font-bold text-gray-800" th:text="#{order.list.title}">Order List</h1>
         </div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        scope="col">
-                        Order ID
+                        scope="col"
+                        th:text="#{order.id}">Order ID
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        scope="col">
-                        Order Time
+                        scope="col"
+                        th:text="#{order.customer}">Customer
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        scope="col">
-                        Final Bill
+                        scope="col"
+                        th:text="#{order.date}">Order Date
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        scope="col"
+                        th:text="#{order.total}">Total
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        scope="col"
+                        th:text="#{order.status}">Status
                     </th>
                 </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                 <tr class="hover:bg-gray-50" th:each="order : ${orders}">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" th:text="${order.id}">1
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+                        th:text="${#strings.substring(order.uuid, 0, 8)}">...
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${order.customer.fullName}">
+                        John Doe
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                        th:text="${#dates.format(order.orderTime, 'dd-MM-yyyy HH:mm:ss')}">2023-01-01 10:00:00
+                        th:text="${#temporals.format(order.orderDate, 'dd-MM-yyyy HH:mm')}">2023-01-01 10:00
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                        th:text="${#numbers.formatCurrency(order.finalBill)}">$100.00
+                        th:text="${#numbers.formatCurrency(order.totalAmount)}">$100.00
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${order.status}">PENDING
                     </td>
                 </tr>
                 </tbody>

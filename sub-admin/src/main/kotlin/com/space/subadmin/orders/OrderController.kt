@@ -8,13 +8,14 @@ import org.springframework.web.bind.annotation.RequestMapping
 @Controller
 @RequestMapping("/orders")
 class OrderWebController(
-    private val orderRepository: OrderRepository
+    private val SQLiteOrderRepository: SQLiteOrderRepository
 ) {
 
     @GetMapping("/list")
     fun showOrderList(model: Model): String {
-        model.addAttribute("orders", orderRepository.findAll())
+        model.addAttribute("orders", SQLiteOrderRepository.findAllWithCustomer())
         return "orders-list"
     }
 
 }
+

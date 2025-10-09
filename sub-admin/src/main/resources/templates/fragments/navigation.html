@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <body>
 
 <!--/*
@@ -7,27 +8,24 @@
     It can be included in other pages using th:replace.
     e.g. <div th:replace="~{fragments/navigation :: navbar}"></div>
 */-->
-<nav class="bg-gray-800 shadow-md" th:fragment="navbar">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <a class="text-white font-bold text-xl" th:href="@{/}">Admin Panel</a>
-                </div>
-                <div class="hidden md:block">
-                    <div class="ml-10 flex items-baseline space-x-4">
-                        <a class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-                           th:href="@{/}">Dashboard</a>
-                        <a class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-                           th:href="@{/products/list}">Products</a>
-                        <a class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-                           th:href="@{/orders/list}">Orders</a>
-                    </div>
-                </div>
-            </div>
+<nav class="bg-gray-800 p-4" th:fragment="navbar">
+    <div class="container mx-auto flex justify-between items-center">
+        <div class="text-white text-lg font-bold">
+            <a href="/" th:text="#{app.title}">Sub-Admin Dashboard</a>
+        </div>
+        <div class="space-x-4">
+            <!--            <a class="text-gray-300 hover:text-white" href="/" th:text="#{nav.home}">Home</a>-->
+            <a class="text-gray-300 hover:text-white" href="/products/list" th:text="#{nav.products}">Products</a>
+            <a class="text-gray-300 hover:text-white" href="/orders/list" th:text="#{nav.orders}">Orders</a>
+        </div>
+        <div class="space-x-2">
+            <a class="text-sm text-gray-300 hover:text-white" href="?lang=en">EN</a>
+            <span class="text-gray-500">|</span>
+            <a class="text-sm text-gray-300 hover:text-white" href="?lang=vi">VI</a>
         </div>
     </div>
 </nav>
+
 
 </body>
 </html>

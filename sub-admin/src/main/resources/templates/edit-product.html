@@ -1,37 +1,31 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Edit Product</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 font-sans">
+
+<head th:replace="~{fragments/header :: common_header(titleKey='product.edit.title')}"></head>
+
+<body class="bg-gray-100">
 
 <div th:replace="~{fragments/navigation :: navbar}"></div>
 
 <div class="container mx-auto p-8">
     <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md mx-auto">
-        <h1 class="text-2xl font-bold mb-6 text-gray-800">Edit Product</h1>
+        <h1 class="text-2xl font-bold mb-6 text-gray-800" th:text="#{product.edit.title}">Edit Product</h1>
         <!-- The form will submit a POST request to /products/edit/{id} -->
-        <form class="space-y-6" method="post" th:action="@{/products/edit/{id}(id=${product.id})}"
-              th:object="${product}">
-            <input th:field="*{id}" type="hidden"/>
+        <form class="space-y-6" method="post" th:action="@{/products/edit/{id}(id=${productForm.productId})}"
+              th:object="${productForm}">
+            <input th:field="*{productId}" type="hidden"/>
+            <input th:field="*{variantId}" type="hidden"/>
             <div>
-                <label class="block text-sm font-medium text-gray-700" for="name">Product Name:</label>
+                <label class="block text-sm font-medium text-gray-700" for="name" th:text="#{product.name}">Product
+                    Name:</label>
                 <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                        id="name" required
                        th:field="*{name}"
                        type="text"/>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700" for="category">Category:</label>
-                <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                       id="category"
-                       th:field="*{category}"
-                       type="text"/>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700" for="description">Description:</label>
+                <label class="block text-sm font-medium text-gray-700" for="description"
+                       th:text="#{product.description}">Description:</label>
                 <textarea
                         class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                         id="description"
@@ -39,35 +33,80 @@
                         th:field="*{description}"></textarea>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700" for="price">Price:</label>
+                <label class="block text-sm font-medium text-gray-700" for="brandId"
+                       th:text="#{product.brand}">Brand:</label>
+                <select class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        id="brandId"
+                        th:field="*{brandId}">
+                    <option th:text="#{product.select_brand}" value="">-- Select a Brand --</option>
+                    <option th:each="brand : ${allBrands}" th:text="${brand.name}" th:value="${brand.id}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700" for="categoryId" th:text="#{product.category}">Category:</label>
+                <select class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        id="categoryId"
+                        th:field="*{categoryId}">
+                    <option th:text="#{product.select_category}" value="">-- Select a Category --</option>
+                    <option th:each="cat : ${allCategories}" th:text="${cat.name}" th:value="${cat.id}"></option>
+                </select>
+            </div>
+
+            <hr class="my-4">
+            <h2 class="text-xl font-semibold text-gray-700" th:text="#{product.variant_details}">Variant Details</h2>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700" for="sku" th:text="#{product.sku}">SKU
+                    (Barcode):</label>
+                <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                       id="sku" required
+                       th:field="*{sku}"
+                       type="text"/>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700" for="price"
+                       th:text="#{product.price}">Price:</label>
                 <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                        id="price" required step="0.01"
                        th:field="*{price}"
                        type="number"/>
             </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700" for="costPrice" th:text="#{product.cost_price}">Cost
+                    Price:</label>
+                <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                       id="costPrice" step="0.01" th:field="*{costPrice}" type="number"/>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700" for="weight"
+                       th:text="#{product.weight}">Weight:</label>
+                <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                       id="weight" step="0.01" th:field="*{weight}" type="number"/>
+            </div>
+
             <div class="flex space-x-4">
                 <button class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                        type="submit">
-                    Update Product
+                        th:text="#{button.update}"
+                        type="submit">Update Product
                 </button>
                 <button class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                         onclick="deleteProduct(this.getAttribute('data-product-id'))"
-                        th:data-product-id="${product.id}"
-                        type="button">
-                    Delete Product
+                        th:data-product-id="${productForm.productId}"
+                        th:text="#{button.delete}"
+                        type="button">Delete Product
                 </button>
             </div>
         </form>
         <div class="mt-4 text-center">
-            <a class="font-medium text-indigo-600 hover:text-indigo-500" th:href="@{/products/list}">Back to Product
-                List</a>
+            <a class="font-medium text-indigo-600 hover:text-indigo-500" th:href="@{/products/list}"
+               th:text="#{product.back_to_list}">Back to Product List</a>
         </div>
     </div>
 </div>
 
 <script>
     function deleteProduct(productId) {
-        if (confirm('Are you sure you want to delete this product?')) {
+        if (confirm("[[#{product.delete.confirm}]]")) {
             fetch(`/api/products/${productId}`, {
                 method: 'DELETE',
             })
@@ -75,7 +114,7 @@
                     if (response.ok) {
                         window.location.href = '/products/list';
                     } else {
-                        alert('Failed to delete product.');
+                        alert("[[#{product.delete.fail}]]");
                     }
                 });
         }
