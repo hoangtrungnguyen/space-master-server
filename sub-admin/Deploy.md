@@ -1,3 +1,8 @@
+# Run Jar file
+
+```shell
+java -jar yourfile.jar
+```
 # Deploy
 
 ```shell

@@ -11,7 +11,6 @@ class OrderWebController(
     private val orderRepository: OrderRepository
 ) {
 
-
     @GetMapping("/list")
     fun showOrderList(model: Model): String {
         model.addAttribute("orders", orderRepository.findAll())

@@ -6,10 +6,24 @@ Design, coding, testing collaborative servers
 API-GateWay for routing, adminstration site, authentication. Here, I use KTOR as backend framework. Socket flows to
 receive changes from FE, end changes to Sync Server. Then, in the down flow, listen to changes from REDIS.
 
+- Tech
+    - Deploy:
+        - port: 8080
 # SYNC-SERVER
 
 Sync Server handle complicated algorithms and data manipulate
 Ensure data consistency using various algorithms: 2 phrase commits, Operational Algorithm,
+
+### Tech
+
+- Deploy
+    - Port: 9099
+
+# CUSTOMER INSIGHTS
+
+- Tech
+    - Port: 8095
+-
 
 # Architect Stream Processing
 

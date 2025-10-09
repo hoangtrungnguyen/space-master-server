@@ -1,18 +1,24 @@
 package com.space.subadmin.orders
 
 
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
+import jakarta.persistence.*
 
+@Table(name = "orders")
 @Entity
 class Order(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
     val orderTime: Long,
-    val finalBill: Double
+    val finalBill: Double,
+    val status: OrderStatus
 )
 
+
+enum class OrderStatus {
+    PENDING,
+    CANCELED,
+    SUCCESS,
+    FAILURE
+}
 

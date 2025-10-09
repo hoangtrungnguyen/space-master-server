@@ -1,13 +1,9 @@
 package com.space.subadmin.orders
 
-class CommitOrder {
+class CancelPendingOrder {
 
 
-    suspend fun execute() {
-
-    }
-
-    private fun save() {
+    private fun deleteTempOrder() {
 
     }
 
@@ -16,7 +12,6 @@ class CommitOrder {
     }
 
     private fun notifyFailure() {
-
 
     }
 }

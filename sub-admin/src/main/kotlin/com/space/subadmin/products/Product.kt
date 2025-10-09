@@ -1,9 +1,6 @@
 package com.space.subadmin.products
 
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
+import jakarta.persistence.*
 
 /**
  * Represents a Product entity.
@@ -12,11 +9,15 @@ import jakarta.persistence.Id
  * @param name The name of the product.
  * @param price The price of the product.
  */
+@Table(name = "products")
 @Entity
 class Product(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = 0,
+    var id: Long = 0,
     val name: String,
-    val price: Double
+    val price: Double,
+    val barcode: String? = "",
+    val description: String? = "",
+    val category: String? = ""
 )

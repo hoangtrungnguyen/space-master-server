@@ -37,7 +37,26 @@ class ProductController(private val productRepository: ProductRepository) {
      */
     @GetMapping
     fun getAllProducts(): List<Product> {
-        return productRepository.findAll()
+        return productRepository.findAll().also {
+            print("Found products: ${it}")
+        }
+    }
+
+    /**
+     * Deletes a product by its ID.
+     * Responds to DELETE requests at /api/products/{id}
+     *
+     * @param id The ID of the product to delete.
+     * @return A response entity indicating the outcome. 204 No Content on success, 404 Not Found if it doesn't exist.
+     */
+    @DeleteMapping("/{id}")
+    fun deleteProduct(@PathVariable id: Long): ResponseEntity<Void> {
+        return if (productRepository.existsById(id)) {
+            productRepository.deleteById(id)
+            ResponseEntity.noContent().build()
+        } else {
+            ResponseEntity.notFound().build()
+        }
     }
 }
 
@@ -89,5 +108,37 @@ class ProductWebController(private val productRepository: ProductRepository) {
     fun showProductList(model: Model): String {
         model.addAttribute("products", productRepository.findAll())
         return "products-list" // This corresponds to 'src/main/resources/templates/products-list.html'
+    }
+
+    /**
+     * Displays the form to edit an existing product.
+     * Responds to GET requests at /products/edit/{id}
+     *
+     * @param id The ID of the product to edit.
+     * @param model The Spring Model to pass data to the view.
+     * @return The name of the Thymeleaf template to render, or a redirect if the product is not found.
+     */
+    @GetMapping("/edit/{id}")
+    fun showEditProductForm(@PathVariable id: Long, model: Model): String {
+        return productRepository.findById(id)
+            .map { product ->
+                model.addAttribute("product", product)
+                "edit-product" // Renders 'src/main/resources/templates/edit-product.html'
+            }
+            .orElse("redirect:/products/list") // Redirect if product not found
+    }
+
+    /**
+     * Processes the submission of the edit product form.
+     * Responds to POST requests at /products/edit/{id}
+     *
+     * @param id The ID of the product being updated.
+     * @param product The Product object populated with form data.
+     * @return A redirect instruction to the product list page.
+     */
+    @PostMapping("/edit/{id}")
+    fun updateProduct(@PathVariable id: Long, @ModelAttribute product: Product): String {
+        productRepository.save(product) // Spring Data JPA handles create vs. update based on the ID
+        return "redirect:/products/list"
     }
 }
