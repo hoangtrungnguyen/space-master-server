@@ -37,7 +37,7 @@ class DashboardService(private val SQLiteOrderRepository: SQLiteOrderRepository)
         }
 
         val revenueTrend = SQLiteOrderRepository.findDailyRevenueAfter(thirtyDaysAgo)
-            .associate { it[0] as String to it[1] as BigDecimal }
+            .associate { it[0].toString() to it[1] as BigDecimal }
 
         val topSellingProducts = SQLiteOrderRepository.findTopSellingProducts(5)
             .map {
