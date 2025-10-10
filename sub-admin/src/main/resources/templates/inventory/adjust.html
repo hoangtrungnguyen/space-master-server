@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: common_header(titleKey='inventory.adjust.title')}"></head>
+
+<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+
+<div th:replace="~{fragments/navigation :: navbar}"></div>
+
+<div class="container mx-auto p-8">
+    <h1 class="text-3xl font-bold mb-6 text-gray-800">Adjust Inventory for <span th:text="${productVariant.sku}"></span>
+    </h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Adjustment Form -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <form method="post" th:action="@{/inventory/adjust}">
+                <input name="productVariantId" th:value="${productVariant.id}" type="hidden"/>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="quantity">Quantity:</label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="quantity" name="quantity" required
+                           type="number"/>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="type">Type:</label>
+                    <select class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="type"
+                            name="type">
+                        <option value="add">Add / Restock</option>
+                        <option value="subtract">Subtract / Adjustment</option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="notes">Notes:</label>
+                    <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="notes" name="notes"
+                              rows="4"></textarea>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                            type="submit">
+                        Submit Adjustment
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Current Inventory -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">Current Inventory</h2>
+            <div class="text-gray-700" th:if="${inventory != null}">
+                <p class="text-lg"><span class="font-semibold">Quantity on Hand:</span> <span
+                        class="text-blue-600 font-bold text-xl" th:text="${inventory.quantityOnHand}"></span></p>
+                <p class="text-sm mt-2"><span class="font-semibold">Committed:</span> <span
+                        th:text="${inventory.quantityCommitted}"></span></p>
+                <p class="text-sm"><span class="font-semibold">Reorder Level:</span> <span
+                        th:text="${inventory.reorderLevel}"></span></p>
+                <p class="text-sm mt-4 text-gray-500">Last Restocked: <span
+                        th:text="${inventory.lastRestockedAt != null ? #temporals.format(inventory.lastRestockedAt, 'dd-MMM-yyyy HH:mm') : 'N/A'}"></span>
+                </p>
+            </div>
+            <div class="text-red-500 font-semibold" th:if="${inventory == null}">
+                No inventory record exists for this product variant.
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
