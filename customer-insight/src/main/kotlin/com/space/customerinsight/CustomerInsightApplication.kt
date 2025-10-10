@@ -3,9 +3,9 @@ package com.space.customerinsight
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
+
 
 @SpringBootApplication
 open class CustomerInsightApplication
@@ -17,23 +17,40 @@ fun main(args: Array<String>) {
 // In your Spring Boot @RestController
 
 @RestController
-@RequestMapping("/api/insights")
-class CsvAnalysisController {
+@RequestMapping("/api/customers/")
+class CsvCustomerController(
+    private val csvProcessingService: ProcessCsvService
+) {
 
-//    @PostMapping("/analyze")
-//    fun analyzeCsv(
-//        @RequestHeader("X-User-Id") userId: String, // Trust this header from the Gateway
-//        @RequestParam("file") file: MultipartFile
-//    ): ResponseEntity<AnalysisResult> {
-//
-//        // The user is already authenticated. You have the userId.
-//        // Now you can proceed with the business logic.
-//        println("Processing file for user: $userId")
-//
-//        val result = analysisService.processCsv(file.inputStream)
-//
-//        return ResponseEntity.ok(result)
-//    }
+    @PostMapping("/upload")
+    fun upload(
+        @RequestHeader("X-User-Id") userId: String, // Trust this header from the Gateway
+        @RequestParam("file") file: MultipartFile
+    ): ResponseEntity<String> {
+        // Basic validation for content type
+        if (file.isEmpty || file.contentType != "text/csv") {
+            return ResponseEntity.badRequest().body("Please upload a non-empty CSV file.")
+        }
+
+        return try {
+//            val customers = csvProcessingService.processMallCustomerCsv(file)
+            // Return the list of products or a success message
+//            ResponseEntity.ok("Customers' size: ${customers.size}")
+            ResponseEntity.ok("Customers' size: 12")
+        } catch (e: Exception) {
+            // A more specific exception handling is better in production
+            ResponseEntity.internalServerError().body("Failed to process CSV file: ${e.message}")
+        }
+    }
+
+
+    @GetMapping("/insights/gender")
+    fun getGender(@RequestHeader("X-User-Id") userId: String): ResponseEntity<String> {
+        println("Processing user: $userId")
+
+        return ResponseEntity.ok("Okay")
+    }
+
 
     @GetMapping("")
     fun index(): ResponseEntity<String> {

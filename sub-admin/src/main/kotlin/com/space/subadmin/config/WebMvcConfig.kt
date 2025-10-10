@@ -15,14 +15,14 @@ class WebMvcConfig : WebMvcConfigurer {
     @Bean
     fun localeResolver(): LocaleResolver {
         val slr = SessionLocaleResolver()
-        slr.setDefaultLocale(Locale.ENGLISH) // Set English as the default language
+        slr.setDefaultLocale(Locale("vi")) // Set Vietnamese as the default language
         return slr
     }
 
     @Bean
     fun localeChangeInterceptor(): LocaleChangeInterceptor {
         val lci = LocaleChangeInterceptor()
-        lci.paramName = "lang" // Users can switch language via a URL parameter, e.g., ?lang=vi
+        lci.paramName = "lang" // Users can switch language via a URL parameter, e.g., ?lang=en
         return lci
     }
 

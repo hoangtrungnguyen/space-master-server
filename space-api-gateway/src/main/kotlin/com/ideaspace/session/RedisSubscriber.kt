@@ -41,6 +41,7 @@ class RedisSubscriber(
                     "Keyspace events (K) are available for stream commands (t). " +
                             "Current 'notify-keyspace-events'='$keyspaceConf'."
                 )
+                throw Exception("Need to SET keyspace notification ")
             } else {
                 logger.error(
                     "Keyspace events (K) are NOT available for stream commands (t). " +

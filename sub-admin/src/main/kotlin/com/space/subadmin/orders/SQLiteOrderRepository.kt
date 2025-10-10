@@ -2,8 +2,10 @@ package com.space.subadmin.orders
 
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import java.time.Instant
+import java.util.*
 
 
 interface OrderRepository {
@@ -12,6 +14,7 @@ interface OrderRepository {
     fun findDailyRevenueAfter(since: Instant): List<Array<Any>>
     fun findOrdersAfter(since: Instant): List<Order>
     fun findAllWithCustomer(): List<Order>
+    fun findOrderDetailById(orderId: Long): Optional<Order>
 
 }
 
@@ -42,4 +45,16 @@ interface SQLiteOrderRepository : OrderRepository, JpaRepository<Order, Long> {
      """
     )
     override fun findTopSellingProducts(limit: Int): List<Array<Any>>
+
+    @Query(
+        """
+        SELECT o FROM Order o
+        LEFT JOIN FETCH o.customer
+        LEFT JOIN FETCH o.items oi
+        LEFT JOIN FETCH oi.productVariant pv
+        LEFT JOIN FETCH pv.product p
+        WHERE o.id = :orderId
+    """
+    )
+    override fun findOrderDetailById(@Param("orderId") orderId: Long): Optional<Order>
 }

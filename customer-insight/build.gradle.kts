@@ -49,6 +49,7 @@ dependencies {
     // 8. Testcontainers for running tests against a real PostgreSQL database
     testImplementation("org.testcontainers:postgresql:1.19.8")
     testImplementation("org.testcontainers:junit-jupiter:1.19.8")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 }
 
 tasks.withType<Test> {

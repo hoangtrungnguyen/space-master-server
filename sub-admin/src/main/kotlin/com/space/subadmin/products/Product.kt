@@ -165,7 +165,7 @@ class ProductVariant(
      *   @Column(columnDefinition = "jsonb")
      *   val attributes: Map<String, Any>? = null,
      */
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "LONGVARCHAR")
     val attributes: String? = null, // Storing as String for simplicity, assuming JSON string
 
     @CreationTimestamp

@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.*
-import java.util.*
 
 /**
  * REST controller for managing products.
@@ -116,7 +115,18 @@ class ProductWebController(
      */
     @GetMapping("/list")
     fun showProductList(model: Model): String {
-        model.addAttribute("products", productRepository.findAllWithDetails())
+        val products = productRepository.findAllWithDetails()
+        val productListItems = products.map { product ->
+            ProductListItemDTO(
+                id = product.id,
+                name = product.name,
+                brandName = product.brand?.name,
+                categoryName = product.category?.name,
+                firstVariantSku = product.variants.firstOrNull()?.sku,
+                isActive = product.isActive
+            )
+        }
+        model.addAttribute("products", productListItems)
         return "products-list" // This corresponds to 'src/main/resources/templates/products-list.html'
     }
 
@@ -166,7 +176,7 @@ class ProductWebController(
      * @return A redirect instruction to the product list page.
      */
     @PostMapping("/edit/{id}")
-    fun updateProduct(@PathVariable id: UUID, @ModelAttribute("productForm") productForm: ProductEditDTO): String {
+    fun updateProduct(@PathVariable id: Long, @ModelAttribute("productForm") productForm: ProductEditDTO): String {
         productService.updateProductWithVariant(productForm)
         return "redirect:/products/list"
     }

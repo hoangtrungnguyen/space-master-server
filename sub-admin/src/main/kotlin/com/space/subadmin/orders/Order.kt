@@ -37,10 +37,10 @@ class Order(
     @Column(name = "total_amount", nullable = false)
     var totalAmount: BigDecimal,
 
-    @Column(name = "shipping_address", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "shipping_address", nullable = false, columnDefinition = "LONGVARCHAR")
     var shippingAddress: String,
 
-    @Column(name = "billing_address", columnDefinition = "TEXT")
+    @Column(name = "billing_address", columnDefinition = "LONGVARCHAR")
     var billingAddress: String?,
 
     @OneToMany(mappedBy = "order", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
