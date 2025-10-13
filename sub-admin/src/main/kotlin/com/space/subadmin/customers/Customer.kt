@@ -2,8 +2,6 @@ package com.space.subadmin.customers
 
 import com.space.subadmin.orders.Order
 import jakarta.persistence.*
-import org.hibernate.annotations.CreationTimestamp
-import org.hibernate.annotations.UpdateTimestamp
 import java.time.Instant
 import java.util.*
 
@@ -14,27 +12,25 @@ class Customer(
     val id: UUID = UUID.randomUUID(),
 
     @Column(name = "first_name", nullable = false, length = 100)
-    var firstName: String,
+    val firstName: String = "",
 
     @Column(name = "last_name", nullable = false, length = 100)
-    var lastName: String,
+    val lastName: String = "",
 
     @Column(nullable = false, unique = true, length = 255)
-    var email: String,
+    val email: String = "",
 
     @Column(name = "phone_number", length = 50)
-    var phoneNumber: String?,
+    val phoneNumber: String? = null,
 
     @OneToMany(mappedBy = "customer", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    val orders: MutableList<Order> = mutableListOf(),
+    val orders: List<Order> = listOf(),
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    val createdAt: Instant = Instant.now(),
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    val createdAt: Instant? = null,
 
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
+    @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    var updatedAt: Instant? = null
 ) {
     val fullName: String
         get() = "$firstName $lastName"

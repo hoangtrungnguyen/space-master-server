@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <body>
 
@@ -13,16 +13,24 @@
         <div class="text-white text-lg font-bold">
             <a href="/" th:text="#{app.title}">Sub-Admin Dashboard</a>
         </div>
-        <div class="space-x-4">
+        <div class="flex-grow space-x-4 ml-4">
             <!--            <a class="text-gray-300 hover:text-white" href="/" th:text="#{nav.home}">Home</a>-->
             <a class="text-gray-300 hover:text-white" href="/products/list" th:text="#{nav.products}">Products</a>
             <a class="text-gray-300 hover:text-white" href="/orders/list" th:text="#{nav.orders}">Orders</a>
             <a class="text-gray-300 hover:text-white" href="/inventory" th:text="Inventory">Inventory</a>
+            <a class="text-gray-300 hover:text-white" href="/users/list" th:text="Users">Users</a>
         </div>
-        <div class="space-x-2">
-            <a class="text-sm text-gray-300 hover:text-white" href="?lang=en">EN</a>
-            <span class="text-gray-500">|</span>
-            <a class="text-sm text-gray-300 hover:text-white" href="?lang=vi">VI</a>
+        <div class="flex items-center space-x-4">
+            <div class="space-x-2">
+                <a class="text-sm text-gray-300 hover:text-white" href="?lang=en">EN</a>
+                <span class="text-gray-500">|</span>
+                <a class="text-sm text-gray-300 hover:text-white" href="?lang=vi">VI</a>
+            </div>
+            <div sec:authorize="isAuthenticated()">
+                <form th:action="@{/logout}" method="post" class="inline ml-4">
+                    <button type="submit" class="text-gray-300 hover:text-white" th:text="#{nav.logout}">Logout</button>
+                </form>
+            </div>
         </div>
     </div>
 </nav>

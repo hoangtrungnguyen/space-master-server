@@ -1,0 +1,28 @@
+<!-- /installer_source/service/sub-admin-service.xml -->
+<service>
+    <!-- A unique ID for the service -->
+    <id>sub-admin</id>
+    <!-- The name that will appear in the Windows Services list -->
+    <name>Sub Admin Service</name>
+    <!-- A description for the service -->
+    <description>Backend service for the Sub Admin application.</description>
+
+    <!--
+      The executable to run. We are running Java.
+      %BASE% is a WinSW variable that points to the directory where this XML file is.
+      We assume a 'runtime' folder with Java will be placed here by the installer.
+    -->
+    <executable>%BASE%\runtime\bin\java.exe</executable>
+
+    <!-- The arguments to pass to the executable -->
+    <arguments>-Xmx256m -jar "%BASE%\app\sub-admin-0.0.1-SNAPSHOT.jar"</arguments>
+
+    <!-- Set the working directory for the application -->
+    <workingdirectory>%BASE%\app</workingdirectory>
+
+    <!-- Log settings -->
+    <log mode="roll-by-size">
+        <sizeThreshold>10240</sizeThreshold> <!-- 10 MB -->
+        <keepFiles>8</keepFiles>
+    </log>
+</service>

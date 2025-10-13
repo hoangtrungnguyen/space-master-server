@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: common_header(titleKey='product.variant.detail.title')}"></head>
+
+<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+
+<div th:replace="~{fragments/navigation :: navbar}"></div>
+
+<div class="container mx-auto p-8" th:if="${detail}">
+    <!-- Parent Product Info -->
+    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2" th:text="${detail.product.name}">Parent Product Name</h1>
+        <p class="text-sm text-gray-500">
+            Created by <span class="font-semibold" th:text="${detail.product.createdByUsername}"></span> on
+            <span th:text="${#temporals.format(detail.product.createdAt, 'dd-MMM-yyyy')}"></span>
+        </p>
+        <div class="border-t border-gray-200 mt-4 pt-4">
+            <p class="text-gray-700" th:text="${detail.product.description}">Parent product description.</p>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-4 text-sm">
+            <div class="bg-gray-50 p-3 rounded-lg">
+                <span class="font-semibold text-gray-600">Brand:</span>
+                <span th:text="${detail.product.brandName ?: 'N/A'}"></span>
+            </div>
+            <div class="bg-gray-50 p-3 rounded-lg">
+                <span class="font-semibold text-gray-600">Category:</span>
+                <span th:text="${detail.product.categoryName ?: 'N/A'}"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Focused Product Variant Details -->
+    <div class="bg-white p-8 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-semibold text-gray-700 mb-4" th:text="'Details for Variant: ' + ${detail.variant.sku}">Variant SKU</h2>
+
+        <!-- Variant Details -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-center">
+            <div class="bg-blue-50 p-3 rounded">
+                <div class="text-xs text-gray-500">Price</div>
+                <div class="font-bold text-lg" th:text="${#numbers.formatCurrency(detail.variant.price)}"></div>
+            </div>
+            <div class="bg-blue-50 p-3 rounded">
+                <div class="text-xs text-gray-500">Cost Price</div>
+                <div class="font-bold text-lg" th:text="${detail.variant.costPrice != null ? #numbers.formatCurrency(detail.variant.costPrice) : 'N/A'}"></div>
+            </div>
+            <div class="bg-blue-50 p-3 rounded">
+                <div class="text-xs text-gray-500">Weight</div>
+                <div class="font-bold text-lg" th:text="${detail.variant.weight != null ? detail.variant.weight + ' kg' : 'N/A'}"></div>
+            </div>
+            <div class="bg-blue-50 p-3 rounded">
+                <div class="text-xs text-gray-500">Attributes</div>
+                <div class="font-bold text-lg" th:text="${detail.variant.attributes ?: 'N/A'}"></div>
+            </div>
+        </div>
+
+        <!-- Inventory Transactions -->
+        <h3 class="text-lg font-semibold text-gray-600 mb-3">Recent Inventory Transactions</h3>
+        <div class="overflow-x-auto">
+            <table class="min-w-full leading-normal text-sm">
+                <thead>
+                <tr class="bg-gray-200 text-gray-600 uppercase text-xs leading-normal">
+                    <th class="py-3 px-6 text-left">Date</th>
+                    <th class="py-3 px-6 text-left">Type</th>
+                    <th class="py-3 px-6 text-right">Quantity</th>
+                    <th class="py-3 px-6 text-left">Notes</th>
+                </tr>
+                </thead>
+                <tbody class="text-gray-600">
+                <tr th:each="tx : ${detail.variant.inventoryTransactions}" class="border-b border-gray-200 hover:bg-gray-100">
+                    <td class="py-3 px-6 text-left" th:text="${#temporals.format(tx.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                    <td class="py-3 px-6 text-left">
+                        <span class="capitalize" th:text="${tx.type.toString()}"></span>
+                    </td>
+                    <td class="py-3 px-6 text-right font-mono"
+                        th:classappend="${tx.type.toString() == 'restock' || tx.type.toString() == 'return'} ? 'text-green-600' : 'text-red-600'"
+                        th:text="${(tx.type.toString() == 'restock' || tx.type.toString() == 'return' ? '+' : '-') + tx.quantity}">
+                    </td>
+                    <td class="py-3 px-6 text-left" th:text="${tx.notes ?: ''}"></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(detail.variant.inventoryTransactions)}">
+                    <td colspan="4" class="text-center py-4 text-gray-500 italic">No inventory transactions found for this variant.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Fallback for when product/variant is not found -->
+<div class="container mx-auto p-8 text-center" th:if="${detail == null}">
+    <h1 class="text-3xl font-bold text-red-600">Product or Variant Not Found</h1>
+    <p class="text-gray-600 mt-4">The product or variant you are looking for does not exist.</p>
+    <a th:href="@{/products/list}" class="mt-6 inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+        Back to Products List
+    </a>
+</div>
+
+</body>
+</html>

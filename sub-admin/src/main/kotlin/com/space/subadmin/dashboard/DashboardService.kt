@@ -1,6 +1,6 @@
 package com.space.subadmin.dashboard
 
-import com.space.subadmin.orders.SQLiteOrderRepository
+import com.space.subadmin.orders.OrderRepository
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -22,11 +22,11 @@ data class TopSellingProduct(
 )
 
 @Service
-class DashboardService(private val SQLiteOrderRepository: SQLiteOrderRepository) {
+class DashboardService(private val orderRepository: OrderRepository) {
 
     fun getDashboardData(): DashboardData {
         val thirtyDaysAgo = Instant.now().minus(30, ChronoUnit.DAYS)
-        val recentOrders = SQLiteOrderRepository.findOrdersAfter(thirtyDaysAgo)
+        val recentOrders = orderRepository.findOrdersAfter(thirtyDaysAgo)
 
         val totalRevenue = recentOrders.sumOf { it.totalAmount }
         val totalOrders = recentOrders.size.toLong()
@@ -36,15 +36,15 @@ class DashboardService(private val SQLiteOrderRepository: SQLiteOrderRepository)
             BigDecimal.ZERO
         }
 
-        val revenueTrend = SQLiteOrderRepository.findDailyRevenueAfter(thirtyDaysAgo)
-            .associate { it[0].toString() to it[1] as BigDecimal }
+        val revenueTrend = orderRepository.findDailyRevenueAfter(thirtyDaysAgo)
+            .associate { it["order_day"].toString() to it["revenue"] as BigDecimal }
 
-        val topSellingProducts = SQLiteOrderRepository.findTopSellingProducts(5)
+        val topSellingProducts = orderRepository.findTopSellingProducts(5)
             .map {
                 TopSellingProduct(
-                    productName = it[0] as String,
-                    totalQuantity = it[1] as Long,
-                    totalRevenue = it[2] as BigDecimal
+                    productName = it["name"] as String,
+                    totalQuantity = (it["total_quantity"] as Number).toLong(),
+                    totalRevenue = it["total_revenue"] as BigDecimal
                 )
             }
 

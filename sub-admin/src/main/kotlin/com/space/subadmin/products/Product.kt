@@ -1,9 +1,8 @@
 package com.space.subadmin.products
 
+import com.space.subadmin.users.User
 import jakarta.persistence.*
-import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.JdbcTypeCode
-import org.hibernate.annotations.UpdateTimestamp
 import org.hibernate.type.SqlTypes
 import java.math.BigDecimal
 import java.time.OffsetDateTime
@@ -19,17 +18,15 @@ class Brand(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @JdbcTypeCode(SqlTypes.BINARY)
-    var id: UUID? = null,
+    val id: UUID = UUID.randomUUID(),
 
     @Column(nullable = false, unique = true)
-    val name: String,
+    val name: String = "",
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: OffsetDateTime? = null,
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    val createdAt: OffsetDateTime? = null,
 
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
     var updatedAt: OffsetDateTime? = null
 )
 
@@ -39,10 +36,10 @@ class Category(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @JdbcTypeCode(SqlTypes.BINARY)
-    var id: UUID? = null,
+    val id: UUID = UUID.randomUUID(),
 
     @Column(nullable = false)
-    val name: String,
+    val name: String = "",
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_category_id")
@@ -51,12 +48,10 @@ class Category(
     @OneToMany(mappedBy = "parentCategory")
     val subCategories: Set<Category> = emptySet(),
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: OffsetDateTime? = null,
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    val createdAt: OffsetDateTime? = null,
 
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
     var updatedAt: OffsetDateTime? = null
 )
 
@@ -66,19 +61,17 @@ class Warehouse(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @JdbcTypeCode(SqlTypes.BINARY)
-    var id: UUID? = null,
+    val id: UUID = UUID.randomUUID(),
 
     @Column(nullable = false)
-    val name: String,
+    val name: String = "",
 
-    val address: String?,
+    val address: String? = null,
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: OffsetDateTime? = null,
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    val createdAt: OffsetDateTime? = null,
 
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
     var updatedAt: OffsetDateTime? = null
 )
 
@@ -91,20 +84,20 @@ class Warehouse(
 class Product(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    var id: Long? = null,
+    val id: Long = 0,
 
     @Column(nullable = false)
-    var name: String,
+    var name: String = "",
 
-    var description: String?,
+    var description: String? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "brand_id")
-    var brand: Brand?,
+    var brand: Brand? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
-    var category: Category?,
+    var category: Category? = null,
 
     @Column(name = "is_active", nullable = false)
     val isActive: Boolean = true,
@@ -112,14 +105,15 @@ class Product(
     @OneToMany(mappedBy = "product", cascade = [CascadeType.ALL], orphanRemoval = true)
     val variants: MutableSet<ProductVariant> = mutableSetOf(),
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: OffsetDateTime? = null,
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    val createdAt: OffsetDateTime? = null,
 
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
     var updatedAt: OffsetDateTime? = null
 ) {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_user_id", nullable = false)
+    lateinit var createdBy: User
 
     fun updateDetails(
         name: String,
@@ -139,43 +133,33 @@ class Product(
 class ProductVariant(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    var id: Long? = null,
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
-    val product: Product,
+    val id: Long = 0,
 
     @Column(nullable = false, length = 100, unique = true)
-    var sku: String,
+    var sku: String = "",
 
     @Column(nullable = false, precision = 10, scale = 2)
-    var price: BigDecimal,
+    var price: BigDecimal = BigDecimal.ZERO,
 
     @Column(name = "cost_price", nullable = false, precision = 10, scale = 2)
-    var costPrice: BigDecimal?,
+    var costPrice: BigDecimal? = null,
 
     @Column(nullable = false, precision = 8, scale = 2)
-    var weight: BigDecimal?,
+    var weight: BigDecimal? = null,
 
-    /**
-     * For full JSONB support with a Map or data class, you'll need a library like hypersistence-utils.
-     * Example with hypersistence-utils:
-     *
-     *   @Type(JsonType::class)
-     *   @Column(columnDefinition = "jsonb")
-     *   val attributes: Map<String, Any>? = null,
-     */
     @Column(columnDefinition = "LONGVARCHAR")
-    val attributes: String? = null, // Storing as String for simplicity, assuming JSON string
+    val attributes: String? = null,
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: OffsetDateTime? = null,
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    val createdAt: OffsetDateTime? = null,
 
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
     var updatedAt: OffsetDateTime? = null
 ) {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    lateinit var product: Product
+
     fun updateDetails(
         sku: String,
         price: BigDecimal,
@@ -188,5 +172,3 @@ class ProductVariant(
         this.weight = weight
     }
 }
-
-

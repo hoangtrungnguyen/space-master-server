@@ -7,29 +7,43 @@
 <div th:replace="~{fragments/navigation :: navbar}"></div>
 
 <div class="container mx-auto p-8">
-    <h1 class="text-3xl font-bold mb-6 text-gray-800">Inventory</h1>
-
     <div class="bg-white shadow-md rounded-lg overflow-hidden">
         <table class="min-w-full leading-normal">
             <thead>
             <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
-                <th class="py-3 px-6 text-left">Product Variant</th>
+                <th class="py-3 px-6 text-left">Product Variant (SKU)</th>
                 <th class="py-3 px-6 text-left">Quantity on Hand</th>
                 <th class="py-3 px-6 text-left">Last Restocked At</th>
                 <th class="py-3 px-6 text-center">Actions</th>
             </tr>
             </thead>
             <tbody class="text-gray-600 text-sm font-light">
-            <tr class="border-b border-gray-200 hover:bg-gray-100" th:each="inventory : ${inventoryList}">
-                <td class="py-3 px-6 text-left whitespace-nowrap" th:text="${inventory.productVariant.sku}"></td>
-                <td class="py-3 px-6 text-left" th:text="${inventory.quantityOnHand}"></td>
+            <tr class="border-b border-gray-200 hover:bg-gray-100" th:each="item : ${inventoryList}">
+                <td class="py-3 px-6 text-left whitespace-nowrap" th:text="${item.productVariantSku}"></td>
+
+                <!--/* Use a span with conditional styling for quantity */-->
+                <td class="py-3 px-6 text-left">
+                    <span th:if="${item.hasInventoryRecord}" th:text="${item.quantityOnHand}"></span>
+                    <span th:unless="${item.hasInventoryRecord}" class="text-gray-400 italic">N/A</span>
+                </td>
+
                 <td class="py-3 px-6 text-left"
-                    th:text="${inventory.lastRestockedAt == null} ? 'N/A' : ${#temporals.format(inventory.lastRestockedAt, 'yyyy-MM-dd HH:mm')}"></td>
+                    th:text="${item.lastRestockedAt == null} ? 'N/A' : ${#temporals.format(item.lastRestockedAt, 'yyyy-MM-dd HH:mm')}"></td>
+
+                <!--/* Conditionally show 'Adjust' or 'Initialize' button */-->
                 <td class="py-3 px-6 text-center">
-                    <a class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out"
-                       th:href="@{/inventory/adjust/{id}(id=${inventory.productVariant.id})}">
-                        Adjust
-                    </a>
+                    <div th:if="${item.hasInventoryRecord}">
+                        <a class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out"
+                           th:href="@{/inventory/adjust/{id}(id=${item.productVariantId})}">
+                            Adjust
+                        </a>
+                    </div>
+                    <div th:unless="${item.hasInventoryRecord}">
+                        <a class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out"
+                           th:href="@{/inventory/init/{id}(id=${item.productVariantId})}">
+                            Initialize
+                        </a>
+                    </div>
                 </td>
             </tr>
             </tbody>

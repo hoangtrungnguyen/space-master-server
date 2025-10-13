@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 @Controller
 @RequestMapping("/orders")
 class OrderWebController(
-    private val orderRepository: SQLiteOrderRepository
+    private val orderRepository: OrderRepository
 ) {
 
     @GetMapping("/list")
