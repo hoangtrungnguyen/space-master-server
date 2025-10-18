@@ -38,7 +38,7 @@ class Order(
     val billingAddress: String? = null,
 
     @OneToMany(mappedBy = "order", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
-    val items: List<OrderItem> = listOf(),
+    val items: MutableList<OrderItem> = mutableListOf(),
 
     @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
     val createdAt: Instant? = null,

@@ -36,6 +36,8 @@ dependencies {
     // JDBC driver for PostgreSQL
     runtimeOnly("org.postgresql:postgresql")
 
+    implementation("io.hypersistence:hypersistence-utils-hibernate-62:3.7.0")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     // Embedded PostgreSQL for testing
     implementation("io.zonky.test:embedded-postgres:2.1.1")

@@ -26,12 +26,18 @@ class Customer(
     @OneToMany(mappedBy = "customer", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     val orders: List<Order> = listOf(),
 
-    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
-    val createdAt: Instant? = null,
 
-    @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
-    var updatedAt: Instant? = null
+    @Column(nullable = false, updatable = false)
+    var createdAt: Instant = Instant.now(),
+
+    @Column(nullable = false)
+    var updatedAt: Instant = Instant.now()
 ) {
     val fullName: String
         get() = "$firstName $lastName"
+
+    @PreUpdate
+    fun onUpdate() {
+        updatedAt = Instant.now()
+    }
 }

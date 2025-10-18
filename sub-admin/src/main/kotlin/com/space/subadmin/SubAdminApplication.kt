@@ -1,7 +1,5 @@
 package com.space.subadmin
 
-import com.space.subadmin.users.Role
-import com.space.subadmin.users.User
 import com.space.subadmin.users.UserRepository
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.event.ApplicationReadyEvent
@@ -9,7 +7,6 @@ import org.springframework.boot.runApplication
 import org.springframework.context.ApplicationListener
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
-import java.util.UUID
 
 @SpringBootApplication
 class SubAdminApplication
