@@ -23,10 +23,10 @@ class Brand(
     @Column(nullable = false, unique = true)
     val name: String = "",
 
-    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    @Column(name = "created_at", nullable = false, updatable = false )
     val createdAt: OffsetDateTime? = null,
 
-    @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    @Column(name = "updated_at", nullable = false)
     var updatedAt: OffsetDateTime? = null
 )
 
@@ -48,10 +48,10 @@ class Category(
     @OneToMany(mappedBy = "parentCategory")
     val subCategories: Set<Category> = emptySet(),
 
-    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    @Column(name = "created_at", nullable = false, updatable = false, )
     val createdAt: OffsetDateTime? = null,
 
-    @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    @Column(name = "updated_at", nullable = false, )
     var updatedAt: OffsetDateTime? = null
 )
 
@@ -68,10 +68,10 @@ class Warehouse(
 
     val address: String? = null,
 
-    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    @Column(name = "created_at", nullable = false, updatable = false, )
     val createdAt: OffsetDateTime? = null,
 
-    @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    @Column(name = "updated_at", nullable = false, )
     var updatedAt: OffsetDateTime? = null
 )
 
@@ -105,10 +105,10 @@ class Product(
     @OneToMany(mappedBy = "product", cascade = [CascadeType.ALL], orphanRemoval = true)
     val variants: MutableSet<ProductVariant> = mutableSetOf(),
 
-    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: OffsetDateTime? = null,
 
-    @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    @Column(name = "updated_at", nullable = false,)
     var updatedAt: OffsetDateTime? = null
 ) {
     @ManyToOne(fetch = FetchType.LAZY)
@@ -147,13 +147,13 @@ class ProductVariant(
     @Column(nullable = false, precision = 8, scale = 2)
     var weight: BigDecimal? = null,
 
-    @Column(columnDefinition = "LONGVARCHAR")
+    @Column()
     val attributes: String? = null,
 
-    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: OffsetDateTime? = null,
 
-    @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    @Column(name = "updated_at", nullable = false)
     var updatedAt: OffsetDateTime? = null
 ) {
     @ManyToOne(fetch = FetchType.LAZY)

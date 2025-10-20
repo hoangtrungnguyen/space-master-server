@@ -29,10 +29,13 @@ class UserService(
         return userRepository.findAll()
     }
 
-    fun findById(id: UUID): User? {
+    fun findById(id: Long): User? {
         return userRepository.findById(id).orElse(null)
     }
 
+    fun findByUUID(uuid: UUID): User? {
+        return userRepository.findByUuid(uuid)
+    }
     fun findByUsername(username: String): User? {
         return userRepository.findByUsername(username)
     }
@@ -58,7 +61,7 @@ class UserService(
         return userRepository.save(user)
     }
 
-    fun deleteById(id: UUID) {
+    fun deleteById(id: Long) {
         userRepository.deleteById(id)
     }
 

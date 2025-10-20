@@ -2,33 +2,39 @@ package com.space.subadmin.customers
 
 import com.space.subadmin.orders.Order
 import jakarta.persistence.*
+import org.hibernate.annotations.GenericGenerator
 import java.time.Instant
 import java.util.*
 
 @Entity
 @Table(name = "customers")
-class Customer(
+data class Customer(
     @Id
-    val id: UUID = UUID.randomUUID(),
+    @GenericGenerator(name = "tsid", strategy = "com.space.subadmin.config.TsidGenerator")
+    @GeneratedValue(generator = "tsid")
+    val id: Long = 0L,
+
+    @Column(name = "uuid", nullable = false, unique = true)
+    var uuid: UUID = UUID.randomUUID(),
 
     @Column(name = "first_name", nullable = false, length = 100)
-    val firstName: String = "",
+    var firstName: String = "",
 
     @Column(name = "last_name", nullable = false, length = 100)
-    val lastName: String = "",
+    var lastName: String = "",
 
     @Column(nullable = false, unique = true, length = 255)
-    val email: String = "",
+    var email: String = "",
 
     @Column(name = "phone_number", length = 50)
-    val phoneNumber: String? = null,
+    var phoneNumber: String? = null,
 
     @OneToMany(mappedBy = "customer", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    val orders: List<Order> = listOf(),
+    var orders: MutableList<Order> = mutableListOf(),
 
 
     @Column(nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now(),
+    val createdAt: Instant = Instant.now(),
 
     @Column(nullable = false)
     var updatedAt: Instant = Instant.now()

@@ -3,23 +3,19 @@ package com.space.subadmin.orders
 
 import com.space.subadmin.customers.Customer
 import com.space.subadmin.products.ProductVariant
+import io.hypersistence.utils.hibernate.id.TsidGenerator
 import jakarta.persistence.*
-import org.hibernate.annotations.JdbcTypeCode
-import org.hibernate.type.SqlTypes
+import org.hibernate.annotations.GenericGenerator
 import java.math.BigDecimal
 import java.time.Instant
-import java.util.*
 
 @Table(name = "orders")
 @Entity
-class Order(
+data class Order(
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GenericGenerator(name = "tsid", strategy = "com.space.subadmin.config.TsidGenerator")
+    @GeneratedValue(generator = "tsid")
     val id: Long = 0,
-
-    @Column(nullable = false, updatable = false, unique = true)
-    @JdbcTypeCode(SqlTypes.BINARY)
-    val uuid: UUID = UUID.randomUUID(),
 
     @Column(name = "order_date", nullable = false)
     val orderDate: Instant = Instant.now(),
@@ -29,34 +25,52 @@ class Order(
     val status: OrderStatus = OrderStatus.PENDING,
 
     @Column(name = "total_amount", nullable = false)
-    val totalAmount: BigDecimal = BigDecimal.ZERO,
+    var totalAmount: BigDecimal = BigDecimal.ZERO,
 
-    @Column(name = "shipping_address", nullable = false, columnDefinition = "LONGVARCHAR")
+    @Column(name = "shipping_address", nullable = false)
     val shippingAddress: String = "",
 
-    @Column(name = "billing_address", columnDefinition = "LONGVARCHAR")
+    @Column(name = "billing_address")
     val billingAddress: String? = null,
 
     @OneToMany(mappedBy = "order", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
-    val items: MutableList<OrderItem> = mutableListOf(),
+    val items: MutableList<OrderItem> = mutableListOf(), // Use val for immutable collection reference
 
-    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
-    val createdAt: Instant? = null,
+    @Column(name = "created_at", nullable = false, updatable = false,)
+    var createdAt: Instant? = null, // Let @PrePersist manage this
 
-    @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
-    var updatedAt: Instant? = null
-) {
+    @Column(name = "updated_at", nullable = false)
+    var updatedAt: Instant? = null,
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id", nullable = false)
-    lateinit var customer: Customer
+    @JoinColumn(name = "customer_id", nullable = true)
+    var customer: Customer? = null
+) {
+    @PrePersist
+    fun onPrePersist() {
+        val now = Instant.now()
+        createdAt = now
+        updatedAt = now
+    }
+
+    @PreUpdate
+    fun onPreUpdate() {
+        updatedAt = Instant.now()
+    }
+
+    fun addItem(item: OrderItem) {
+        items.add(item)
+        item.order = this
+    }
 }
 
 @Table(name = "order_items")
 @Entity
-class OrderItem(
+data class OrderItem(
     @Id
-    @JdbcTypeCode(SqlTypes.BINARY)
-    val id: UUID = UUID.randomUUID(),
+    @GenericGenerator(name = "tsid", strategy = "com.space.subadmin.config.TsidGenerator")
+    @GeneratedValue(generator = "tsid")
+    val id: Long = 0,
 
     @Column(nullable = false)
     val quantity: Int = 0,

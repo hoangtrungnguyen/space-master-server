@@ -1,5 +1,6 @@
 package com.space.subadmin.orders
 
+import com.space.subadmin.products.ProductVariant
 import java.math.BigDecimal
 import java.time.Instant
 
@@ -15,8 +16,11 @@ data class OrderDetail(
 )
 
 data class OrderItemDetail(
+    val productVariantId: Long,
     val productName: String,
     val quantity: Int,
-    val pricePerUnit: BigDecimal,
+    val pricePerUnit: BigDecimal
+) {
     val lineTotal: BigDecimal
-)
+        get() = pricePerUnit * BigDecimal(quantity)
+}

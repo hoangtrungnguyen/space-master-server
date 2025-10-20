@@ -11,14 +11,11 @@ class UserController(private val userService: UserService) {
     @GetMapping
     fun getAllUsers(): List<User> = userService.getAllUsers()
 
-    @GetMapping("/{id}")
-    fun getUserById(@PathVariable id: UUID): ResponseEntity<User> {
-        val user = userService.findById(id)
-        return if (user != null) {
-            ResponseEntity.ok(user)
-        } else {
-            ResponseEntity.notFound().build()
-        }
+    @GetMapping("/{uuid}")
+    fun getUserById(@PathVariable uuid: UUID): ResponseEntity<User> {
+        return userService.findByUUID(uuid)
+            ?.let { ResponseEntity.ok(it) }
+            ?: ResponseEntity.notFound().build()
     }
 
     @PostMapping
@@ -26,22 +23,15 @@ class UserController(private val userService: UserService) {
 
     @PutMapping("/{id}")
     fun updateUser(@PathVariable id: UUID, @RequestBody userDetails: User): ResponseEntity<User> {
-        val existingUser = userService.findById(id)
-        return if (existingUser != null) {
-            val updatedUser = existingUser.apply {
-                username = userDetails.username
-                passwordHash = userDetails.passwordHash
+        return userService.findByUUID(id)?.let { existingUser ->
+            // Assuming User is a data class, copy is preferred for immutability
+            val updatedUser = existingUser.copy(
+                username = userDetails.username,
+                // Be cautious: password should be re-encoded if changed
+                passwordHash = userDetails.passwordHash,
                 role = userDetails.role
-            }
+            )
             ResponseEntity.ok(userService.save(updatedUser))
-        } else {
-            ResponseEntity.notFound().build()
-        }
-    }
-
-    @DeleteMapping("/{id}")
-    fun deleteUser(@PathVariable id: UUID): ResponseEntity<Void> {
-        userService.deleteById(id)
-        return ResponseEntity.noContent().build()
+        } ?: ResponseEntity.notFound().build()
     }
 }

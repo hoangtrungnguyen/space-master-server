@@ -24,7 +24,7 @@ data class CashPaymentRequest(
  */
 data class PaymentConfirmation(
     val paymentId: UUID,
-    val orderId: UUID, // The public-facing UUID of the order
+    val orderId: Long, // The public-facing UUID of the order
     val amountPaid: BigDecimal,
     val status: PaymentStatus,
     val paymentMethod: PaymentMethodType,
@@ -71,7 +71,7 @@ class PayByCash(
         // 5. Return a standardized confirmation DTO.
         return PaymentConfirmation(
             paymentId = savedPayment.id!!,
-            orderId = savedPayment.order.uuid, // Use the public-facing UUID of the order
+            orderId = savedPayment.order.id, // Use the public-facing UUID of the order
             amountPaid = savedPayment.amount,
             status = savedPayment.status,
             paymentMethod = savedPayment.paymentMethod,

@@ -37,6 +37,7 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
 
     implementation("io.hypersistence:hypersistence-utils-hibernate-62:3.7.0")
+    implementation("com.github.f4b6a3:tsid-creator:5.2.2")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     // Embedded PostgreSQL for testing

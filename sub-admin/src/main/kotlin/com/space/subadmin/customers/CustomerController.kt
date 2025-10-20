@@ -27,48 +27,18 @@ data class CustomerRequest(
  * Updated to include fullName.
  */
 data class CustomerResponse(
-    val id: UUID,
+    val uuid: UUID,
     val fullName: String,
     val email: String,
     val phoneNumber: String?,
     val createdAt: Instant
 )
 
-// --- Custom Exception for Business Logic ---
 
-class CustomerAlreadyExistsException(message: String) : RuntimeException(message)
-
-// --- JPA Repository ---
-
-interface CustomerRepository : JpaRepository<Customer, UUID> {
-    /**
-     * Finds a customer by their email address.
-     */
-    fun findByEmail(email: String): Customer?
-}
 
 // --- Service Layer ---
 
-@Service
-class CustomerService(private val customerRepository: CustomerRepository) {
 
-    @Transactional
-    fun createCustomer(request: CustomerRequest): Customer {
-        // 1. Check if a customer with this email already exists.
-        customerRepository.findByEmail(request.email)?.let {
-            throw CustomerAlreadyExistsException("A customer with email '${request.email}' already exists.")
-        }
-
-        // 2. If not, create the new customer using the updated fields.
-        val customer = Customer(
-            firstName = request.firstName,
-            lastName = request.lastName,
-            email = request.email,
-            phoneNumber = request.phoneNumber
-        )
-        return customerRepository.save(customer)
-    }
-}
 
 // --- API Controller ---
 
@@ -82,7 +52,7 @@ class CustomerController(private val customerService: CustomerService) {
 
         // Map the updated Customer entity to the CustomerResponse DTO.
         val response = CustomerResponse(
-            id = customer.id,
+            uuid = customer.uuid,
             fullName = customer.fullName, // Use the new computed property
             email = customer.email,
             phoneNumber = customer.phoneNumber, // Use the renamed field

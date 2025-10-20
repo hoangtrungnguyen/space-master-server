@@ -1,18 +1,26 @@
 package com.space.subadmin.users
 
+import io.hypersistence.utils.hibernate.id.TsidGenerator
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import org.hibernate.annotations.GenericGenerator
 import java.util.UUID
 
 @Entity
 @Table(name = "users")
 data class User(
     @Id
-    val id: UUID = UUID.randomUUID(),
+    @GenericGenerator(name = "tsid", strategy = "com.space.subadmin.config.TsidGenerator")
+    @GeneratedValue(generator = "tsid")
+    val id:  Long = 1,
+
+    @Column(name ="uuid")
+    val uuid: UUID = UUID.randomUUID(),
 
     @Column(nullable = false, unique = true)
     var username: String = "",
@@ -26,16 +34,18 @@ data class User(
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-        other as User
-        return username == other.username
+        if (other !is User) return false
+        // Use ID for equality if it's not the default value, otherwise it's a new entity
+        return id != 1L && id == other.id
     }
 
     override fun hashCode(): Int {
-        return username.hashCode()
+        // Consistent with the equals implementation
+        return if (id != 1L) id.hashCode() else super.hashCode()
     }
 
     override fun toString(): String {
-        return "User(id=$id, username='$username', role=$role)"
+        // Leverage the data class's default toString() for clarity
+        return "User(id=$id, uuid=$uuid, username='$username', role=$role)"
     }
 }

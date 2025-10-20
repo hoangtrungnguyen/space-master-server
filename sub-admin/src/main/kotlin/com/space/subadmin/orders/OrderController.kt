@@ -30,7 +30,7 @@ class OrderWebController(
             orderDate = order.orderDate,
             status = order.status.toString(),
             totalAmount = order.totalAmount,
-            customerName = "${order.customer.firstName} ${order.customer.lastName}",
+            customerName = order.customer?.fullName ?: "",
             shippingAddress = order.shippingAddress,
             billingAddress = order.billingAddress ?: "",
             items = order.items.map {
@@ -38,7 +38,7 @@ class OrderWebController(
                     productName = it.productVariant.product.name,
                     quantity = it.quantity,
                     pricePerUnit = it.pricePerUnit,
-                    lineTotal = it.lineTotal
+                    productVariantId = it.productVariant.id
                 )
             }
         )
