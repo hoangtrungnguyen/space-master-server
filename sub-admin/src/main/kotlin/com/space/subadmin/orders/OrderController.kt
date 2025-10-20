@@ -1,49 +1,27 @@
 package com.space.subadmin.orders
 
-import org.springframework.stereotype.Controller
-import org.springframework.ui.Model
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.bind.annotation.RequestMapping
 
-@Controller
-@RequestMapping("/orders")
-class OrderWebController(
-    private val orderRepository: OrderRepository
+@RestController
+@RequestMapping("/api/v1/orders")
+class OrderController(
+    private val createPendingOrder: CreatePendingOrder
 ) {
 
-    @GetMapping("/list")
-    fun showOrderList(model: Model): String {
-        model.addAttribute("orders", orderRepository.findAllWithCustomer())
-        return "orders-list"
+    /**
+     * Creates a new order with a 'PENDING' status.
+     *
+     * @param request The request body containing customer and order item details.
+     * @return A [ResponseEntity] with the [OrderConfirmation] and HTTP status 201 (Created).
+     */
+    @PostMapping("/create-pending")
+    fun createPendingOrder(@RequestBody request: CreateOrderRequest): ResponseEntity<OrderConfirmation> {
+        val orderConfirmation = createPendingOrder.execute(request)
+        return ResponseEntity.status(HttpStatus.CREATED).body(orderConfirmation)
     }
-
-    @GetMapping("/{id}")
-    fun showOrderDetail(@PathVariable id: Long, model: Model): String {
-        val orderOptional = orderRepository.findOrderDetailById(id)
-        if (orderOptional.isEmpty) {
-            return "redirect:/orders/list"
-        }
-        val order = orderOptional.get()
-        val orderDetail = OrderDetail(
-            id = order.id,
-            orderDate = order.orderDate,
-            status = order.status.toString(),
-            totalAmount = order.totalAmount,
-            customerName = order.customer?.fullName ?: "",
-            shippingAddress = order.shippingAddress,
-            billingAddress = order.billingAddress ?: "",
-            items = order.items.map {
-                OrderItemDetail(
-                    productName = it.productVariant.product.name,
-                    quantity = it.quantity,
-                    pricePerUnit = it.pricePerUnit,
-                    productVariantId = it.productVariant.id
-                )
-            }
-        )
-        model.addAttribute("order", orderDetail)
-        return "orders/order-detail"
-    }
-
 }
