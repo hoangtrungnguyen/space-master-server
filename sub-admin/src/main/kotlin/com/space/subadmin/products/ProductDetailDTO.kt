@@ -16,28 +16,57 @@ data class ProductDetailDTO(
     val isActive: Boolean,
     val createdAt: OffsetDateTime?,
     val createdByUsername: String,
-    val variants: List<ProductVariantDetailDTO>
-)
+    val variants: List<ProductVariantDetailTransactionsDTO>,
+){
+    /**
+     * Nested DTO for parent product information.
+     */
+    data class ProductInfo(
+        val id: Long,
+        val name: String,
+        val description: String?,
+        val brandName: String?,
+        val categoryName: String?,
+        val createdAt: OffsetDateTime?,
+        val createdByUsername: String
+    )
 
-/**
- * A DTO for displaying details of a single product variant.
- */
-data class ProductVariantDetailDTO(
-    val id: Long,
-    val sku: String,
-    val price: BigDecimal,
-    val costPrice: BigDecimal?,
-    val weight: BigDecimal?,
-    val attributes: String?,
-    val inventoryTransactions: List<InventoryTransactionInfoDTO>
-)
+    /**
+     * DTO for the detailed view of a single product variant.
+     */
+    data class ProductVariantInfoDTO(
+        val id: Long,
+        val sku: String,
+        val price: BigDecimal,
+        val costPrice: BigDecimal?,
+        val weight: BigDecimal?,
+        val attributes: String?,
+        val createdAt: OffsetDateTime?,
+        val updatedAt: OffsetDateTime?
+    )
 
-/**
- * A DTO for displaying a single inventory transaction.
- */
-data class InventoryTransactionInfoDTO(
-    val type: InventoryTransactionType,
-    val quantity: Int,
-    val notes: String?,
-    val createdAt: OffsetDateTime?
-)
+    /**
+     * A DTO for displaying details of a single product variant.
+     */
+    data class ProductVariantDetailTransactionsDTO(
+        val id: Long,
+        val sku: String,
+        val price: BigDecimal,
+        val costPrice: BigDecimal?,
+        val weight: BigDecimal?,
+        val attributes: String?,
+        val inventoryTransactions: List<InventoryTransactionInfoDTO>
+    )
+
+    /**
+     * A DTO for displaying a single inventory transaction.
+     */
+    data class InventoryTransactionInfoDTO(
+        val type: InventoryTransactionType,
+        val quantity: Int,
+        val notes: String?,
+        val createdAt: OffsetDateTime?
+    )
+
+}
+

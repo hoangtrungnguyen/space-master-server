@@ -2,7 +2,9 @@ package com.space.subadmin.products
 
 import com.space.subadmin.users.User
 import jakarta.persistence.*
+import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.annotations.UpdateTimestamp
 import org.hibernate.type.SqlTypes
 import java.math.BigDecimal
 import java.time.OffsetDateTime
@@ -92,11 +94,11 @@ class Product(
     var description: String? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "brand_id")
+    @JoinColumn(name = "brand_id", nullable = true)
     var brand: Brand? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
+    @JoinColumn(name = "category_id", nullable = true)
     var category: Category? = null,
 
     @Column(name = "is_active", nullable = false)
@@ -106,9 +108,11 @@ class Product(
     val variants: MutableSet<ProductVariant> = mutableSetOf(),
 
     @Column(name = "created_at", nullable = false, updatable = false)
+    @CreationTimestamp
     val createdAt: OffsetDateTime? = null,
 
     @Column(name = "updated_at", nullable = false,)
+    @UpdateTimestamp
     var updatedAt: OffsetDateTime? = null
 ) {
     @ManyToOne(fetch = FetchType.LAZY)

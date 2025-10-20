@@ -39,7 +39,7 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700" for="brandId" th:text="#{product.brand}">Brand:</label>
                 <select class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        id="brandId" required
+                        id="brandId"
                         th:field="*{brandId}">
                     <option th:text="#{product.select_brand}" value="">-- Select a Brand --</option>
                     <option th:each="brand : ${allBrands}" th:text="${brand.name}" th:value="${brand.id}"></option>
@@ -54,7 +54,7 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700" for="categoryId" th:text="#{product.category}">Category:</label>
                 <select class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        id="categoryId" required
+                        id="categoryId"
                         th:field="*{categoryId}">
                     <option th:text="#{product.select_category}" value="">-- Select a Category --</option>
                     <option th:each="cat : ${allCategories}" th:text="${cat.name}" th:value="${cat.id}"></option>

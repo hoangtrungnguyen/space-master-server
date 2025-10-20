@@ -75,8 +75,9 @@ class ProductWebController(
         @RequestParam variantId: Long,
         model: Model
     ): String {
-        val detail = productService.findProductAndVariantDetail(id, variantId)
-        model.addAttribute("detail", detail)
+        val data = productService.findProductVariantDetail(id, variantId)
+        model.addAttribute("info", data?.first)
+        model.addAttribute("detail", data?.second)
         return "products/detail-product-variant" // Renders the new template
     }
 

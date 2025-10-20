@@ -27,7 +27,10 @@ class ProductService(
      * @return A DTO containing the product and variant details, or null if not found.
      */
     @Transactional(readOnly = true)
-    fun findProductAndVariantDetail(productId: Long, variantId: Long): ProductAndVariantDetailDTO? {
+    fun findProductVariantDetail(
+        productId: Long,
+        variantId: Long
+    ): Pair<ProductDetailDTO.ProductVariantInfoDTO, ProductDetailDTO.ProductVariantDetailTransactionsDTO>? {
         // 1. Fetch the product with all its variants efficiently
         val product = productRepository.findProductDetailById(productId).orElse(null) ?: return null
 
@@ -37,18 +40,17 @@ class ProductService(
         // 3. Fetch transactions for only this specific variant
         val transactions = inventoryTransactionRepository.findByProductVariantIdIn(listOf(variant.id))
 
-        // 4. Assemble the DTO
-        val productInfo = ProductAndVariantDetailDTO.ProductInfo(
-            id = product.id,
-            name = product.name,
-            description = product.description,
-            brandName = product.brand?.name,
-            categoryName = product.category?.name,
-            createdAt = product.createdAt,
-            createdByUsername = product.createdBy.username
+        val variantInfo = ProductDetailDTO.ProductVariantInfoDTO(
+            id = variant.id,
+            sku = variant.sku,
+            price = variant.price,
+            costPrice = variant.costPrice,
+            weight = variant.weight,
+            attributes = variant.attributes,
+            createdAt = variant.createdAt,
+            updatedAt = variant.updatedAt
         )
-
-        val variantDetail = ProductVariantDetailDTO(
+        val variantDetail = ProductDetailDTO.ProductVariantDetailTransactionsDTO(
             id = variant.id,
             sku = variant.sku,
             price = variant.price,
@@ -56,7 +58,7 @@ class ProductService(
             weight = variant.weight,
             attributes = variant.attributes,
             inventoryTransactions = transactions.map { tx ->
-                InventoryTransactionInfoDTO(
+                ProductDetailDTO.InventoryTransactionInfoDTO(
                     type = tx.type,
                     quantity = tx.quantity,
                     notes = tx.notes,
@@ -65,7 +67,10 @@ class ProductService(
             }
         )
 
-        return ProductAndVariantDetailDTO(product = productInfo, variant = variantDetail)
+        return Pair(
+            variantInfo,
+            variantDetail
+        )
     }
 
     /**
@@ -120,7 +125,7 @@ class ProductService(
             createdByUsername = product.createdBy.username,
             variants = product.variants.map { variant ->
                 val variantTransactions = allTransactions[variant.id] ?: emptyList()
-                ProductVariantDetailDTO(
+                ProductDetailDTO.ProductVariantDetailTransactionsDTO(
                     id = variant.id,
                     sku = variant.sku,
                     price = variant.price,
@@ -128,7 +133,7 @@ class ProductService(
                     weight = variant.weight,
                     attributes = variant.attributes,
                     inventoryTransactions = variantTransactions.map { tx ->
-                        InventoryTransactionInfoDTO(
+                        ProductDetailDTO.InventoryTransactionInfoDTO(
                             type = tx.type,
                             quantity = tx.quantity,
                             notes = tx.notes,
@@ -149,8 +154,15 @@ class ProductService(
      */
     @Transactional
     fun createProduct(dto: ProductFormDTO, createdBy: User): Product {
-        val brand = dto.brandId?.let { brandRepository.findById(UUID.fromString(it)).orElse(null) }
-        val category = dto.categoryId?.let { categoryRepository.findById(UUID.fromString(it)).orElse(null) }
+        val brandId = dto.brandId ?: ""
+        val categoryId = dto.categoryId ?: ""
+
+        val brand = brandId.ifBlank { null }?.let {
+            brandRepository.findById(UUID.fromString(it)).orElse(null)
+        }
+        val category = categoryId.ifBlank { null }?.let {
+            dto.categoryId?.let { categoryRepository.findById(UUID.fromString(it)).orElse(null) }
+        }
 
         val product = Product(
             name = dto.name,
