@@ -1,10 +1,17 @@
-package com.space.subadmin.customers
+package com.space.subadmin.db
 
-import com.space.subadmin.orders.Order
-import jakarta.persistence.*
+import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.Id
+import jakarta.persistence.OneToMany
+import jakarta.persistence.PreUpdate
+import jakarta.persistence.Table
 import org.hibernate.annotations.GenericGenerator
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 
 @Entity
 @Table(name = "customers")

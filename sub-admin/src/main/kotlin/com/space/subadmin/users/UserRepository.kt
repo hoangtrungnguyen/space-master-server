@@ -1,5 +1,6 @@
 package com.space.subadmin.users
 
+import com.space.subadmin.db.User
 import org.springframework.data.jpa.repository.JpaRepository
 import java.util.UUID
 

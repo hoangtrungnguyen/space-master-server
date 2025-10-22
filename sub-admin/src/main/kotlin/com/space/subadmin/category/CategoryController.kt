@@ -1,6 +1,6 @@
 package com.space.subadmin.category
 
-import com.space.subadmin.products.Category
+import com.space.subadmin.db.Category
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping

@@ -1,5 +1,6 @@
 package com.space.subadmin.users
 
+import com.space.subadmin.db.Role
 import org.springframework.stereotype.Service
 
 @Service

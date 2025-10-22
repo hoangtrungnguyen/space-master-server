@@ -1,8 +1,8 @@
 package com.space.subadmin
 
 import com.space.subadmin.customers.CustomerService
-import com.space.subadmin.users.Role
-import com.space.subadmin.users.User
+import com.space.subadmin.db.Role
+import com.space.subadmin.db.User
 import com.space.subadmin.users.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent

@@ -1,5 +1,6 @@
 package com.space.subadmin.customers
 
+import com.space.subadmin.db.Customer
 import org.springframework.data.jpa.repository.JpaRepository
 import java.util.UUID
 

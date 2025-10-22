@@ -1,6 +1,6 @@
-package com.space.subadmin.users
+package com.space.subadmin.db
 
-import io.hypersistence.utils.hibernate.id.TsidGenerator
+import com.space.subadmin.db.Role
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType

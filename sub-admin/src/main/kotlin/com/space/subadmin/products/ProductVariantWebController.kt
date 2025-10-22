@@ -18,7 +18,7 @@ class ProductVariantWebController(
         model.addAttribute("variantForm", ProductVariantFormDTO())
         val products = productService.findAllProducts()
         model.addAttribute("products", products)
-        return "add-product-variant"
+        return "products/add-product-variant"
     }
 
     @PostMapping("/add")

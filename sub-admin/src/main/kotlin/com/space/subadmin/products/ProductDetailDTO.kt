@@ -1,6 +1,6 @@
 package com.space.subadmin.products
 
-import com.space.subadmin.inventory.InventoryTransactionType
+import com.space.subadmin.db.InventoryTransactionType
 import java.math.BigDecimal
 import java.time.OffsetDateTime
 

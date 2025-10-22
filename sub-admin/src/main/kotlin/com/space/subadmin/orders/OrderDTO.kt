@@ -1,6 +1,5 @@
 package com.space.subadmin.orders
 
-import com.space.subadmin.products.ProductVariant
 import java.math.BigDecimal
 import java.time.Instant
 

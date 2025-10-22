@@ -1,15 +1,24 @@
-package com.space.subadmin.payment
+package com.space.subadmin.db
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import com.space.subadmin.orders.Order
-import com.space.subadmin.products.ProductVariant
-import jakarta.persistence.*
+import jakarta.persistence.AttributeConverter
+import jakarta.persistence.Column
+import jakarta.persistence.Convert
+import jakarta.persistence.Converter
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.Table
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.UUID
-
-// --- Core Enums ---
 
 enum class PaymentMethodType {
     CASH,
@@ -24,8 +33,6 @@ enum class PaymentStatus {
     REFUNDED
 }
 
-// --- Type-Safe Metadata Structure ---
-
 sealed interface PaymentMethodDetails
 
 data class CashDetails(val notes: String? = null) : PaymentMethodDetails
@@ -36,8 +43,6 @@ data class CardDetails(
     val brand: String,
     val gatewayTransactionId: String
 ) : PaymentMethodDetails
-
-// --- JPA Converter for Metadata ---
 
 @Converter
 class PaymentMethodDetailsConverter : AttributeConverter<PaymentMethodDetails, String> {
@@ -61,8 +66,6 @@ class PaymentMethodDetailsConverter : AttributeConverter<PaymentMethodDetails, S
         }
     }
 }
-
-// --- Main Payment and PaymentDetail Entities ---
 
 @Entity
 @Table(name = "payments")

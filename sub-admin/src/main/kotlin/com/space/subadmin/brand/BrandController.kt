@@ -1,6 +1,6 @@
 package com.space.subadmin.brand
 
-import com.space.subadmin.products.Brand
+import com.space.subadmin.db.Brand
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping

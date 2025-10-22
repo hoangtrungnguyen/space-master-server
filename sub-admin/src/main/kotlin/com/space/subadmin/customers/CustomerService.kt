@@ -1,5 +1,6 @@
 package com.space.subadmin.customers
 
+import com.space.subadmin.db.Customer
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -28,10 +29,10 @@ class CustomerService(private val customerRepository: CustomerRepository) {
     }
 
     @Transactional
-    fun createCustomerZero() : Customer{
+    fun createCustomerZero() : Customer {
         // 2. If not, create the new customer using the updated fields.
         val customer = Customer(
-            id =  0,
+            id = 0,
             firstName = "",
             lastName = "",
             email = "hoangtrungnguyen18102000@gmail.com",

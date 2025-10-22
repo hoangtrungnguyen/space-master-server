@@ -1,5 +1,8 @@
 package com.space.subadmin.inventory
 
+import com.space.subadmin.db.Inventory
+import com.space.subadmin.db.InventoryTransaction
+import com.space.subadmin.db.InventoryTransactionType
 import com.space.subadmin.exception.OverQuantityException
 import com.space.subadmin.products.ProductVariantRepository
 import org.springframework.stereotype.Service

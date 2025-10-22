@@ -1,5 +1,6 @@
 package com.space.subadmin.users
 
+import com.space.subadmin.db.User
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.util.UUID

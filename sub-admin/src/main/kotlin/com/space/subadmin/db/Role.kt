@@ -1,4 +1,4 @@
-package com.space.subadmin.users
+package com.space.subadmin.db
 
 enum class Role {
     MANAGER,

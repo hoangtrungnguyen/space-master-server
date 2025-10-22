@@ -1,5 +1,6 @@
 package com.space.subadmin.products
 
+import com.space.subadmin.db.ProductVariant
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -19,7 +20,7 @@ class GetAllProductVariants(
     }
 
     /**
-     * Extension function to map a [ProductVariant] entity to a [ProductAndVariantDTO.ProductVariantInfoDTO].
+     * Extension function to map a [com.space.subadmin.db.ProductVariant] entity to a [ProductAndVariantDTO.ProductVariantInfoDTO].
      * This keeps the mapping logic cleanly separated.
      */
     private fun ProductVariant.toProductAndVariantDetailDTO(): ProductAndVariantDTO {
@@ -33,7 +34,6 @@ class GetAllProductVariants(
                 categoryName = parentProduct.category?.name,
                 createdAt = parentProduct.createdAt,
                 createdByUsername = parentProduct.createdBy.username
-
             ),
             variant = ProductAndVariantDTO.ProductVariantInfoDTO(
                 id = this.id,

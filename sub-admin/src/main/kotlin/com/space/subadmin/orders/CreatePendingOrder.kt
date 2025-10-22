@@ -1,6 +1,9 @@
 package com.space.subadmin.orders
 
 import com.space.subadmin.customers.CustomerRepository
+import com.space.subadmin.db.Order
+import com.space.subadmin.db.OrderItem
+import com.space.subadmin.db.OrderStatus
 import com.space.subadmin.products.ProductVariantsRepository
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service

@@ -2,9 +2,11 @@ package com.space.subadmin.products
 
 import com.space.subadmin.brand.BrandRepository
 import com.space.subadmin.category.CategoryRepository
+import com.space.subadmin.db.Product
+import com.space.subadmin.db.ProductVariant
 import com.space.subadmin.inventory.InventoryRepository
 import com.space.subadmin.inventory.InventoryTransactionRepository
-import com.space.subadmin.users.User
+import com.space.subadmin.db.User
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

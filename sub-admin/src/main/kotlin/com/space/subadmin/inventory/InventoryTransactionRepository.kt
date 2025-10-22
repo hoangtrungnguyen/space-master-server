@@ -1,5 +1,6 @@
 package com.space.subadmin.inventory
 
+import com.space.subadmin.db.InventoryTransaction
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import java.util.*

@@ -1,11 +1,10 @@
-package com.space.subadmin.common
+package com.space.subadmin.db
 
 import jakarta.persistence.Column
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.MappedSuperclass
-import jakarta.persistence.PrePersist
 import jakarta.persistence.PreUpdate
 import java.time.Instant
 import java.util.UUID

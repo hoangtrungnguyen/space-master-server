@@ -1,6 +1,6 @@
-package com.space.subadmin.products
+package com.space.subadmin.db
 
-import com.space.subadmin.users.User
+import com.space.subadmin.db.User
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.JdbcTypeCode
