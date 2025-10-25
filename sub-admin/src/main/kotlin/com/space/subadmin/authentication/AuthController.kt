@@ -1,5 +1,6 @@
 package com.space.subadmin.authentication
 
+import jakarta.servlet.http.HttpServletRequest
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
@@ -12,7 +13,8 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/auth")
 class AuthController(
     private val authenticationManager: AuthenticationManager,
-    private val tokenService: AppTokenService
+    private val tokenService: AppTokenService,
+    private val tokenDenylistService: TokenDenylistService
 ) {
 
     @PostMapping("/login")
@@ -26,9 +28,14 @@ class AuthController(
     }
 
     @PostMapping("/logout")
-    fun logout(): String {
+    fun logout(request: HttpServletRequest): String {
+        val authHeader = request.getHeader("Authorization")
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            val token = authHeader.substring(7)
+            tokenDenylistService.addToDenylist(token)
+        }
+
         SecurityContextHolder.clearContext()
         return "Logout successful"
     }
 }
-

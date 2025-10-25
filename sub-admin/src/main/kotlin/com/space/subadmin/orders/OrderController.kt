@@ -1,5 +1,9 @@
 package com.space.subadmin.orders
 
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
@@ -13,12 +17,6 @@ class OrderController(
     private val createPendingOrder: CreatePendingOrder
 ) {
 
-    /**
-     * Creates a new order with a 'PENDING' status.
-     *
-     * @param request The request body containing customer and order item details.
-     * @return A [ResponseEntity] with the [OrderConfirmation] and HTTP status 201 (Created).
-     */
     @PostMapping("/create-pending")
     fun createPendingOrder(@RequestBody request: CreateOrderRequest): ResponseEntity<OrderConfirmation> {
         val orderConfirmation = createPendingOrder.execute(request)

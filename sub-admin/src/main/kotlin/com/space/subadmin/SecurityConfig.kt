@@ -1,6 +1,7 @@
 package com.space.subadmin
 
 import com.space.subadmin.authentication.AuthService
+import com.space.subadmin.authentication.ApiAuthenticationEntryPoint
 import com.space.subadmin.authentication.JwtAuthFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -20,6 +21,7 @@ import org.springframework.security.web.authentication.rememberme.JdbcTokenRepos
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository
 import javax.sql.DataSource
 import org.springframework.security.config.annotation.web.invoke
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 
 
 @Configuration
@@ -27,7 +29,8 @@ import org.springframework.security.config.annotation.web.invoke
 class SecurityConfig(
     private val authService: AuthService,
     private val dataSource: DataSource,
-    private val jwtAuthFilter: JwtAuthFilter
+    private val jwtAuthFilter: JwtAuthFilter,
+    private val apiAuthenticationEntryPoint: ApiAuthenticationEntryPoint
 ) {
 
     @Bean
@@ -41,7 +44,6 @@ class SecurityConfig(
         http {
             // Apply this filter chain only to API endpoints
             securityMatcher("/api/**")
-
             // For API, we use stateless session management
             sessionManagement {
                 sessionCreationPolicy = SessionCreationPolicy.STATELESS
@@ -49,9 +51,8 @@ class SecurityConfig(
 
             authorizeHttpRequests {
                 // Allow unauthenticated access to the API login endpoint
-//                authorize(HttpMethod.GET, "/api/v1/product-variants", permitAll)
                 authorize("/api/auth/login", permitAll)
-                // Secure all other API endpoints
+                // Secure all other API endpoints. This was a security vulnerability.
                 authorize(anyRequest, authenticated)
             }
 
@@ -59,8 +60,17 @@ class SecurityConfig(
             csrf { disable() }
 
             // Add your custom JWT filter before the standard auth filter
-            addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
+            // This is crucial for your JWT-based authentication to work for API calls.
+            addFilterBefore<UsernamePasswordAuthenticationFilter>(jwtAuthFilter)
+
+            // Set the custom authentication provider
+            authenticationProvider()
+            
+            exceptionHandling {
+                authenticationEntryPoint = apiAuthenticationEntryPoint
+            }
         }
+
         return http.build()
     }
 
@@ -70,6 +80,11 @@ class SecurityConfig(
     fun webSecurityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http {
             authorizeHttpRequests {
+                // Allow public access to OpenAPI documentation and Swagger UI
+                authorize("/swagger-ui/**", permitAll)
+                authorize("/v3/api-docs/**", permitAll)
+                authorize("/swagger-ui.html", permitAll)
+
                 // Secure all non-api requests by default
                 authorize(anyRequest, authenticated)
             }
@@ -86,6 +101,9 @@ class SecurityConfig(
                 tokenRepository = persistentTokenRepository()
                 userDetailsService = authService // Explicitly set the UserDetailsService
             }
+
+            // Set the custom authentication provider
+            authenticationProvider()
         }
         return http.build()
     }

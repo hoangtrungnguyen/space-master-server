@@ -7,6 +7,7 @@ import org.springframework.security.core.Authentication
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Service
 import java.util.Date
+import java.util.UUID
 import javax.crypto.SecretKey
 
 @Service
@@ -24,34 +25,69 @@ class AppTokenService {
         val userPrincipal = authentication.principal as UserDetails
         val now = Date()
         val expiryDate = Date(now.time + expiration)
-
+        val extraClaims = mapOf<String, Any>() // Add any other claims you need here
         return Jwts.builder()
             .setSubject(userPrincipal.username)
+            .setId(UUID.randomUUID().toString())
             .setIssuedAt(now)
             .setExpiration(expiryDate)
             .signWith(secretKey)
+            .addClaims(extraClaims)
             .compact()
     }
 
-    fun getUsernameFromToken(token: String): String {
-        return getClaimsFromToken(token).subject
-    }
 
     fun validateToken(token: String, userDetails: UserDetails): Boolean {
-        val username = getUsernameFromToken(token)
-        return username == userDetails.username && !isTokenExpired(token)
+        return try {
+            val username = getSubjectFromToken(token)
+            username == userDetails.username && !isTokenExpired(token)
+        } catch (e: Exception) {
+            // If validation fails for any reason (e.g., parsing, signature), return false.
+            false
+        }
     }
 
     private fun isTokenExpired(token: String): Boolean {
-        val expirationDate = getClaimsFromToken(token).expiration
+        // This will throw an exception if the token is already expired, which is handled by the parser.
+        val expirationDate = getExpirationDateFromToken(token)
         return expirationDate.before(Date())
     }
 
-    private fun getClaimsFromToken(token: String): Claims {
+
+    fun getExpirationDateFromToken(token: String): Date =
+        getClaim(token, Claims::getExpiration)
+            ?: throw IllegalStateException("Expiration date claim not found in token")
+
+    fun getJtiFromToken(token: String): String? =
+        getClaim(token, Claims::getId)
+
+    /**
+     * A generic function to extract a specific claim from the token.
+     *
+     * @param token The JWT string.
+     * @param claimsResolver A function that takes a Claims object and returns the desired claim value.
+     * @return The claim value, or null if parsing fails.
+     */
+    private fun <T> getClaim(token: String, claimsResolver: (Claims) -> T): T? {
+        return try {
+            val claims = getAllClaims(token)
+            claimsResolver(claims)
+        } catch (e: Exception) {
+            // Log the exception in a real application
+            println("Failed to parse JWT claims: ${e.message}")
+            null
+        }
+    }
+
+    private fun getAllClaims(token: String): Claims {
         return Jwts.parserBuilder()
             .setSigningKey(secretKey)
             .build()
             .parseClaimsJws(token)
             .body
+    }
+
+    fun getSubjectFromToken(token: String): String? {
+        return getClaim(token, Claims::getSubject)
     }
 }
