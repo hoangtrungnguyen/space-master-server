@@ -1,6 +1,5 @@
 package com.space.subadmin.products
 
-import com.space.subadmin.brand.BrandRepository
 import com.space.subadmin.category.CategoryRepository
 import com.space.subadmin.db.Product
 import com.space.subadmin.db.ProductVariant
@@ -15,7 +14,6 @@ import java.util.*
 @Service
 class ProductService(
     private val productRepository: ProductRepository,
-    private val brandRepository: BrandRepository,
     private val categoryRepository: CategoryRepository,
     private val inventoryTransactionRepository: InventoryTransactionRepository,
     private val inventoryRepository: InventoryRepository // Injected repository
@@ -159,9 +157,6 @@ class ProductService(
         val brandId = dto.brandId ?: ""
         val categoryId = dto.categoryId ?: ""
 
-        val brand = brandId.ifBlank { null }?.let {
-            brandRepository.findById(UUID.fromString(it)).orElse(null)
-        }
         val category = categoryId.ifBlank { null }?.let {
             dto.categoryId?.let { categoryRepository.findById(UUID.fromString(it)).orElse(null) }
         }
@@ -169,7 +164,6 @@ class ProductService(
         val product = Product(
             name = dto.name,
             description = dto.description,
-            brand = brand,
             category = category,
         )
         product.createdBy = createdBy

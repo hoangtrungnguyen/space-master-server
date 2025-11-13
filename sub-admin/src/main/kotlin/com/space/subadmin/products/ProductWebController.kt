@@ -1,6 +1,5 @@
 package com.space.subadmin.products
 
-import com.space.subadmin.brand.BrandRepository
 import com.space.subadmin.category.CategoryRepository
 import com.space.subadmin.users.UserService
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -25,7 +24,6 @@ import org.springframework.web.bind.annotation.RequestParam
 class ProductWebController(
     private val productRepository: ProductRepository,
     private val productService: ProductService,
-    private val brandRepository: BrandRepository,
     private val categoryRepository: CategoryRepository,
     private val userService: UserService // Injected to get the current user
 ) {
@@ -41,7 +39,6 @@ class ProductWebController(
     fun showAddProductForm(model: Model): String {
         // Use a DTO to represent the form's data structure
         model.addAttribute("productForm", ProductFormDTO())
-        model.addAttribute("allBrands", brandRepository.findAll())
         model.addAttribute("allCategories", categoryRepository.findAll())
         return "add-product" // This corresponds to 'src/main/resources/templates/add-product.html'
     }
@@ -125,7 +122,6 @@ class ProductWebController(
                 )
 
                 model.addAttribute("productForm", productForm)
-                model.addAttribute("allBrands", brandRepository.findAll())
                 model.addAttribute("allCategories", categoryRepository.findAll())
                 "edit-product" // Renders 'src/main/resources/templates/edit-product.html'
             }

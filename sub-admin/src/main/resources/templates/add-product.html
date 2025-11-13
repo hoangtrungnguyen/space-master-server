@@ -37,21 +37,6 @@
                         th:field="*{description}"></textarea>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700" for="brandId" th:text="#{product.brand}">Brand:</label>
-                <select class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        id="brandId"
-                        th:field="*{brandId}">
-                    <option th:text="#{product.select_brand}" value="">-- Select a Brand --</option>
-                    <option th:each="brand : ${allBrands}" th:text="${brand.name}" th:value="${brand.id}"></option>
-                </select>
-                <div class="mt-2 text-sm">
-                    <a class="font-medium text-indigo-600 hover:text-indigo-500"
-                       href="#" id="add-brand-link" th:text="#{product.add_new_brand}">
-                        + Add a new brand
-                    </a>
-                </div>
-            </div>
-            <div>
                 <label class="block text-sm font-medium text-gray-700" for="categoryId" th:text="#{product.category}">Category:</label>
                 <select class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                         id="categoryId"

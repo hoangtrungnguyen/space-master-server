@@ -9,7 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 
 @SpringBootApplication
-class SubAdminApplication
+open class SubAdminApplication
 
 fun main(args: Array<String>) {
     runApplication<SubAdminApplication>(*args)
@@ -22,13 +22,7 @@ class ApplicationStartup(
 ) : ApplicationListener<ApplicationReadyEvent> {
 
     override fun onApplicationEvent(event: ApplicationReadyEvent) {
-//                val adminUser = User(
-//                    id = UUID.randomUUID(),
-//                    username = "admin",
-//                    passwordHash = passwordEncoder.encode("123"),
-//                    role = Role.ADMIN
-//                )
-//                userRepository.save(adminUser)
-
+        // This is a good place to run seed data or other startup logic.
+        // For now, it's empty.
     }
 }
