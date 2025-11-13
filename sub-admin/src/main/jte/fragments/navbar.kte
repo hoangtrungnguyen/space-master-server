@@ -1,0 +1,25 @@
+<nav class="bg-gray-800 p-4">
+    <div class="container mx-auto flex justify-between items-center">
+        <div class="text-white text-lg font-bold">
+            <a href="/">Sub-Admin Dashboard</a>
+        </div>
+        <div class="flex-grow space-x-4 ml-4">
+            <a class="text-gray-300 hover:text-white" href="/products/list">Products</a>
+            <a class="text-gray-300 hover:text-white" href="/orders/list">Orders</a>
+            <a class="text-gray-300 hover:text-white" href="/inventory">Inventory</a>
+            <a class="text-gray-300 hover:text-white" href="/users/list">Users</a>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div class="space-x-2">
+                <a class="text-sm text-gray-300 hover:text-white" href="?lang=en">EN</a>
+                <span class="text-gray-500">|</span>
+                <a class="text-sm text-gray-300 hover:text-white" href="?lang=vi">VI</a>
+            </div>
+            <div>
+                <form action="/logout" method="post" class="inline ml-4">
+                    <button type="submit" class="text-gray-300 hover:text-white">Logout</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</nav>

@@ -4,6 +4,7 @@ plugins {
     kotlin("plugin.spring") version "1.9.25"
     id("org.springframework.boot") version "3.5.6"
     id("io.spring.dependency-management") version "1.1.7"
+    id("gg.jte.gradle") version "3.1.12"
 }
 
 group = "com.space"
@@ -18,7 +19,7 @@ java {
 
 repositories {
     mavenCentral()
-    maven { url = uri("https://repo.spring.io/release") }
+    maven { url = uri("https.repo.spring.io/release") }
 }
 
 dependencies {
@@ -41,6 +42,11 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
+    // JTE dependencies
+    implementation("gg.jte:jte:3.1.12")
+    implementation("gg.jte:jte-kotlin:3.1.12")
+    implementation("gg.jte:jte-spring-boot-starter-3:3.1.12")
+
     // JDBC driver for PostgreSQL
     runtimeOnly("org.postgresql:postgresql")
 
@@ -50,8 +56,10 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     // Embedded PostgreSQL for testing
     implementation("io.zonky.test:embedded-postgres:2.1.1")
+    testImplementation("io.zonky.test:embedded-database-spring-test:2.1.1")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("com.ninjasquad:springmockk:4.0.2")
 
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -72,4 +80,10 @@ kotlin {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+jte {
+    generate()
+    binaryStaticContent = true
+    contentType = gg.jte.ContentType.Html
 }

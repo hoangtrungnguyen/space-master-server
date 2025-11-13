@@ -1,0 +1,4 @@
+@param title: String = "Default Title"
+<meta charset="UTF-8">
+<title>${title}</title>
+<link rel="stylesheet" href="/css/main.css">
