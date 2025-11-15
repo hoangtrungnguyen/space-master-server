@@ -30,7 +30,6 @@ class GetAllProductVariants(
                 id = parentProduct.id,
                 description = parentProduct.description,
                 name = parentProduct.name,
-                brandName = parentProduct.brand?.name,
                 categoryName = parentProduct.category?.name,
                 createdAt = parentProduct.createdAt,
                 createdByUsername = parentProduct.createdBy.username

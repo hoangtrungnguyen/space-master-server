@@ -7,7 +7,6 @@ package com.space.subadmin.products
 data class ProductVariantInventoryDTO(
     val productId: Long,
     val productName: String,
-    val brandName: String?,
     val categoryName: String?,
     val variantId: Long,
     val variantSku: String,

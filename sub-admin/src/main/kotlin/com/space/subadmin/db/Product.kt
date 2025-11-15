@@ -11,26 +11,9 @@ import java.time.OffsetDateTime
 import java.util.*
 
 // =================================================================
-//  Supporting Tables (Brands, Categories, Warehouses)
+//  Supporting Tables ( Categories, Warehouses)
 // =================================================================
 
-@Entity
-@Table(name = "brands")
-class Brand(
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @JdbcTypeCode(SqlTypes.BINARY)
-    val id: UUID = UUID.randomUUID(),
-
-    @Column(nullable = false, unique = true)
-    val name: String = "",
-
-    @Column(name = "created_at", nullable = false, updatable = false )
-    val createdAt: OffsetDateTime? = null,
-
-    @Column(name = "updated_at", nullable = false)
-    var updatedAt: OffsetDateTime? = null
-)
 
 @Entity
 @Table(name = "categories")
@@ -94,10 +77,6 @@ class Product(
     var description: String? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "brand_id", nullable = true)
-    var brand: Brand? = null,
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = true)
     var category: Category? = null,
 
@@ -122,12 +101,10 @@ class Product(
     fun updateDetails(
         name: String,
         description: String?,
-        brand: Brand?,
         category: Category?
     ) {
         this.name = name
         this.description = description
-        this.brand = brand
         this.category = category
     }
 }

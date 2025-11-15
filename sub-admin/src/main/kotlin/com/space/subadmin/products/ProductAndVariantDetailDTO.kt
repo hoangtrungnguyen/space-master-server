@@ -18,7 +18,6 @@ data class ProductAndVariantDTO(
         val id: Long,
         val name: String,
         val description: String?,
-        val brandName: String?,
         val categoryName: String?,
         val createdAt: OffsetDateTime?,
         val createdByUsername: String

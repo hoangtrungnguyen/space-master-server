@@ -113,7 +113,6 @@ class ProductWebController(
                     variantId = variant?.id,
                     name = product.name,
                     description = product.description,
-                    brandId = product.brand?.id?.toString(),
                     categoryId = product.category?.id?.toString(),
                     sku = variant?.sku ?: "",
                     price = variant?.price ?: java.math.BigDecimal.ZERO,

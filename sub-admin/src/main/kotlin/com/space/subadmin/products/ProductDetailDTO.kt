@@ -11,7 +11,6 @@ data class ProductDetailDTO(
     val id: Long,
     val name: String,
     val description: String?,
-    val brandName: String?,
     val categoryName: String?,
     val isActive: Boolean,
     val createdAt: OffsetDateTime?,

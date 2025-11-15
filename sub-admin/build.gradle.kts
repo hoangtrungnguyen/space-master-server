@@ -59,7 +59,6 @@ dependencies {
     testImplementation("io.zonky.test:embedded-database-spring-test:2.1.1")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("com.ninjasquad:springmockk:4.0.2")
 
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -70,7 +69,8 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5") // or jjwt-gson
 
-}
+    testImplementation("com.ninja-squad:springmockk:4.0.2")
+} // Use the latest version
 
 kotlin {
     compilerOptions {
@@ -86,4 +86,6 @@ jte {
     generate()
     binaryStaticContent = true
     contentType = gg.jte.ContentType.Html
+//    sourceDirectory.set(project.projectDir.toPath().resolve("src/main/resources/templates"))
+//    targetDirectory.set(project.projectDir.toPath().resolve("build/generated-resources/jte"))
 }

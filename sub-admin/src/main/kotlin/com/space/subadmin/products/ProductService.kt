@@ -89,7 +89,6 @@ class ProductService(
                 ProductVariantInventoryDTO(
                     productId = product.id,
                     productName = product.name,
-                    brandName = product.brand?.name,
                     categoryName = product.category?.name,
                     variantId = variant.id,
                     variantSku = variant.sku,
@@ -118,7 +117,6 @@ class ProductService(
             id = product.id,
             name = product.name,
             description = product.description,
-            brandName = product.brand?.name,
             categoryName = product.category?.name,
             isActive = product.isActive,
             createdAt = product.createdAt,
@@ -142,6 +140,19 @@ class ProductService(
                     }
                 )
             }
+        )
+    }
+
+    @Transactional(readOnly = true)
+    fun getProductFormById(productId: Long): ProductFormDTO {
+        val product = productRepository.findById(productId)
+            .orElseThrow { EntityNotFoundException("Product not found with id: $productId") }
+
+        return ProductFormDTO(
+            name = product.name,
+            description = product.description,
+            brandId = null, // ProductFormDTO has brandId, but Product entity does not. This needs to be handled.
+            categoryId = product.category?.id?.toString()
         )
     }
 
@@ -210,4 +221,5 @@ class ProductService(
     fun findAllProducts(): List<Product> {
         return productRepository.findAll()
     }
+
 }
