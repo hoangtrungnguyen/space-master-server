@@ -52,6 +52,8 @@ class SecurityConfig(
             authorizeHttpRequests {
                 // Allow unauthenticated access to the API login endpoint
                 authorize("/api/auth/login", permitAll)
+
+                authorize("/api/dev/**", permitAll)
                 // Secure all other API endpoints. This was a security vulnerability.
                 authorize(anyRequest, authenticated)
             }

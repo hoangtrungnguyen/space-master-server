@@ -1,6 +1,7 @@
 package com.space.subadmin.db
 
 import com.space.subadmin.db.Customer
+import com.space.subadmin.users.SnowflakeIdSequence
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -23,8 +24,7 @@ import java.time.Instant
 @Entity
 data class Order(
     @Id
-    @GenericGenerator(name = "tsid", strategy = "com.space.subadmin.config.TsidGenerator")
-    @GeneratedValue(generator = "tsid")
+    @SnowflakeIdSequence()
     val id: Long = 0,
 
     @Column(name = "order_date", nullable = false)
@@ -32,7 +32,7 @@ data class Order(
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    val status: OrderStatus = OrderStatus.PENDING,
+    var status: OrderStatus = OrderStatus.PENDING,
 
     @Column(name = "total_amount", nullable = false)
     var totalAmount: BigDecimal = BigDecimal.ZERO,
@@ -78,8 +78,7 @@ data class Order(
 @Entity
 data class OrderItem(
     @Id
-    @GenericGenerator(name = "tsid", strategy = "com.space.subadmin.config.TsidGenerator")
-    @GeneratedValue(generator = "tsid")
+    @SnowflakeIdSequence
     val id: Long = 0,
 
     @Column(nullable = false)
@@ -102,6 +101,7 @@ data class OrderItem(
 
 enum class OrderStatus {
     PENDING,
+    AWAITING_PAYMENT,
     CANCELED,
     PROCESSING,
     SHIPPED,
