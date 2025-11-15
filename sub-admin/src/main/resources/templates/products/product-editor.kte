@@ -1,0 +1,30 @@
+@import com.space.subadmin.products.ProductFormDTO
+
+@param productForm: ProductFormDTO
+@param isEdit: Boolean = false
+@param productId: Long? = null
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@if(isEdit)Edit Product@elseAdd New Product@endif</title>
+</head>
+<body>
+    <h1>@if(isEdit)Edit Product@elseAdd New Product@endif</h1>
+    <form method="post" action="${if(isEdit && productId != null) "/products/edit/" + productId else "/products/add"}">
+        <div>
+            <label for="name">Product Name:</label>
+            <input type="text" id="name" name="name" value="${productForm.name}" required />
+        </div>
+        <div>
+            <label for="description">Description:</label>
+            <textarea id="description" name="description">${productForm.description}</textarea>
+        </div>
+        <div>
+            <label for="categoryId">Category ID:</label>
+            <input type="number" id="categoryId" name="categoryId" value="${productForm.categoryId}" />
+        </div>
+        <button type="submit">@if(isEdit)Update Product@elseSave Product@endif</button>
+    </form>
+</body>
+</html>

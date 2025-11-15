@@ -6,6 +6,7 @@ import java.math.BigDecimal
  * DTO for the new, simplified product creation form.
  */
 data class ProductFormDTO(
+    var productId: String? = null ,
     var name: String = "",
     var description: String? = null,
     var brandId: String? = null,

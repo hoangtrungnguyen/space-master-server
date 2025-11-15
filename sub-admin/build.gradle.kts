@@ -37,13 +37,12 @@ dependencies {
     // Use Spring Data JPA for data access
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+//    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
     // JTE dependencies
-    implementation("gg.jte:jte:3.1.12")
     implementation("gg.jte:jte-kotlin:3.1.12")
     implementation("gg.jte:jte-spring-boot-starter-3:3.1.12")
 
@@ -84,8 +83,7 @@ tasks.withType<Test> {
 
 jte {
     generate()
-    binaryStaticContent = true
     contentType = gg.jte.ContentType.Html
 //    sourceDirectory.set(project.projectDir.toPath().resolve("src/main/resources/templates"))
-//    targetDirectory.set(project.projectDir.toPath().resolve("build/generated-resources/jte"))
+//    targetDirectory.set(project.projectDir.toPath().resolve("build/generated-resources/"))
 }

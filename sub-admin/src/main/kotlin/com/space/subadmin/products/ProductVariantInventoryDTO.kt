@@ -9,7 +9,9 @@ data class ProductVariantInventoryDTO(
     val productName: String,
     val categoryName: String?,
     val variantId: Long,
+    val variantName: String?,
     val variantSku: String,
+    val price: java.math.BigDecimal,
     val quantityOnHand: Int?,
     val isActive: Boolean
 )

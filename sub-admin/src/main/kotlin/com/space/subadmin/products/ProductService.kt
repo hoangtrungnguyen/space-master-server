@@ -91,7 +91,9 @@ class ProductService(
                     productName = product.name,
                     categoryName = product.category?.name,
                     variantId = variant.id,
+                    variantName = variant.attributes,
                     variantSku = variant.sku,
+                    price = variant.price,
                     quantityOnHand = inventory?.quantityOnHand,
                     isActive = product.isActive
                 )
@@ -165,7 +167,6 @@ class ProductService(
      */
     @Transactional
     fun createProduct(dto: ProductFormDTO, createdBy: User): Product {
-        val brandId = dto.brandId ?: ""
         val categoryId = dto.categoryId ?: ""
 
         val category = categoryId.ifBlank { null }?.let {

@@ -32,6 +32,6 @@ class ProductJteWebController(
         model.addAttribute("productForm", productForm)
         model.addAttribute("isEdit", true)
         model.addAttribute("productId", productId)
-        return "products/product-editor"
+        return "product-editor"
     }
 }

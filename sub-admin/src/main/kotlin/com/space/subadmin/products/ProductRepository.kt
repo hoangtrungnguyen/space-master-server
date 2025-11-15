@@ -12,7 +12,6 @@ interface ProductRepository : JpaRepository<Product, Long> {
         """
         SELECT p
         FROM Product p
-        LEFT JOIN FETCH p.brand
         LEFT JOIN FETCH p.category
         LEFT JOIN FETCH p.variants
         """
@@ -25,7 +24,6 @@ interface ProductRepository : JpaRepository<Product, Long> {
     @Query(
         """
         SELECT p FROM Product p
-        LEFT JOIN FETCH p.brand
         LEFT JOIN FETCH p.category
         LEFT JOIN FETCH p.createdBy
         LEFT JOIN FETCH p.variants

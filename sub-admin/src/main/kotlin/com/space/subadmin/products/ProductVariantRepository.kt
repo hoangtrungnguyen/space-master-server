@@ -12,6 +12,6 @@ interface ProductVariantRepository : JpaRepository<ProductVariant, Long> {
      * This is an efficient way to load all necessary data to build the DTOs,
      * avoiding N+1 query problems.
      */
-    @Query("SELECT pv FROM ProductVariant pv JOIN FETCH pv.product p JOIN FETCH p.createdBy LEFT JOIN FETCH p.brand LEFT JOIN FETCH p.category")
+    @Query("SELECT pv FROM ProductVariant pv JOIN FETCH pv.product p JOIN FETCH p.createdBy  LEFT JOIN FETCH p.category")
     fun findAllWithDetails(): List<ProductVariant>
 }

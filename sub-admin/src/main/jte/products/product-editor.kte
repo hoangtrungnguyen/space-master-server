@@ -1,0 +1,75 @@
+@import com.space.subadmin.products.ProductFormDTO
+ @param productForm: ProductFormDTO
+@param isEdit: Boolean = false
+@param productId: Long? = null
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>${if(isEdit) "Edit Product" else "Add New Product"}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/main.css">
+    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+
+<div class="container mx-auto p-8">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md mx-auto">
+        <h1 class="text-2xl font-bold mb-6 text-gray-800">
+            ${if(isEdit) "Edit Product" else "Add New Product" }
+        </h1>
+
+        <form class="space-y-6" method="post">
+              action="${if(isEdit && productForm.productId != null) "/products/edit/" + productId else "/products/add"}">
+            <!-- Product Name -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700" for="name">Product Name:</label>
+                <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                       id="name" name="name" required
+                       value="${productForm.name}"
+                       type="text"/>
+            </div>
+
+            <!-- Product Description -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700" for="description">Description:</label>
+                <textarea
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        id="description" name="description"
+                        rows="10">${productForm.description}</textarea>
+            </div>
+
+            <!-- Category (simplified for now) -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700" for="categoryId">Category:</label>
+                <input class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                       id="categoryId" name="categoryId"
+                       value="${productForm.categoryId}"
+                       type="number"/>
+            </div>
+
+            <div>
+                <button class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        type="submit">
+                    @if(isEdit)Update Product@elseSave Product@endif
+                </button>
+            </div>
+        </form>
+        <div class="mt-4 text-center">
+            <a class="font-medium text-indigo-600 hover:text-indigo-500" href="/products/list">Back to Product List</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    tinymce.init({
+        selector: 'textarea#description',
+        plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
+        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+    });
+</script>
+</body>
+
+</html>
