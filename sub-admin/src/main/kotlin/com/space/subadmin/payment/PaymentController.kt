@@ -1,6 +1,8 @@
 package com.space.subadmin.payment
 
+import com.space.subadmin.orders.CreateOrderRequest
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -9,24 +11,34 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/v1")
 class PaymentController(
-    private val payByCash: PayByCash
+    private val paymentOrchestrator: PaymentOrchestrator
 ) {
 
     /**
-     * API endpoint to process a payment made with cash.
-     *
-     * This endpoint accepts the details of a cash transaction and uses the PayByCash
-     * service to record it in the unified payments ledger.
-     *
-     * @param request The request body containing the order ID, amount, and optional notes.
-     * @return A ResponseEntity containing the standardized payment confirmation.
+     * Initiates the SAGA by creating an order with status AWAITING_PAYMENT.
      */
-    @PostMapping("/payments/cash")
-    fun processCashPayment(@RequestBody request: CashPaymentRequest): ResponseEntity<PaymentConfirmation> {
-        // Delegate the entire business logic to the PayByCash executioner class.
-        val confirmation = payByCash.execute(request)
+    @PostMapping("/orders/initiate")
+    fun initiateOrder(@RequestBody request: CreateOrderRequest): ResponseEntity<Map<String, Any>> {
+        val order = paymentOrchestrator.initiateOrder(request)
+        return ResponseEntity.ok(mapOf("orderUuid" to order.uuid, "status" to order.status))
+    }
 
-        // Return a 200 OK response with the confirmation details.
-        return ResponseEntity.ok(confirmation)
+    /**
+     * API endpoint to confirm a cash payment for an existing order and resume the SAGA.
+     */
+    @PostMapping("/orders/{orderId}/confirm-cash-payment")
+    fun confirmCashPayment(
+        @PathVariable orderId: Long,
+        @RequestBody request: CashPaymentRequest
+    ): ResponseEntity<Unit> {
+//         Resume the SAGA with the payment details.
+        paymentOrchestrator.resumeSagaAfterCashConfirmation(orderId, request)
+        return ResponseEntity.ok().build()
+    }
+
+
+    @PostMapping("/orders/{orderId}/cancel-payment")
+    fun cancelOrder(uuid: String): ResponseEntity<Map<String, Any>> {
+        return ResponseEntity.ok().build()
     }
 }

@@ -20,14 +20,15 @@ import java.util.UUID
  */
 data class CashPaymentRequest(
     val orderId: Long, // The internal ID of the Order entity
-    val notes: String? = null
+    val notes: String? = null,
+    val amount: BigDecimal
 )
 
 /**
  * The confirmation response sent back to the client.
  */
 data class PaymentConfirmation(
-    val paymentId: UUID,
+    val uuid: UUID,
     val orderId: Long, // The public-facing UUID of the order
     val amountPaid: BigDecimal,
     val status: PaymentStatus,
@@ -74,7 +75,7 @@ class PayByCash(
 
         // 5. Return a standardized confirmation DTO.
         return PaymentConfirmation(
-            paymentId = savedPayment.id!!,
+            uuid = savedPayment.uuid,
             orderId = savedPayment.order.id, // Use the public-facing UUID of the order
             amountPaid = savedPayment.amount,
             status = savedPayment.status,

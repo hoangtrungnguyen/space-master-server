@@ -1,5 +1,6 @@
 package com.space.subadmin.db
 
+import com.space.subadmin.users.SnowflakeIdSequence
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -17,8 +18,7 @@ import java.util.UUID
 @Table(name = "customers")
 data class Customer(
     @Id
-    @GenericGenerator(name = "tsid", strategy = "com.space.subadmin.config.TsidGenerator")
-    @GeneratedValue(generator = "tsid")
+    @SnowflakeIdSequence
     val id: Long = 0L,
 
     @Column(name = "uuid", nullable = false, unique = true)

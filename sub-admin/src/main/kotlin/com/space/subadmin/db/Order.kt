@@ -19,6 +19,7 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.GenericGenerator
 import java.math.BigDecimal
 import java.time.Instant
+import java.util.UUID
 
 @Table(name = "orders")
 @Entity
@@ -26,6 +27,9 @@ data class Order(
     @Id
     @SnowflakeIdSequence()
     val id: Long = 0,
+
+    @Column(nullable = false)
+    var uuid: UUID = UUID.randomUUID(),
 
     @Column(name = "order_date", nullable = false)
     val orderDate: Instant = Instant.now(),
@@ -80,6 +84,9 @@ data class OrderItem(
     @Id
     @SnowflakeIdSequence
     val id: Long = 0,
+
+    @Column(nullable = false)
+    var uuid: UUID = UUID.randomUUID(),
 
     @Column(nullable = false)
     val quantity: Int = 0,
