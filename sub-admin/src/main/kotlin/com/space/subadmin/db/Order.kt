@@ -1,6 +1,7 @@
 package com.space.subadmin.db
 
 import com.space.subadmin.db.Customer
+import com.space.subadmin.users.SnowflakeIdSequence
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -18,21 +19,24 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.GenericGenerator
 import java.math.BigDecimal
 import java.time.Instant
+import java.util.UUID
 
 @Table(name = "orders")
 @Entity
 data class Order(
     @Id
-    @GenericGenerator(name = "tsid", strategy = "com.space.subadmin.config.TsidGenerator")
-    @GeneratedValue(generator = "tsid")
+    @SnowflakeIdSequence()
     val id: Long = 0,
+
+    @Column(nullable = false)
+    var uuid: UUID = UUID.randomUUID(),
 
     @Column(name = "order_date", nullable = false)
     val orderDate: Instant = Instant.now(),
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    val status: OrderStatus = OrderStatus.PENDING,
+    var status: OrderStatus = OrderStatus.PENDING,
 
     @Column(name = "total_amount", nullable = false)
     var totalAmount: BigDecimal = BigDecimal.ZERO,
@@ -78,9 +82,11 @@ data class Order(
 @Entity
 data class OrderItem(
     @Id
-    @GenericGenerator(name = "tsid", strategy = "com.space.subadmin.config.TsidGenerator")
-    @GeneratedValue(generator = "tsid")
+    @SnowflakeIdSequence
     val id: Long = 0,
+
+    @Column(nullable = false)
+    var uuid: UUID = UUID.randomUUID(),
 
     @Column(nullable = false)
     val quantity: Int = 0,
@@ -102,6 +108,7 @@ data class OrderItem(
 
 enum class OrderStatus {
     PENDING,
+    AWAITING_PAYMENT,
     CANCELED,
     PROCESSING,
     SHIPPED,

@@ -2,6 +2,7 @@ package com.space.subadmin.db
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.space.subadmin.users.SnowflakeIdSequence
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
@@ -71,8 +72,11 @@ class PaymentMethodDetailsConverter : AttributeConverter<PaymentMethodDetails, S
 @Table(name = "payments")
 class Payment(
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    var id: UUID? = null,
+    @SnowflakeIdSequence
+    var id: Long = 0,
+
+    @Column(nullable = false)
+    var uuid: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id",  )

@@ -28,6 +28,10 @@ class CustomerService(private val customerRepository: CustomerRepository) {
         return customerRepository.findById(id).orElse(null)
     }
 
+    fun findByName(name: String): Customer? {
+        return customerRepository.findByName(name).firstOrNull()
+    }
+
     @Transactional
     fun createCustomerZero() : Customer {
         // 2. If not, create the new customer using the updated fields.
