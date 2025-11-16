@@ -46,7 +46,7 @@
                     <td class="py-3 px-6 text-left">${item.categoryName ?: "N/A"}</td>
                     <td class="py-3 px-6 text-right font-semibold">
                     <span>  @if(item.quantityOnHand != null)
-                            item.quantityOnHand.toString()
+                            ${item.quantityOnHand.toString()}
                         @else
                             "N/A"
                         @endif
