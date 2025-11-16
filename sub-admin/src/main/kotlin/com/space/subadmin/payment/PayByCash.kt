@@ -19,7 +19,7 @@ import java.util.UUID
  * The client only needs to specify which order is being paid for.
  */
 data class CashPaymentRequest(
-    val orderId: Long, // The internal ID of the Order entity
+    val orderUuid: UUID, // The internal ID of the Order entity
     val notes: String? = null,
     val amount: BigDecimal
 )
@@ -58,8 +58,8 @@ class PayByCash(
     @Transactional
     fun execute(request: CashPaymentRequest): PaymentConfirmation {
         // 1. Fetch the order from the database using its internal ID.
-        val order = orderRepository.findById(request.orderId)
-            .orElseThrow { EntityNotFoundException("Order not found with id: ${request.orderId}") }
+        val order = orderRepository.findByUuid(request.orderUuid)
+            .orElseThrow { EntityNotFoundException("Order not found with id: ${request.orderUuid}") }
 
         // 2. Create the unified Payment entity.
         val payment = Payment(
@@ -68,6 +68,8 @@ class PayByCash(
             status = PaymentStatus.COMPLETED,
             paymentMethod = PaymentMethodType.CASH,
             metadata = CashDetails(notes = request.notes)
+
+
         )
 
         // 4. Save the single, unified Payment object and its details to the database.

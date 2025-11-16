@@ -5,8 +5,8 @@ import java.math.BigDecimal
 import java.time.Instant
 
 data class OrderDetail(
-    val id: Long,
-    val orderDate: Instant,
+    val uuid: String,
+    val orderDate: String,
     val status: String,
     val totalAmount: BigDecimal,
     val customerName: String,
@@ -25,7 +25,7 @@ data class OrderItemDetail(
         get() = pricePerUnit * BigDecimal(quantity)
 }
 
-data class OderListItemDto(
+data class OrderListItemDto(
     val uuid: String,
     val orderDate: String,
     val status: String,

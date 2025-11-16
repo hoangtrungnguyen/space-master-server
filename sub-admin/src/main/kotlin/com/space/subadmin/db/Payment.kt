@@ -16,7 +16,11 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.PrePersist
+import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.UUID
@@ -70,12 +74,12 @@ class PaymentMethodDetailsConverter : AttributeConverter<PaymentMethodDetails, S
 
 @Entity
 @Table(name = "payments")
-class Payment(
+data class Payment(
     @Id
     @SnowflakeIdSequence
     var id: Long = 0,
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     var uuid: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -85,22 +89,35 @@ class Payment(
     var amount: BigDecimal,
 
     @Enumerated(EnumType.STRING)
-    var currency: Currency = Currency.USD,
+    var currency: Currency,
 
     @Enumerated(EnumType.STRING)
-    var status: PaymentStatus = PaymentStatus.PENDING,
+    var status: PaymentStatus,
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method")
     var paymentMethod: PaymentMethodType,
 
     @Convert(converter = PaymentMethodDetailsConverter::class)
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    var metadata: PaymentMethodDetails? = null,
+    val metadata: PaymentMethodDetails? = null,
 
-    var createdAt: Instant = Instant.now(),
-    var updatedAt: Instant = Instant.now()
+     late i  nitvar createdAt: Instant?,
+     var updatedAt: Instant?,
 ) {
+
+    @PrePersist
+    fun onPrePersist() {
+        val now = Instant.now()
+        createdAt = now
+        updatedAt = now
+    }
+
+    @PreUpdate
+    fun onPreUpdate(){
+        updatedAt = Instant.now()
+    }
 
 }
 

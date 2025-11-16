@@ -26,13 +26,13 @@ class PaymentController(
     /**
      * API endpoint to confirm a cash payment for an existing order and resume the SAGA.
      */
-    @PostMapping("/orders/{orderId}/confirm-cash-payment")
+    @PostMapping("/orders/{orderUuid}/confirm-cash-payment")
     fun confirmCashPayment(
-        @PathVariable orderId: Long,
+        @PathVariable orderUuid: String,
         @RequestBody request: CashPaymentRequest
     ): ResponseEntity<Unit> {
 //         Resume the SAGA with the payment details.
-        paymentOrchestrator.resumeSagaAfterCashConfirmation(orderId, request)
+        paymentOrchestrator.resumeSagaAfterCashConfirmation(orderUuid, request)
         return ResponseEntity.ok().build()
     }
 

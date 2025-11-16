@@ -1,6 +1,6 @@
-@import com.space.subadmin.orders.OderListItemDto
+@import com.space.subadmin.orders.OrderListItemDto
 
-@param orders: List<OderListItemDto>
+@param orders: List<OrderListItemDto>
 
 <!DOCTYPE html>
 <html>
@@ -74,6 +74,10 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <a class="text-indigo-600 hover:text-indigo-900"
                                href="/orders/${order.uuid}">View</a>
+                            @if(order.status == "AWAITING_PAYMENT")
+                                <a href="/orders/${order.uuid}/confirm-payment"
+                                   class="ml-4 text-green-600 hover:text-green-900">Confirm Payment</a>
+                            @endif
                         </td>
                     </tr>
                 @endfor
