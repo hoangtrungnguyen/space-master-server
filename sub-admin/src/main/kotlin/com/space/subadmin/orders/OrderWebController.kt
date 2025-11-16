@@ -1,10 +1,14 @@
 package com.space.subadmin.orders
 
+import com.space.subadmin.common.extensions.toFormattedString
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
+
+
+
 @Controller
 @RequestMapping("/orders")
 class OrderWebController(
@@ -13,8 +17,16 @@ class OrderWebController(
 
     @GetMapping("/list")
     fun showOrderList(model: Model): String {
-        model.addAttribute("orders", orderRepository.findAllWithCustomer())
-        return "orders-list"
+        model.addAttribute("orders", orderRepository.findAllWithCustomer().map {
+            OderListItemDto(
+                uuid = it.uuid.toString(),
+                orderDate = it.orderDate.toFormattedString("yyyy-MM-dd HH:mm:ss"),
+                status = it.status.toString(),
+                totalAmount = it.totalAmount,
+                customerName = it.customer?.fullName ?: ""
+            )
+        })
+        return "orders/orders-list"
     }
 
     @GetMapping("/{id}")

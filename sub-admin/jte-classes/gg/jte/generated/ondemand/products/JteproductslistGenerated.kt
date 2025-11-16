@@ -5,7 +5,7 @@ import com.space.subadmin.products.ProductVariantInventoryDTO
 class JteproductslistGenerated {
 companion object {
 	@JvmField val JTE_NAME = "products/products-list.kte"
-	@JvmField val JTE_LINE_INFO = intArrayOf(0,0,0,1,1,1,1,1,6,6,6,9,9,37,37,40,40,41,41,43,43,43,44,44,44,45,45,45,47,47,49,49,51,51,55,55,57,57,59,59,62,62,62,62,62,62,62,62,66,66,73,73,73,1,1,1,1,1)
+	@JvmField val JTE_LINE_INFO = intArrayOf(0,0,0,1,1,1,1,1,6,6,6,9,9,37,37,40,40,41,41,43,43,43,44,44,44,45,45,45,47,47,48,48,48,49,49,51,51,55,55,57,57,59,59,62,62,62,62,62,62,62,62,66,66,73,73,73,1,1,1,1,1)
 	@JvmStatic fun render(jteOutput:gg.jte.html.HtmlTemplateOutput, jteHtmlInterceptor:gg.jte.html.HtmlInterceptor?, products:List<ProductVariantInventoryDTO>) {
 		jteOutput.writeContent("\r\n<!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    ")
 		gg.jte.generated.ondemand.fragments.JteheaderGenerated.render(jteOutput, jteHtmlInterceptor, "Default Title");
@@ -28,7 +28,10 @@ companion object {
 			jteOutput.writeUserContent(item.categoryName ?: "N/A")
 			jteOutput.writeContent("</td>\r\n                    <td class=\"py-3 px-6 text-right font-semibold\">\r\n                    <span>  ")
 			if (item.quantityOnHand != null) {
-				jteOutput.writeContent("\r\n                            item.quantityOnHand.toString()\r\n                        ")
+				jteOutput.writeContent("\r\n                            ")
+				jteOutput.setContext("span", null)
+				jteOutput.writeUserContent(item.quantityOnHand.toString())
+				jteOutput.writeContent("\r\n                        ")
 			} else {
 				jteOutput.writeContent("\r\n                            \"N/A\"\r\n                        ")
 			}

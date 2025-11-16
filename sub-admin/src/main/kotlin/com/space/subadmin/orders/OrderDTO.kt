@@ -1,5 +1,6 @@
 package com.space.subadmin.orders
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import java.math.BigDecimal
 import java.time.Instant
 
@@ -23,3 +24,11 @@ data class OrderItemDetail(
     val lineTotal: BigDecimal
         get() = pricePerUnit * BigDecimal(quantity)
 }
+
+data class OderListItemDto(
+    val uuid: String,
+    val orderDate: String,
+    val status: String,
+    val totalAmount: BigDecimal,
+    val customerName: String
+)

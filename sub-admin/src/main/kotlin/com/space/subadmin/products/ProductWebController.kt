@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam
  * @param productRepository The repository for accessing product data.
  */
 @Controller
-@RequestMapping("/products") // Base path for web-related product pages
+@RequestMapping("/v1/products") // Base path for web-related product pages
 class ProductWebController(
     private val productRepository: ProductRepository,
     private val productService: ProductService,

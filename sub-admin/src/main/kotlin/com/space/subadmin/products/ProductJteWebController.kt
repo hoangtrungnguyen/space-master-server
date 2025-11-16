@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 
 @Controller
-@RequestMapping("/jte/products")
+@RequestMapping("/products")
 class ProductJteWebController(
     private val productService: ProductService
 ) {
@@ -32,6 +32,6 @@ class ProductJteWebController(
         model.addAttribute("productForm", productForm)
         model.addAttribute("isEdit", true)
         model.addAttribute("productId", productId)
-        return "product-editor"
+        return "products/product-editor"
     }
 }
