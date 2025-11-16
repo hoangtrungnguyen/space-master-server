@@ -2,6 +2,7 @@ package com.space.subadmin.payment
 
 import com.space.subadmin.db.Order
 import com.space.subadmin.orders.CreateOrderRequest
+import com.space.subadmin.orders.OrderDetail
 import org.springframework.context.annotation.Profile
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
+import java.util.UUID
 
 @RestController
 @RequestMapping("/api/dev/payments")
@@ -41,7 +43,7 @@ class DevPaymentController(
      * ```
      */
     @PostMapping("/initiate")
-    fun initiateOrder(@RequestBody orderRequest: CreateOrderRequest): Order {
+    fun initiateOrder(@RequestBody orderRequest: CreateOrderRequest): OrderDetail {
         return paymentOrchestrator.initiateOrder(orderRequest)
     }
 
@@ -52,7 +54,7 @@ class DevPaymentController(
      * @param request A DTO containing the payment amount.
      *
      * Example Request:
-     * POST /dev/payments/{orderId}/resume-cash
+     * POST /api/dev/payments/{orderId}/resume-cash
      *
      * Example Request Body:
      * ```json
@@ -61,15 +63,17 @@ class DevPaymentController(
      * }
      * ```
      */
-    @PostMapping("/{orderId}/resume-cash")
+    @PostMapping("/resume-cash")
     fun resumeSagaAfterCashConfirmation(
-        @PathVariable orderId: Long,
         @RequestBody request: CashPaymentRequestDto
     ) {
         // In a real app, you'd get amount from a trusted source. Here we use a DTO for dev purposes.
-        val paymentDetails = CashPaymentRequest(orderId = orderId, amount = request.amount)
-        paymentOrchestrator.resumeSagaAfterCashConfirmation(orderId, paymentDetails)
+        val paymentDetails = CashPaymentRequest(orderUuid = UUID.fromString(request.orderUuid), amount = request.amount)
+        paymentOrchestrator.resumeSagaAfterCashConfirmation(request.orderUuid, paymentDetails)
     }
 
-    data class CashPaymentRequestDto(val amount: BigDecimal)
+    data class CashPaymentRequestDto(
+        val orderUuid: String,
+        val amount: BigDecimal
+    )
 }

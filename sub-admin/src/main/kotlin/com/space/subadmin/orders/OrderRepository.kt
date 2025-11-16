@@ -75,4 +75,22 @@ interface OrderRepository : JpaRepository<Order, Long> {
     """, nativeQuery = true
     )
     fun findTopSellingProducts(limit: Int): List<Map<String, Any>>
+
+    /**
+     * Finds an order by its UUID, eagerly fetching all related entities for the detail view.
+     * This includes the customer, order items, product variants, and products.
+     */
+    @Query(
+        """
+        SELECT DISTINCT o FROM Order o
+        LEFT JOIN FETCH o.customer
+        LEFT JOIN FETCH o.items i
+        LEFT JOIN FETCH i.productVariant pv
+        LEFT JOIN FETCH pv.product
+        WHERE o.uuid = :uuid
+        """
+    )
+    fun findOrderDetailByUuid(uuid: java.util.UUID): Optional<Order>
+
+    fun findByUuid(uuid: java.util.UUID): Optional<Order>
 }

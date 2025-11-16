@@ -18,7 +18,7 @@ class OrderWebController(
     @GetMapping("/list")
     fun showOrderList(model: Model): String {
         model.addAttribute("orders", orderRepository.findAllWithCustomer().map {
-            OderListItemDto(
+            OrderListItemDto(
                 uuid = it.uuid.toString(),
                 orderDate = it.orderDate.toFormattedString("yyyy-MM-dd HH:mm:ss"),
                 status = it.status.toString(),
@@ -37,8 +37,8 @@ class OrderWebController(
         }
         val order = orderOptional.get()
         val orderDetail = OrderDetail(
-            id = order.id,
-            orderDate = order.orderDate,
+            uuid = order.uuid.toString(),
+            orderDate = order.orderDate.toFormattedString("yyyy-MM-dd HH:mm:ss"),
             status = order.status.toString(),
             totalAmount = order.totalAmount,
             customerName = order.customer?.fullName ?: "",
