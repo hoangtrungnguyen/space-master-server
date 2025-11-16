@@ -13,6 +13,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
 import jakarta.persistence.PrePersist
 import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
@@ -58,7 +59,10 @@ data class Order(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = true)
-    var customer: Customer? = null
+    var customer: Customer? = null,
+
+    @OneToOne(mappedBy = "order", cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
+    var payment: Payment? = null
 ) {
     @PrePersist
     fun onPrePersist() {

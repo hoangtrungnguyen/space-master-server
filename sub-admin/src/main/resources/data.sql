@@ -61,7 +61,9 @@ INSERT INTO inventory (id, product_variant_id, quantity_on_hand, quantity_commit
                                                                                                                            (gen_random_uuid(), 3, 75, 8, 15, NOW() - INTERVAL '5 day'),
                                                                                                                            (gen_random_uuid(), 4, 20, 2, 5, NOW() - INTERVAL '14 day'),
                                                                                                                            (gen_random_uuid(), 5, 150, 25, 30, NOW() - INTERVAL '3 day'),
-                                                                                                                           (gen_random_uuid(), 6, 80, 12, 20, NOW() - INTERVAL '3 day');
+                                                                                                                           (gen_random_uuid(), 6, 80, 12, 20, NOW() - INTERVAL '3 day'),
+                                                                                                                           (gen_random_uuid(), 101, 50, 5, 10, NOW()),
+                                                                                                                           (gen_random_uuid(), 102, 50, 5, 10, NOW());
 
 -- 7. Orders
 -- Create a few orders with different statuses

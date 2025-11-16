@@ -34,6 +34,6 @@ fun Order.toListItemDto(): OrderListItemDto {
         orderDate = formatter.format(this.orderDate),
         status = this.status.name,
         totalAmount = this.totalAmount,
-        customerName = this.customer?.fullName ?: "N/A"
+        customerName = this.customer?.fullName ?: "N/A", paymentStatus = this.payment?.status.toString(),
     )
 }
