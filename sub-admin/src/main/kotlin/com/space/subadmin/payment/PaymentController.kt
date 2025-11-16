@@ -33,6 +33,7 @@ class PaymentController(
     ): ResponseEntity<Unit> {
 //         Resume the SAGA with the payment details.
         paymentOrchestrator.resumeSagaAfterCashConfirmation(orderUuid, request)
+
         return ResponseEntity.ok().build()
     }
 

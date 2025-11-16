@@ -1,6 +1,7 @@
 package com.space.subadmin.payment
 
 import com.space.subadmin.db.CashDetails
+import com.space.subadmin.db.Currency
 import com.space.subadmin.db.Payment
 import com.space.subadmin.db.PaymentMethodType
 import com.space.subadmin.db.PaymentStatus
@@ -63,18 +64,19 @@ class PayByCash(
 
         // 2. Create the unified Payment entity.
         val payment = Payment(
-            order = order,
-            amount = order.totalAmount,
-            status = PaymentStatus.COMPLETED,
-            paymentMethod = PaymentMethodType.CASH,
-            metadata = CashDetails(notes = request.notes)
-
-
-        )
+            metadata = CashDetails(notes = request.notes).toString()
+        ).apply {
+            this.order = order
+            this.amount = order.totalAmount
+            this.status = PaymentStatus.COMPLETED
+            this.paymentMethod = PaymentMethodType.CASH
+            this.currency = Currency.VND
+        }
 
         // 4. Save the single, unified Payment object and its details to the database.
         val savedPayment = paymentRepository.save(payment)
 
+        order.payment = savedPayment
         // 5. Return a standardized confirmation DTO.
         return PaymentConfirmation(
             uuid = savedPayment.uuid,

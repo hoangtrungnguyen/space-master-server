@@ -23,7 +23,8 @@ class OrderWebController(
                 orderDate = it.orderDate.toFormattedString("yyyy-MM-dd HH:mm:ss"),
                 status = it.status.toString(),
                 totalAmount = it.totalAmount,
-                customerName = it.customer?.fullName ?: ""
+                customerName = it.customer?.fullName ?: "",
+                paymentStatus = it.payment?.status?.toString() ?: "PENDING"
             )
         })
         return "orders/orders-list"

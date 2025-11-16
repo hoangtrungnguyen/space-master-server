@@ -17,6 +17,7 @@ interface OrderRepository : JpaRepository<Order, Long> {
         """
         SELECT o FROM Order o
         LEFT JOIN FETCH o.customer
+        LEFT join fetch o.payment
         """
     )
     fun findAllWithCustomer(): List<Order>

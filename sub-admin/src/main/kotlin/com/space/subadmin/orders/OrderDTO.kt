@@ -30,5 +30,6 @@ data class OrderListItemDto(
     val orderDate: String,
     val status: String,
     val totalAmount: BigDecimal,
-    val customerName: String
+    val customerName: String,
+    val paymentStatus: String
 )

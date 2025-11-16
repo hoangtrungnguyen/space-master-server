@@ -65,7 +65,6 @@ class PaymentOrchestrator(
             val paymentConfirmation = payByCash.execute(paymentDetails)
             paymentUuid = paymentConfirmation.uuid
             logger.info("SAGA-STEP-2-SUCCESS: Payment ${paymentUuid} processed successfully.")
-
             // Step 3: Update inventory (Local Transaction 3)
             logger.info("SAGA-STEP-3: Debiting inventory for order ${order.id}.")
             sagaActions.debitInventory(order)

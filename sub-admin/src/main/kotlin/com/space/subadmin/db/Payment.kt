@@ -1,5 +1,7 @@
 package com.space.subadmin.db
 
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.space.subadmin.users.SnowflakeIdSequence
@@ -11,11 +13,9 @@ import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
-import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToOne
 import jakarta.persistence.PrePersist
 import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
@@ -38,6 +38,15 @@ enum class PaymentStatus {
     REFUNDED
 }
 
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.PROPERTY,
+    property = "type"
+)
+@JsonSubTypes(
+    JsonSubTypes.Type(value = CashDetails::class, name = "cash"),
+    JsonSubTypes.Type(value = CardDetails::class, name = "card")
+)
 sealed interface PaymentMethodDetails
 
 data class CashDetails(val notes: String? = null) : PaymentMethodDetails
@@ -59,14 +68,20 @@ class PaymentMethodDetailsConverter : AttributeConverter<PaymentMethodDetails, S
     }
 
     override fun convertToEntityAttribute(dbData: String?): PaymentMethodDetails? {
-        if (dbData == null) return null
+        if (dbData.isNullOrBlank()) return null
         return try {
-            objectMapper.readValue(dbData, CardDetails::class.java)
+            // Try new format first (with "type" property)
+            objectMapper.readValue(dbData, PaymentMethodDetails::class.java)
         } catch (e: Exception) {
+            // Fallback to old format (guessing)
             try {
-                objectMapper.readValue(dbData, CashDetails::class.java)
+                objectMapper.readValue(dbData, CardDetails::class.java)
             } catch (e2: Exception) {
-                throw IllegalArgumentException("Could not deserialize payment details: $dbData", e2)
+                try {
+                    objectMapper.readValue(dbData, CashDetails::class.java)
+                } catch (e3: Exception) {
+                    throw IllegalArgumentException("Could not deserialize payment details in either new or old format: $dbData", e3)
+                }
             }
         }
     }
@@ -82,30 +97,27 @@ data class Payment(
     @Column(nullable = false, unique = true)
     var uuid: UUID = UUID.randomUUID(),
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id",  )
-    var order: Order,
+    val metadata: String? = null,
+) {
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
+    lateinit var order: Order
 
-    var amount: BigDecimal,
+    lateinit var amount: BigDecimal
 
     @Enumerated(EnumType.STRING)
-    var currency: Currency,
+    lateinit var currency: Currency
 
     @Enumerated(EnumType.STRING)
-    var status: PaymentStatus,
+    lateinit var status: PaymentStatus
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method")
-    var paymentMethod: PaymentMethodType,
+    lateinit var paymentMethod: PaymentMethodType
 
-    @Convert(converter = PaymentMethodDetailsConverter::class)
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
-    val metadata: PaymentMethodDetails? = null,
+    lateinit var createdAt: Instant
 
-     late i  nitvar createdAt: Instant?,
-     var updatedAt: Instant?,
-) {
+    lateinit var updatedAt: Instant
 
     @PrePersist
     fun onPrePersist() {
@@ -122,5 +134,5 @@ data class Payment(
 }
 
 enum class Currency {
-    USD, EUR, GBP, JPY
+    USD, EUR, GBP, JPY, VND
 }
