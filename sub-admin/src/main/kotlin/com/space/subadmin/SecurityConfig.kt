@@ -5,6 +5,7 @@ import com.space.subadmin.authentication.ApiAuthenticationEntryPoint
 import com.space.subadmin.authentication.JwtAuthFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Profile
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpMethod
 import org.springframework.security.authentication.AuthenticationManager
@@ -40,6 +41,7 @@ class SecurityConfig(
 
     @Bean
     @Order(1)
+    @Profile("prod")
     fun apiSecurityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http {
             // Apply this filter chain only to API endpoints
@@ -79,6 +81,7 @@ class SecurityConfig(
 
     @Bean
     @Order(2)
+    @Profile("prod")
     fun webSecurityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http {
             authorizeHttpRequests {
