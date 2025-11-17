@@ -41,7 +41,6 @@ class SecurityConfig(
 
     @Bean
     @Order(1)
-    @Profile("prod")
     fun apiSecurityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http {
             // Apply this filter chain only to API endpoints
@@ -81,7 +80,6 @@ class SecurityConfig(
 
     @Bean
     @Order(2)
-    @Profile("prod")
     fun webSecurityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http {
             authorizeHttpRequests {
@@ -134,5 +132,5 @@ class SecurityConfig(
         return authConfig.authenticationManager
     }
 
-
 }
+
