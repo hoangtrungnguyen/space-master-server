@@ -1,0 +1,297 @@
+@import com.space.subadmin.dashboard.PeriodMetricsUiDto
+@param periodMetricDto: PeriodMetricsUiDto
+@param days: Int = 30
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Performance Dashboard</title>
+    <!-- 1. Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 2. Chart.js via CDN for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 3. Chart.js Date Adapter (date-fns) -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <!-- 4. Inter font family (common with Tailwind) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Apply the Inter font family */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 antialiased">
+
+<!-- Main Container -->
+<div class="container mx-auto p-4 md:p-8">
+
+    <!-- Header -->
+    <header class="mb-8 flex flex-col sm:flex-row justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-800">Sales Performance Dashboard</h1>
+        <!-- Date Range Selector -->
+        <div>
+            <label for="dateRange" class="text-sm font-medium text-gray-600 mr-2">Period:</label>
+            <select id="dateRange" name="dateRange" class="mt-1 block w-full sm:w-auto pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm">
+                <option value="30" selected="${days == 30}">Last 30 Days</option>
+                <option value="90" selected="${days == 90}">Last 90 Days</option>
+                <option value="180" selected="${(days == 180) }">Last 6 Months</option>
+                <option value="365" selected="${days == 365}" >Last Year</option>
+            </select>
+        </div>
+    </header>
+
+    <!-- KPI Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <!-- Card 1: Revenue -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 uppercase">Revenue</p>
+                    <p id="kpi-revenue" class="text-3xl font-bold text-gray-800 mt-2">${periodMetricDto.totalRevenue}</p>
+                </div>
+                <div class="bg-indigo-100 text-indigo-600 rounded-full p-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.105 0 2 .895 2 2s-.895 2-2 2-2-.895-2-2 .895-2 2 2zm0 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.105 0 2 .895 2 2s-.895 2-2 2-2-.895-2-2 .895-2 2 2z"></path></svg>
+                </div>
+            </div>
+            <div class="mt-4 flex items-baseline">
+                <span id="kpi-revenue-growth" class="text-2xl font-semibold"></span>
+                <span class="ml-2 text-sm text-gray-500">vs. previous period</span>
+            </div>
+        </div>
+
+        <!-- Card 2: Profit Margin -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 uppercase">Profit Margin</p>
+                    <p id="kpi-profit-margin" class="text-3xl font-bold text-gray-800 mt-2">${periodMetricDto.totalCogs}</p>
+                </div>
+                <div class="bg-green-100 text-green-600 rounded-full p-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                </div>
+            </div>
+            <div class="mt-4 flex items-baseline">
+                <span id="kpi-profit-margin-change" class="text-2xl font-semibold"></span>
+                <span class="ml-2 text-sm text-gray-500">vs. previous period</span>
+            </div>
+        </div>
+
+        <!-- Card 3: Number of Transactions -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 uppercase">Transactions</p>
+                    <p id="kpi-transactions" class="text-3xl font-bold text-gray-800 mt-2">${periodMetricDto.transactionCount}</p>
+                </div>
+                <div class="bg-blue-100 text-blue-600 rounded-full p-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                </div>
+            </div>
+            <div class="mt-4 flex items-baseline">
+                <span id="kpi-transactions-change" class="text-2xl font-semibold"></span>
+                <span class="ml-2 text-sm text-gray-500">vs. previous period</span>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+<!-- JavaScript Section -->
+<%--<script>--%>
+<%--    // --- GLOBAL VARIABLES -----%>
+<%--    let revenueProfitChartInstance = null;--%>
+<%--    let transactionsChartInstance = null;--%>
+
+<%--    // --- INITIAL DATA FROM SERVER -----%>
+<%--    const initialDashboardData = {--%>
+<%--        kpi: {--%>
+<%--            revenue: "${uiDto.kpi.revenue}",--%>
+<%--            revenueGrowth: ${uiDto.kpi.revenueGrowth},--%>
+<%--            profitMargin: "${uiDto.kpi.profitMargin}",--%>
+<%--            profitMarginChange: ${uiDto.kpi.profitMarginChange},--%>
+<%--            transactions: "${uiDto.kpi.transactions}",--%>
+<%--            transactionChange: ${uiDto.kpi.transactionChange}--%>
+<%--        },--%>
+<%--        chart: {--%>
+<%--            labels: [ @for(label in uiDto.chart.labels)"${label}"@if(!label_isLast),@endif @endfor ],--%>
+<%--            revenueData: [ @for(data in uiDto.chart.revenueData)${data.toString()}@if(!data_isLast),@endif @endfor ],--%>
+<%--            transactionData: [ @for(data in uiDto.chart.transactionData)${data.toString()}@if(!data_isLast),@endif @endfor ],--%>
+<%--            profitMarginData: [ @for(data in uiDto.chart.profitMarginData)${data.toString()}@if(!data_isLast),@endif @endfor ]--%>
+<%--        }--%>
+<%--    };--%>
+
+<%--    // --- HELPER FUNCTIONS -----%>
+
+<%--    /**--%>
+<%--     * Formats a number as USD currency--%>
+<%--     */--%>
+<%--    function formatCurrency(number) {--%>
+<%--        return new Intl.NumberFormat('en-US', {--%>
+<%--            style: 'currency',--%>
+<%--            currency: 'USD',--%>
+<%--            minimumFractionDigits: 2--%>
+<%--        }).format(number);--%>
+<%--    }--%>
+
+<%--    /**--%>
+<%--     * Updates a KPI change element with color and text--%>
+<%--     */--%>
+<%--    function updateChangeElement(element, value, unit) {--%>
+<%--        const formattedValue = value.toFixed(1);--%>
+<%--        element.textContent = `${if(value >= 0) '+' else ''}${formattedValue}${unit}`;--%>
+<%--        element.classList.remove('text-green-600', 'text-red-600', 'text-gray-600');--%>
+<%--        if (value > 0) {--%>
+<%--            element.classList.add('text-green-600');--%>
+<%--        } else if (value < 0) {--%>
+<%--            element.classList.add('text-red-600');--%>
+<%--        } else {--%>
+<%--            element.classList.add('text-gray-600');--%>
+<%--        }--%>
+<%--    }--%>
+
+<%--    // --- MAIN DASHBOARD UPDATE FUNCTION -----%>
+<%--    function updateDashboardUI(dashboardData) {--%>
+<%--        // 1. Update KPI Cards--%>
+<%--        document.getElementById('kpi-revenue').textContent = dashboardData.kpi.revenue;--%>
+<%--        updateChangeElement(document.getElementById('kpi-revenue-growth'), dashboardData.kpi.revenueGrowth, '%');--%>
+
+<%--        document.getElementById('kpi-profit-margin').textContent = dashboardData.kpi.profitMargin;--%>
+<%--        updateChangeElement(document.getElementById('kpi-profit-margin-change'), dashboardData.kpi.profitMarginChange, ' pts');--%>
+
+<%--        document.getElementById('kpi-transactions').textContent = dashboardData.kpi.transactions;--%>
+<%--        updateChangeElement(document.getElementById('kpi-transactions-change'), dashboardData.kpi.transactionChange, '%');--%>
+
+<%--        // 2. Update Charts--%>
+<%--        updateCharts(dashboardData.chart, Number(document.getElementById('dateRange').value));--%>
+<%--    }--%>
+
+<%--    // --- CHARTING FUNCTIONS -----%>
+<%--    function updateCharts(chartData, days) {--%>
+<%--        let unit = days > 90 ? 'week' : 'day';--%>
+
+<%--        // --- Chart 1: Revenue & Profit Margin (Line Chart) -----%>
+<%--        const ctxRevenue = document.getElementById('revenueProfitChart').getContext('2d');--%>
+<%--        if (revenueProfitChartInstance) {--%>
+<%--            revenueProfitChartInstance.destroy();--%>
+<%--        }--%>
+<%--        revenueProfitChartInstance = new Chart(ctxRevenue, {--%>
+<%--            type: 'line',--%>
+<%--            data: {--%>
+<%--                labels: chartData.labels,--%>
+<%--                datasets: [--%>
+<%--                    {--%>
+<%--                        label: 'Revenue',--%>
+<%--                        data: chartData.revenueData,--%>
+<%--                        borderColor: 'rgb(79, 70, 229)',--%>
+<%--                        backgroundColor: 'rgba(79, 70, 229, 0.1)',--%>
+<%--                        fill: true,--%>
+<%--                        yAxisID: 'yRevenue',--%>
+<%--                        tension: 0.1--%>
+<%--                    },--%>
+<%--                    {--%>
+<%--                        label: 'Profit Margin',--%>
+<%--                        data: chartData.profitMarginData,--%>
+<%--                        borderColor: 'rgb(22, 163, 74)',--%>
+<%--                        backgroundColor: 'transparent',--%>
+<%--                        yAxisID: 'yProfit',--%>
+<%--                        tension: 0.1--%>
+<%--                    }--%>
+<%--                ]--%>
+<%--            },--%>
+<%--            options: {--%>
+<%--                responsive: true,--%>
+<%--                maintainAspectRatio: false,--%>
+<%--                scales: {--%>
+<%--                    x: { type: 'time', time: { unit: unit, tooltipFormat: 'MMM dd, yyyy' }, grid: { display: false } },--%>
+<%--                    yRevenue: {--%>
+<%--                        type: 'linear', position: 'left', beginAtZero: true,--%>
+<%--                        ticks: { callback: value => value >= 1000 ? '$' + (value / 1000) + 'k' : '$' + value }--%>
+<%--                    },--%>
+<%--                    yProfit: {--%>
+<%--                        type: 'linear', position: 'right', beginAtZero: true, max: 100,--%>
+<%--                        grid: { drawOnChartArea: false },--%>
+<%--                        ticks: { callback: value => value + '%' }--%>
+<%--                    }--%>
+<%--                },--%>
+<%--                plugins: {--%>
+<%--                    tooltip: {--%>
+<%--                        mode: 'index', intersect: false,--%>
+<%--                        callbacks: {--%>
+<%--                            label: function(context) {--%>
+<%--                                let label = context.dataset.label || '';--%>
+<%--                                if (label) label += ': ';--%>
+<%--                                if (context.parsed.y !== null) {--%>
+<%--                                    label += context.dataset.yAxisID === 'yProfit' ? context.parsed.y.toFixed(1) + '%' : formatCurrency(context.parsed.y);--%>
+<%--                                }--%>
+<%--                                return label;--%>
+<%--                            }--%>
+<%--                        }--%>
+<%--                    }--%>
+<%--                }--%>
+<%--            }--%>
+<%--        });--%>
+
+<%--        // --- Chart 2: Transactions (Bar Chart) -----%>
+<%--        const ctxTransactions = document.getElementById('transactionsChart').getContext('2d');--%>
+<%--        if (transactionsChartInstance) {--%>
+<%--            transactionsChartInstance.destroy();--%>
+<%--        }--%>
+<%--        transactionsChartInstance = new Chart(ctxTransactions, {--%>
+<%--            type: 'bar',--%>
+<%--            data: {--%>
+<%--                labels: chartData.labels,--%>
+<%--                datasets: [{--%>
+<%--                    label: 'Transactions',--%>
+<%--                    data: chartData.transactionData,--%>
+<%--                    backgroundColor: 'rgba(37, 99, 235, 0.8)',--%>
+<%--                    borderRadius: 4--%>
+<%--                }]--%>
+<%--            },--%>
+<%--            options: {--%>
+<%--                responsive: true,--%>
+<%--                maintainAspectRatio: false,--%>
+<%--                scales: {--%>
+<%--                    x: { type: 'time', time: { unit: unit, tooltipFormat: 'MMM dd, yyyy' }, grid: { display: false } },--%>
+<%--                    y: { beginAtZero: true }--%>
+<%--                },--%>
+<%--                plugins: { legend: { display: false } }--%>
+<%--            }--%>
+<%--        });--%>
+<%--    }--%>
+
+<%--    // --- DATA FETCHING -----%>
+<%--    async function fetchDashboardData(days) {--%>
+<%--        try {--%>
+<%--            const response = await fetch(`/api/dashboard?days=${days}`);--%>
+<%--            if (!response.ok) {--%>
+<%--                throw new Error(`HTTP error! status: ${response.status}`);--%>
+<%--            }--%>
+<%--            const data = await response.json();--%>
+<%--            updateDashboardUI(data);--%>
+<%--        } catch (error) {--%>
+<%--            console.error("Failed to fetch dashboard data:", error);--%>
+<%--            // Optionally, display an error message to the user--%>
+<%--        }--%>
+<%--    }--%>
+
+<%--    // --- INITIALIZATION -----%>
+<%--    document.addEventListener('DOMContentLoaded', () => {--%>
+<%--        // 1. Initial UI setup from server-rendered data--%>
+<%--        updateDashboardUI(initialDashboardData);--%>
+
+<%--        // 2. Add event listener for the date range selector--%>
+<%--        document.getElementById('dateRange').addEventListener('change', (e) => {--%>
+<%--            fetchDashboardData(Number(e.target.value));--%>
+<%--        });--%>
+<%--    });--%>
+
+<%--</script>--%>
+</body>
+</html>
