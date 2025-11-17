@@ -19,4 +19,6 @@ interface CustomerRepository : JpaRepository<Customer, Long> {
 
     @Query("SELECT c FROM Customer c WHERE lower(concat(c.firstName, ' ', c.lastName)) = lower(:name)")
     fun findByName(@Param("name") name: String): List<Customer>
+
+    fun countByCreatedAtAfter(date: java.time.Instant): Long
 }

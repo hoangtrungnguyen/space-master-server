@@ -1,5 +1,8 @@
 package com.space.subadmin.dashboard
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.space.subadmin.customers.CustomerRepository
 import com.space.subadmin.orders.OrderRepository
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -12,7 +15,10 @@ data class DashboardData(
     val totalOrders: Long,
     val averageOrderValue: BigDecimal,
     val revenueTrend: Map<String, BigDecimal>,
-    val topSellingProducts: List<TopSellingProduct>
+    val topSellingProducts: List<TopSellingProduct>,
+    val grossProfitMargin: BigDecimal,
+    val newCustomers: Long,
+    val customerRetentionRate: BigDecimal
 )
 
 data class TopSellingProduct(
@@ -22,9 +28,13 @@ data class TopSellingProduct(
 )
 
 @Service
-class DashboardService(private val orderRepository: OrderRepository) {
+class DashboardService(
+    private val orderRepository: OrderRepository,
+    private val customerRepository: CustomerRepository,
+    private val dashboardMapper: DashboardMapper
+) {
 
-    fun getDashboardData(): DashboardData {
+    fun getDashboardUiDto(): DashboardUiDto {
         val thirtyDaysAgo = Instant.now().minus(30, ChronoUnit.DAYS)
         val recentOrders = orderRepository.findOrdersAfter(thirtyDaysAgo)
 
@@ -48,12 +58,23 @@ class DashboardService(private val orderRepository: OrderRepository) {
                 )
             }
 
-        return DashboardData(
+        val newCustomers = customerRepository.countByCreatedAtAfter(thirtyDaysAgo)
+
+        // TODO: Implement actual calculation for Gross Profit Margin and Customer Retention Rate
+        val grossProfitMargin = BigDecimal("0.5") // Mocked value: 50%
+        val customerRetentionRate = BigDecimal("0.85") // Mocked value: 85%
+
+        val dashboardData = DashboardData(
             totalRevenue = totalRevenue,
             totalOrders = totalOrders,
             averageOrderValue = averageOrderValue,
             revenueTrend = revenueTrend,
-            topSellingProducts = topSellingProducts
+            topSellingProducts = topSellingProducts,
+            grossProfitMargin = grossProfitMargin,
+            newCustomers = newCustomers,
+            customerRetentionRate = customerRetentionRate
         )
+
+        return dashboardMapper.toUiDto(dashboardData)
     }
 }
