@@ -1,9 +1,7 @@
 @import com.space.subadmin.dashboard.PeriodMetricsUiDto
-@import com.space.subadmin.dashboard.GroupedChartDataUiDto
 
 @param periodMetricDto: PeriodMetricsUiDto
 @param days: Int = 30
-@param groupedChartData: List<GroupedChartDataUiDto>
 
 <!DOCTYPE html>
 <html lang="en">

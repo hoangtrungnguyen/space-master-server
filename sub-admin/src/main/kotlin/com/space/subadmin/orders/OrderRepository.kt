@@ -52,7 +52,7 @@ interface OrderRepository : JpaRepository<Order, Long> {
     @Query(
         value = """
          SELECT CAST(order_date AS DATE) as order_day, SUM(total_amount) as revenue
-         FROM orders
+         FROM orders o
          WHERE order_date >= :since
          GROUP BY order_day
          ORDER BY order_day
@@ -113,4 +113,11 @@ interface OrderRepository : JpaRepository<Order, Long> {
     fun findOrderDetailByUuid(uuid: java.util.UUID): Optional<Order>
 
     fun findByUuid(uuid: java.util.UUID): Optional<Order>
+
+    @Query(
+        value = """
+            select count(o.id) from Order o where CAST(o.orderDate AS DATE) >= CAST(:since AS DATE)
+        """
+    )
+    fun countAfter(since: Instant): Int
 }
