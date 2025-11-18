@@ -87,7 +87,7 @@ class SecurityConfig(
                 authorize("/swagger-ui/**", permitAll)
                 authorize("/v3/api-docs/**", permitAll)
                 authorize("/swagger-ui.html", permitAll)
-
+                authorize ("/webjars/**", permitAll)
                 // Secure all non-api requests by default
                 authorize(anyRequest, authenticated)
             }

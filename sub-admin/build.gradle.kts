@@ -62,6 +62,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     testImplementation("io.mockk:mockk:1.13.8") // Popular mocking library for Kotlin
 
+
+    implementation("org.webjars.npm:htmx.org:1.9.10")
     // For JWT generation and validation
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
