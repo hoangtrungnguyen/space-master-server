@@ -6,5 +6,13 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/dashboard")
-class RestDashBoardController(private val dashboardService: DashboardService) {
+class RestDashBoardController(
+    private val dashboardService: DashboardService,
+) {
+
+    @GetMapping("/v2")
+    fun getDashboardDataV2(): DashBoardUiDtoV2 {
+        val dashboardData = dashboardService.getDashboardDataV2()
+        return dashboardData.toUiDto()
+    }
 }

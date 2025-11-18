@@ -2,6 +2,12 @@ package com.space.subadmin.dashboard
 
 import java.math.BigDecimal
 
+data class DashBoardUiDtoV2(
+    val groupedChartData: List<GroupedChartDataUiDto>,
+    val periodMetrics: PeriodMetricsUiDto,
+    val topSellingProducts: List<TopSellingProductUiDto>
+)
+
 data class TransactionUiDto(
     val date: String,
     val revenue: BigDecimal,

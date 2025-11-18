@@ -61,8 +61,27 @@ interface OrderRepository : JpaRepository<Order, Long> {
     fun findDailyRevenueAfter(since: Instant): List<Map<String, Any>>
 
     /**
+     * Calculates the total daily cost of goods sold for orders placed after a given date.
+     * Returns a List of Maps, where each map contains "order_day" and "cogs".
+     */
+    @Query(
+        value = """
+        SELECT
+            CAST(o.order_date AS DATE) as order_day,
+            SUM(oi.quantity * pv.cost_price) as cogs
+        FROM orders o
+        JOIN order_items oi ON o.id = oi.order_id
+        JOIN product_variants pv ON oi.product_variant_id = pv.id
+        WHERE o.order_date >= :since
+        GROUP BY order_day
+        ORDER BY order_day
+    """, nativeQuery = true
+    )
+    fun findDailyCogsAfter(since: Instant): List<Map<String, Any>>
+
+    /**
      * Finds the top selling products based on revenue.
-     * Returns a List of Maps, where each map contains \"name\", \"total_quantity\", and \"total_revenue\".
+     * Returns a List of Maps, where each map contains "name", "total_quantity", and "total_revenue".
      */
     @Query(
         value = """
