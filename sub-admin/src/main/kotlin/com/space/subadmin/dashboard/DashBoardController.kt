@@ -21,7 +21,6 @@ class DashBoardController(private val dashboardService: DashboardService) {
         val dashboardData = dashboardService.getDashboardDataV2()
         val dashboardUiDto = dashboardData.toUiDto()
         model.addAttribute("periodMetricDto", dashboardUiDto.periodMetrics)
-        model.addAttribute("groupedChartData", dashboardUiDto.groupedChartData)
         model.addAttribute("days", 30)
         return "index_dashboard"
     }
@@ -33,26 +32,45 @@ class DashBoardController(private val dashboardService: DashboardService) {
     @GetMapping("dashboard/chart-partial")
     @Throws(JsonProcessingException::class)
     fun getChartPartial(@RequestParam(defaultValue = "7") days: Int, model: Model): String {
-        // 4. Serialize data to JSON strings to safely embed in the <script> tag
-//        model.addAttribute("labelsJson", objectMapper.writeValueAsString(data.labels()))
-//        model.addAttribute("dataJson", objectMapper.writeValueAsString(data.data()))
 
-        val data = generateDummyData(30)
+        val dashboardData = dashboardService.getDashboardDataV2(
+            days = days
+        )
+
+        val dashboardUiDto = dashboardData.toUiDto()
+
+        val revenueChartData: ChartData = dashboardUiDto.groupedChartData.map {
+            (it.date to it.revenue)
+        }.let {
+            ChartData(
+                labels = it.map { it.first },
+                data = it.map { it.second }.map { it.toInt() }
+            )
+        }
+
+        val transactionChartData: ChartData = dashboardUiDto.groupedChartData.map {
+            (it.date to it.transactions)
+        }.let {
+            ChartData(
+                labels = it.map { it.first },
+                data = it.map { it.second }.map { it }
+            )
+        }
 
         model.addAttribute(
             "labelsJson",
-            objectMapper.writeValueAsString(data.labels)
+            objectMapper.writeValueAsString(revenueChartData.labels)
         )
-        model.addAttribute("dataJson", objectMapper.writeValueAsString(data.data))
+        model.addAttribute("dataJson", objectMapper.writeValueAsString(revenueChartData.data))
 
         model.addAttribute(
             "transactionLabels",
-            objectMapper.writeValueAsString(data.labels)
+            objectMapper.writeValueAsString(transactionChartData.labels)
         )
 
         model.addAttribute(
             "transactionData",
-            objectMapper.writeValueAsString(data.data)
+            objectMapper.writeValueAsString(transactionChartData.data)
         )
         // Renders the partial template: /src/main/jte/includes/chart.kte
         return "dashboard/chart"

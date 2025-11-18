@@ -41,18 +41,19 @@ class DashboardService(
     private val customerRepository: CustomerRepository,
 ) {
 
-    fun getDashboardDataV2(): DashboardDataV2 {
-        val since = Instant.now().minus(30, ChronoUnit.DAYS)
+    fun getDashboardDataV2(days: Int = 30): DashboardDataV2 {
+        val since = Instant.now().minus(days.toLong(), ChronoUnit.DAYS)
         val dailyRevenueData = orderRepository.findDailyRevenueAfter(since)
         val dailyCogsData = orderRepository.findDailyCogsAfter(since)
         val topSellingProductsData = orderRepository.findTopSellingProducts(5)
 
+        val transactionCount = orderRepository.countAfter(since)
         val dailyMetrics = mergeRevenueAndCogs(dailyRevenueData, dailyCogsData)
 
         val totalMetrics = TotalMetrics(
             totalRevenue = dailyMetrics.sumOf { it.revenue },
             totalCogs = dailyMetrics.sumOf { it.cogs },
-            transactionCount = dailyMetrics.sumOf { it.transactions }
+            transactionCount = transactionCount
         )
 
         val topProducts = topSellingProductsData.map {
