@@ -8,6 +8,7 @@ import io.lettuce.core.RedisClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.Serializable
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 @Serializable
 data class PeerData(
@@ -32,112 +33,87 @@ class RedisPeerManagerImpl(
 ) : RTCPeerManager {
 
     private val peerRedisSubscriber = PeerRedisSubscriber(redisClient, scope)
-
-    val peersInOthers: MutableMap<Long, MutableSet<PeerUuid>> = HashMap()
-
-    val peersInThis: MutableMap<Long, MutableSet<PeerUuid>> = HashMap()
-
-    init {
-
-    }
+    
+    // Track active subscriptions for this instance to avoid redundant subscribe calls
+    private val activeSubscriptions = ConcurrentHashMap.newKeySet<Long>()
 
     override suspend fun registerPeerGroup(docId: Long, peerUuid: PeerUuid) {
-        if (peersInThis.containsKey(docId)) {
-            peersInThis[docId]!!.add(peerUuid)
-            val listPeer = mutableSetOf<UUID>()
-            listPeer.addAll(peersInOthers[docId] ?: emptyList())
-            listPeer.addAll(peersInThis[docId]!!)
+        // 1. Subscribe to events for this document if not already subscribed
+        if (activeSubscriptions.add(docId)) {
+            peerRedisSubscriber.subscribeToPeerGroup(docId) { event ->
+                handlePeerEvent(event)
+            }
+        }
 
-            peerRedisSubscriber.publishListPeerEvent(
-                docId = docId,
-                listPeerOut = ListPeerOut(
-                    listPeer.size,
-                    listPeer = listPeer.toList(),
-                    newPeer = peerUuid
-                )
-            )
+        // 2. Join the group in Redis and get the current full list of peers
+        val currentPeers = peerRedisSubscriber.joinAndNotify(docId, peerUuid)
 
-        } else {
-            peersInThis[docId] = mutableSetOf(
-                peerUuid
-            )
-
-            peerRedisSubscriber.subscribeToPeerGroup(docId) { listPeerOut ->
-
-                val allPeers = listPeerOut.listPeer.toMutableSet()
-
-                val thisPeersNow = peersInThis[docId]!!
-
-                val peersInOthersNow = allPeers.subtract(thisPeersNow)
-
-                peersInOthers[docId] = peersInOthersNow.toMutableSet()
-
-                val notConnectedPeer = thisPeersNow.subtract(allPeers)
-                allPeers.addAll(notConnectedPeer)
-                // send to all socket
-                sessionManager.getConnections(docId)?.forEach { conn ->
-                    conn.value.send(
+        // 3. Send the FULL LIST to the joining peer ONLY
+        // We find the connection(s) belonging to this peerUuid
+        sessionManager.getConnections(docId)?.forEach { (_, conn) ->
+            if (conn.process.peerUuid == peerUuid) {
+                try {
+                    conn.send(
                         ListPeerOut(
-                            peerCount = allPeers.size,
-                            listPeer = allPeers.toList(),
+                            peerCount = currentPeers.size,
+                            listPeer = currentPeers,
+                            newPeer = peerUuid // Optional: indicate self-join
                         )
                     )
+                } catch (e: Exception) {
+                    println("Failed to send initial peer list to $peerUuid: ${e.message}")
                 }
             }
+        }
+    }
 
-
-            val allPeer = mutableSetOf<UUID>()
-            peerRedisSubscriber.getLastest(docId)?.listPeer?.let {
-                allPeer.addAll(it)
+    private suspend fun handlePeerEvent(event: PeerEvent) {
+        // Broadcast the event to all LOCAL connections for this document
+        val fullList = peerRedisSubscriber.getPeers(event.docId)
+        
+        sessionManager.getConnections(event.docId)?.forEach { (key, conn) ->
+            // Optionally, avoid echoing back to the sender if the event originated from them
+            // But usually, it's safer to let frontend handle "I joined" confirmation unless we want to filter.
+            // For now, we broadcast to everyone so they stay in sync.
+            
+            try {
+                val output = when (event.type) {
+                    PeerEventType.JOIN -> ListPeerOut(
+                        peerCount = fullList.size,
+                        newPeer = event.peerUuid,
+                        listPeer = fullList
+                    )
+                    PeerEventType.LEAVE -> ListPeerOut(
+                        peerCount = fullList.size,
+                        removedPeer = event.peerUuid,
+                        listPeer = fullList
+                    )
+                }
+                conn.send(output)
+            } catch (e: Exception) {
+                println("Failed to broadcast peer event to ${key.userId}: ${e.message}")
             }
-            allPeer.add(peerUuid)
-            peerRedisSubscriber.publishListPeerEvent(
-                docId = docId,
-                listPeerOut = ListPeerOut(
-                    allPeer.size,
-                    listPeer = allPeer.toList(),
-                    newPeer = peerUuid
-                )
-            )
-
-
         }
     }
 
     override suspend fun unregisterPeerGroup(docId: Long, peerUuid: PeerUuid) {
-        peersInThis[docId]?.let {
-            peersInThis[docId]!!.remove(peerUuid)
+        // 1. Leave the Redis group
+        peerRedisSubscriber.leaveAndNotify(docId, peerUuid)
 
-            if (peersInThis[docId]!!.isEmpty()) {
-
-                peerRedisSubscriber.publishListPeerEvent(
-                    docId,
-                    ListPeerOut(
-                        peersInOthers[docId]?.size ?: 0,
-                        peerUuid,
-                        listPeer = peersInOthers[docId]?.toList() ?: emptyList(),
-                    )
-                )
-                peersInOthers.remove(docId)
-                peersInThis.remove(docId)
-                peerRedisSubscriber.unsubscribeFromPeerGroup(docId)
-            } else {
-                val allPeers = mutableListOf<UUID>()
-                allPeers.addAll(peersInOthers[docId] ?: emptyList())
-                allPeers.addAll(peersInThis[docId]!!)
-
-                peerRedisSubscriber.publishListPeerEvent(
-                    docId,
-                    ListPeerOut(
-                        allPeers.size,
-                        peerUuid,
-                        listPeer = allPeers.toList(),
-                    )
-                )
+        // 2. Check if we should unsubscribe (no local connections left)
+        // This is an optimization. 
+        val remainingConnections = sessionManager.getConnections(docId)?.size ?: 0
+        if (remainingConnections <= 1) { // 1 because the unregistering one might still be in the map briefly?
+            // Actually sessionManager.unregister is called BEFORE or AFTER?
+            // Typically unregisterPeerGroup is called from SessionManager or cleanup.
+            // Let's assume safely: if map is empty.
+            if (sessionManager.getConnections(docId).isNullOrEmpty()) {
+                if (activeSubscriptions.remove(docId)) {
+                    peerRedisSubscriber.unsubscribeFromPeerGroup(docId)
+                }
             }
         }
     }
-
 
     override suspend fun close() {
         peerRedisSubscriber.close()

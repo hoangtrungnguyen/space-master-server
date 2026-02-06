@@ -1,232 +1,142 @@
 package com.ideaspace.peerManager
 
+import com.ideaspace.core.dto.UUIDToString
 import com.ideaspace.core.redis.RedisManager
-import com.ideaspace.core.redis.redisDocKeyPattern
-import com.ideaspace.session.ListPeerOut
-import com.ideaspace.session.toListPeerOut
-import io.lettuce.core.Limit
-import io.lettuce.core.Range
 import io.lettuce.core.RedisClient
-import io.lettuce.core.api.StatefulRedisConnection
-import io.lettuce.core.api.sync.RedisCommands
 import io.lettuce.core.pubsub.RedisPubSubListener
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
-import kotlinx.serialization.json.*
-import redisPeer2PeerEventsKey
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
+@Serializable
+data class PeerEvent(
+    val type: PeerEventType,
+    @Serializable(with = com.ideaspace.core.dto.UUIDToString::class)
+    val peerUuid: UUID,
+    val docId: Long
+)
+
+enum class PeerEventType { JOIN, LEAVE }
 
 class PeerRedisSubscriber(
     private val redisClient: RedisClient,
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 ) {
-
     private val subscriptions = ConcurrentHashMap<Long, PeerGroupSubscription>()
-
-    private val dataConnection: StatefulRedisConnection<String, String> by lazy {
-        redisClient.connect()
-    }
+    
+    // Separate PubSub connection
     private val pubSubConnection: StatefulRedisPubSubConnection<String, String> by lazy {
         redisClient.connectPubSub()
     }
-
-    init {
-        dataConnection.async().configGet("peer-keyspace-events").thenAccept { result ->
-            val keyspaceConf = result.get("peer-keyspace-events") ?: ""
-            if (keyspaceConf.contains('K') && keyspaceConf.contains('t')) {
-//                logger.info(
-//                    "Keyspace events (K) are available for stream commands (t). " +
-//                            "Current 'peer-keyspace-events'='$keyspaceConf'."
-//                )
-            } else {
-//                logger.error(
-//                    "Keyspace events (K) are NOT available for stream commands (t). " +
-//                            "Current 'peer-keyspace-events'='$keyspaceConf'."
-//                )
-            }
-        }
-    }
+    
+    // Standard connection for commands (SADD, SREM, SMEMBERS)
+    private val commands = RedisManager.connectionString.sync()
 
     private data class PeerGroupSubscription(
         val docId: Long,
-        val channel: Channel<ListPeerOut>,
+        val channel: Channel<PeerEvent>,
         val job: Job
     )
 
-    suspend fun subscribeToPeerGroup(docId: Long, onMessage: suspend (ListPeerOut) -> Unit) {
-        // Check if already subscribed
-        if (subscriptions.containsKey(docId)) {
-            println("Already subscribed to document $docId")
-            return
-        }
+    private fun getChannelName(docId: Long) = "peer:events:$docId"
+    private fun getSetKey(docId: Long) = "peer:set:$docId"
 
-        val streamKey = redisPeer2PeerEventsKey(docId)
-        val streamPatternKey = "__keyspace@0__:${streamKey}"
-        val redisEventChannel = Channel<ListPeerOut>(Channel.UNLIMITED)
+    suspend fun subscribeToPeerGroup(docId: Long, onEvent: suspend (PeerEvent) -> Unit) {
+        if (subscriptions.containsKey(docId)) return
+
+        val eventChannel = Channel<PeerEvent>(Channel.UNLIMITED)
+        val redisChannelName = getChannelName(docId)
 
         val job = coroutineScope.launch {
-            redisEventChannel.consumeEach { redisEvent ->
+            eventChannel.consumeEach { event ->
                 try {
-                    println("[PeerRedisSubscriber] event received")
-                    onMessage(redisEvent)
+                    onEvent(event)
                 } catch (e: Exception) {
-                    println("Error consuming redis event '$redisEvent' for document '$docId': ${e.message}")
+                    println("Error processing peer event: ${e.message}")
                 }
             }
         }
 
-        subscriptions[docId] = PeerGroupSubscription(docId, redisEventChannel, job)
+        subscriptions[docId] = PeerGroupSubscription(docId, eventChannel, job)
 
+        // Add Listener
         pubSubConnection.addListener(object : RedisPubSubListener<String, String> {
             override fun message(channel: String, message: String) {
-                if (channel == streamPatternKey) {
+                if (channel == redisChannelName) {
                     try {
-                        val listPeer = Json.decodeFromString<ListPeerOut>(message)
-                        subscriptions[docId]?.channel?.trySend(listPeer)
+                        val event = Json.decodeFromString<PeerEvent>(message)
+                        subscriptions[docId]?.channel?.trySend(event)
                     } catch (e: Exception) {
-                        println("[PeerRedisSubscriber] Error sending message to $message")
+                        println("Error decoding peer message: $message")
                     }
                 }
             }
-
-            override fun message(pattern: String, channel: String, message: String) {
-                if (channel == streamPatternKey) {
-                    try {
-                        val listPeer = Json.decodeFromString<ListPeerOut>(message)
-                        subscriptions[docId]?.channel?.trySend(listPeer)
-                    } catch (e: Exception) {
-                        println("[PeerRedisSubscriber] Error sending message to $message")
-                    }
-                }
-            }
-
-            override fun subscribed(channel: String, count: Long) {
-                println("[PeerRedisSubscriber] ✅ Subscribed to Redis keyspace doc:$docId on channel:$channel")
-            }
-
-            override fun psubscribed(pattern: String, count: Long) {
-                println("[PeerRedisSubscriber] ✅ Pattern subscribed to Redis keyspace  doc:$docId on pattern:$pattern")
-            }
-
-            override fun unsubscribed(channel: String, count: Long) {
-                println("[PeerRedisSubscriber] ❌ Unsubscribed from Redis keyspace document $docId on channel: $channel")
-            }
-
-            override fun punsubscribed(pattern: String, count: Long) {
-                println("[PeerRedisSubscriber] ❌ Pattern unsubscribed from Redis keyspace document $docId on pattern: $pattern")
-            }
+            override fun message(pattern: String, channel: String, message: String) {}
+            override fun subscribed(channel: String, count: Long) {}
+            override fun psubscribed(pattern: String, count: Long) {}
+            override fun unsubscribed(channel: String, count: Long) {}
+            override fun punsubscribed(pattern: String, count: Long) {}
         })
 
-        pubSubConnection.sync().subscribe(streamPatternKey)
-
-        println("[PeerRedisSubscriber] 🔔 Started Redis keyspace notification subscription for document $docId with key: $streamPatternKey")
-
+        pubSubConnection.sync().subscribe(redisChannelName)
+        println("[PeerRedisSubscriber] Subscribed to $redisChannelName")
     }
 
     suspend fun unsubscribeFromPeerGroup(docId: Long) {
-        val subscription = subscriptions.remove(docId)
-        if (subscription != null) {
-            val streamPattern = redisDocKeyPattern(docId)
-
-            // Unsubscribe from Redis
-            pubSubConnection.sync().unsubscribe(streamPattern)
-
-            // Close the channel and cancel the job
-            subscription.channel.close()
-
-            println("[PeerRedisSubscriber] 🔕 Stopped Redis keyspace notification subscription for document $docId")
+        subscriptions.remove(docId)?.let { sub ->
+            pubSubConnection.sync().unsubscribe(getChannelName(docId))
+            sub.channel.close()
+            sub.job.cancel()
+            println("[PeerRedisSubscriber] Unsubscribed from ${getChannelName(docId)}")
         }
     }
 
-    suspend fun publishListPeerEvent(
-        docId: Long,
-        listPeerOut: ListPeerOut
-    ): Long {
-        val streamKey = redisPeer2PeerEventsKey(docId)
-        val streamPatternKey = "__keyspace@0__:${streamKey}"
-        val syncCommands: RedisCommands<String, String> = RedisManager.connectionString.sync()
-        return syncCommands.publishListPeer(listPeerOut, streamPatternKey)
-    }
+    fun joinAndNotify(docId: Long, peerUuid: UUID): List<UUID> {
+        // 1. Add to Redis Set
+        commands.sadd(getSetKey(docId), peerUuid.toString())
+        
+        // 2. Publish JOIN event
+        val event = PeerEvent(PeerEventType.JOIN, peerUuid, docId)
+        commands.publish(getChannelName(docId), Json.encodeToString(event))
 
-
-    suspend fun getLastest(docId: Long): ListPeerOut? {
-        val streamKey = redisPeer2PeerEventsKey(docId)
-        val streamPatternKey = "__keyspace@0__:${streamKey}"
-        val syncCommands: RedisCommands<String, String> = RedisManager.connectionString.sync()
-        val messages = syncCommands.xrevrange(
-            streamPatternKey,
-            Range.create("+", "-"), // Range from newest (+) to oldest (-)
-            Limit.from(1)             // Limit to just 1 result
-        )
-
-        // 4. Process the result
-        if (messages.isNotEmpty()) {
-            val latestMessage = messages.first()
-            println("✅ Success! Found latest message:")
-            println("   ID: ${latestMessage.id}")
-            println("   Body: ${latestMessage.body}")
-            return latestMessage.body.toListPeerOut()
-        } else {
-            println("❌ Stream '$streamPatternKey' is empty or does not exist.")
-            return null
+        // 3. Return current list of peers (snapshot)
+        val members = commands.smembers(getSetKey(docId))
+        return members.mapNotNull { 
+            try { UUID.fromString(it) } catch (e: Exception) { null } 
         }
     }
 
+    fun leaveAndNotify(docId: Long, peerUuid: UUID) {
+        // 1. Remove from Redis Set
+        commands.srem(getSetKey(docId), peerUuid.toString())
 
-    /**
-     * Close all subscriptions and cleanup resources
-     */
-    suspend fun close() {
-        // Cancel all subscription jobs and close channels
-        subscriptions.values.forEach { subscription ->
-            subscription.channel.close()
-            subscription.job.cancel()
+        // 2. Publish LEAVE event
+        val event = PeerEvent(PeerEventType.LEAVE, peerUuid, docId)
+        commands.publish(getChannelName(docId), Json.encodeToString(event))
+    }
+
+    fun getPeers(docId: Long): List<UUID> {
+        return commands.smembers(getSetKey(docId)).mapNotNull {
+            try { UUID.fromString(it) } catch (e: Exception) { null }
+        }
+    }
+
+    fun close() {
+        subscriptions.values.forEach { 
+            it.channel.close()
+            it.job.cancel() 
         }
         subscriptions.clear()
-
-        dataConnection.close()
         pubSubConnection.close()
-
-        // Cancel the coroutine scope
+        // We do not close data connection here as it might be shared or managed by RedisManager
+        // But in this class we access it via RedisManager.connectionString which is static/singleton
         coroutineScope.cancel()
-
-        println("🔐 Closed all Redis keyspace notification subscriptions")
+        println("[PeerRedisSubscriber] Closed all subscriptions")
     }
-
-
-}
-
-private fun RedisCommands<String, String>.startXAdd(
-    listPeerOut: ListPeerOut,
-    redisKey: String,
-): String {
-    val jsonElement = Json.encodeToJsonElement(listPeerOut)
-    if (jsonElement is JsonObject) {
-        val redisMap: Map<String, String> = jsonElement.jsonObject.mapValues { (_, value) ->
-            if (value is JsonPrimitive) {
-                value.content
-            } else {
-                Json.encodeToString(JsonElement.serializer(), value)
-            }
-        }
-        val messageId = this.xadd(redisKey, redisMap)
-        return messageId.also {
-            println("✅ Send peer data'$redisKey' with message ID $messageId")
-        }
-    } else {
-        throw Exception("The provided event did not serialize to a JSON object, cannot publish to Redis stream.")
-
-    }
-}
-
-
-private fun RedisCommands<String, String>.publishListPeer(
-    listPeerOut: ListPeerOut,
-    redisKey: String,
-): Long {
-    val messageId = this.publish(redisKey, Json.encodeToString(listPeerOut))
-    return messageId
 }
