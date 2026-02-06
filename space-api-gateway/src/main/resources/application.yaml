@@ -1,7 +1,7 @@
 ktor:
   application:
     modules:
-      - com.ideaspace.ApplicationKt.module
+      - com.ideaspace.ApiGatewayApplicationKt.module
   deployment:
     port: 8080
 
@@ -12,7 +12,7 @@ jwt:
   realm: "Space Master Server"
 
 postgres:
-  url: "jdbc:postgresql://localhost:5439/idea_space_main"
+  url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/space_main}
   user: postgres
   password: postgres
   driver: "org.postgresql.Driver"

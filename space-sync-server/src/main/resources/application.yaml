@@ -2,11 +2,11 @@ developmentMode: true
 ktor:
   application:
     modules:
-      - com.ideaspace.ApplicationKt.module
+      - com.ideaspace.SyncApplicationKt.module
   deployment:
     port: 9099
 postgres:
-  url: "jdbc:postgresql://localhost:5439/idea_space_main"
+  url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/space_main}
   user: postgres
   password: postgres
   driver: "org.postgresql.Driver"
