@@ -41,7 +41,8 @@ enum class MessageType {
 
     ACK_TRANSFORMED,
 
-    LIST_PEER
+    LIST_PEER,
+    WEBRTC_SIGNAL
 }
 
 @Serializable
@@ -265,6 +266,30 @@ data class Acknowledgement(
     val message: String
 ) : DocumentChannelOutput()
 
+
+@Serializable
+@SerialName("WEBRTC_SIGNAL")
+data class WebRTCSignalInput(
+    override val messageId: String,
+    @Transient
+    override val messageType: MessageType = MessageType.WEBRTC_SIGNAL,
+    @Serializable(with = UUIDToString::class)
+    val targetPeerUuid: UUID,
+    val signalType: String, // "OFFER", "ANSWER", "ICE"
+    val payload: JsonObject
+) : DocumentChannelInput()
+
+@Serializable
+data class WebRTCSignalOutput(
+    override val replyTo: String = "NONE",
+    override val messageType: MessageType = MessageType.WEBRTC_SIGNAL,
+    @Serializable(with = UUIDToString::class)
+    val sourcePeerUuid: UUID,
+    val signalType: String,
+    val payload: JsonObject
+) : DocumentChannelOutput()
+
+
 val ChannelJson = Json {
     encodeDefaults = true
     ignoreUnknownKeys = true
@@ -273,6 +298,8 @@ val ChannelJson = Json {
         polymorphic(DocumentChannelOutput::class) {
             subclass(StreamAddEntry::class, StreamAddEntry.serializer())
             subclass(Acknowledgement::class, Acknowledgement.serializer())
+            subclass(WebRTCSignalOutput::class, WebRTCSignalOutput.serializer())
+            subclass(ListPeerOut::class, ListPeerOut.serializer())
         }
     }
 }

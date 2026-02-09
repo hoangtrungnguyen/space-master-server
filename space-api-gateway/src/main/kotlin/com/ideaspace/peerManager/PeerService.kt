@@ -1,122 +1,100 @@
 package com.ideaspace.peerManager
 
-import com.ideaspace.core.dto.UUIDToString
-import com.ideaspace.core.models.Process
-import com.ideaspace.session.ListPeerOut
-import com.ideaspace.session.SessionManager
-import io.lettuce.core.RedisClient
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.serialization.Serializable
+import com.ideaspace.session.*
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-
-@Serializable
-data class PeerData(
-    val process: Process,
-    @Serializable(with = UUIDToString::class)
-    val peerUuid: UUID
-)
 
 typealias PeerUuid = UUID
 
 interface RTCPeerManager {
     suspend fun registerPeerGroup(docId: Long, peerUuid: PeerUuid)
     suspend fun unregisterPeerGroup(docId: Long, peerUuid: PeerUuid)
+    suspend fun sendSignal(docId: Long, sourcePeerUuid: PeerUuid, signal: WebRTCSignalInput)
     suspend fun close()
 }
 
 
-class RedisPeerManagerImpl(
+class InMemoryPeerManager(
     private val sessionManager: SessionManager,
-    private val redisClient: RedisClient,
-    private val scope: CoroutineScope,
 ) : RTCPeerManager {
 
-    private val peerRedisSubscriber = PeerRedisSubscriber(redisClient, scope)
-    
-    // Track active subscriptions for this instance to avoid redundant subscribe calls
-    private val activeSubscriptions = ConcurrentHashMap.newKeySet<Long>()
+    private val peers = ConcurrentHashMap<Long, MutableSet<PeerUuid>>()
 
     override suspend fun registerPeerGroup(docId: Long, peerUuid: PeerUuid) {
-        // 1. Subscribe to events for this document if not already subscribed
-        if (activeSubscriptions.add(docId)) {
-            peerRedisSubscriber.subscribeToPeerGroup(docId) { event ->
-                handlePeerEvent(event)
-            }
+        var added = false
+        peers.compute(docId) { _, existingSet ->
+            val set = existingSet ?: ConcurrentHashMap.newKeySet()
+            added = set.add(peerUuid)
+            set
         }
 
-        // 2. Join the group in Redis and get the current full list of peers
-        val currentPeers = peerRedisSubscriber.joinAndNotify(docId, peerUuid)
-
-        // 3. Send the FULL LIST to the joining peer ONLY
-        // We find the connection(s) belonging to this peerUuid
-        sessionManager.getConnections(docId)?.forEach { (_, conn) ->
-            if (conn.process.peerUuid == peerUuid) {
-                try {
-                    conn.send(
-                        ListPeerOut(
-                            peerCount = currentPeers.size,
-                            listPeer = currentPeers,
-                            newPeer = peerUuid // Optional: indicate self-join
-                        )
-                    )
-                } catch (e: Exception) {
-                    println("Failed to send initial peer list to $peerUuid: ${e.message}")
-                }
-            }
-        }
-    }
-
-    private suspend fun handlePeerEvent(event: PeerEvent) {
-        // Broadcast the event to all LOCAL connections for this document
-        val fullList = peerRedisSubscriber.getPeers(event.docId)
-        
-        sessionManager.getConnections(event.docId)?.forEach { (key, conn) ->
-            // Optionally, avoid echoing back to the sender if the event originated from them
-            // But usually, it's safer to let frontend handle "I joined" confirmation unless we want to filter.
-            // For now, we broadcast to everyone so they stay in sync.
-            
-            try {
-                val output = when (event.type) {
-                    PeerEventType.JOIN -> ListPeerOut(
-                        peerCount = fullList.size,
-                        newPeer = event.peerUuid,
-                        listPeer = fullList
-                    )
-                    PeerEventType.LEAVE -> ListPeerOut(
-                        peerCount = fullList.size,
-                        removedPeer = event.peerUuid,
-                        listPeer = fullList
-                    )
-                }
-                conn.send(output)
-            } catch (e: Exception) {
-                println("Failed to broadcast peer event to ${key.userId}: ${e.message}")
-            }
-        }
+        // Broadcast regardless of whether it was added (to ensure sync),
+        // but typically only needed if added or if we want to send full list to the joiner.
+        broadcastListPeer(docId, newPeer = peerUuid)
     }
 
     override suspend fun unregisterPeerGroup(docId: Long, peerUuid: PeerUuid) {
-        // 1. Leave the Redis group
-        peerRedisSubscriber.leaveAndNotify(docId, peerUuid)
+        var removed = false
+        peers.compute(docId) { _, docPeers ->
+            if (docPeers != null) {
+                removed = docPeers.remove(peerUuid)
+                if (docPeers.isEmpty()) null else docPeers
+            } else {
+                null
+            }
+        }
 
-        // 2. Check if we should unsubscribe (no local connections left)
-        // This is an optimization. 
-        val remainingConnections = sessionManager.getConnections(docId)?.size ?: 0
-        if (remainingConnections <= 1) { // 1 because the unregistering one might still be in the map briefly?
-            // Actually sessionManager.unregister is called BEFORE or AFTER?
-            // Typically unregisterPeerGroup is called from SessionManager or cleanup.
-            // Let's assume safely: if map is empty.
-            if (sessionManager.getConnections(docId).isNullOrEmpty()) {
-                if (activeSubscriptions.remove(docId)) {
-                    peerRedisSubscriber.unsubscribeFromPeerGroup(docId)
+        if (removed) {
+            broadcastListPeer(docId, removedPeer = peerUuid)
+        }
+    }
+
+    override suspend fun sendSignal(docId: Long, sourcePeerUuid: PeerUuid, signal: WebRTCSignalInput) {
+        val connections = sessionManager.getConnections(docId) ?: return
+
+        // We need to find the connection associated with the target peer UUID.
+        // sessionManager stores connections keyed by ProcessKey (which includes userId, windowId).
+        // The Process object inside DocumentConnection has the peerUuid (we need to make sure it's set).
+
+        connections.values.forEach { conn ->
+            if (conn.process.peerUuid == signal.targetPeerUuid) {
+                try {
+                    conn.send(
+                        WebRTCSignalOutput(
+                            sourcePeerUuid = sourcePeerUuid,
+                            signalType = signal.signalType,
+                            payload = signal.payload
+                        )
+                    )
+                } catch (e: Exception) {
+                    println("Failed to send signal from $sourcePeerUuid to ${signal.targetPeerUuid}: ${e.message}")
                 }
+            }
+        }
+    }
+
+    private suspend fun broadcastListPeer(docId: Long, newPeer: PeerUuid? = null, removedPeer: PeerUuid? = null) {
+        val currentList = peers[docId]?.toList() ?: emptyList()
+        val connections = sessionManager.getConnections(docId) ?: return
+
+        val output = ListPeerOut(
+            peerCount = currentList.size,
+            newPeer = newPeer,
+            removedPeer = removedPeer,
+            listPeer = currentList
+        )
+
+        connections.values.forEach { conn ->
+            try {
+                conn.send(output)
+            } catch (e: Exception) {
+                println("Failed to broadcast peer list: ${e.message}")
             }
         }
     }
 
     override suspend fun close() {
-        peerRedisSubscriber.close()
+        peers.clear()
     }
 
 }
