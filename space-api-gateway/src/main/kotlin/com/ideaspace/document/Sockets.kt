@@ -146,6 +146,7 @@ fun Route.documentWebSocketRoutes() {
                                     if (input.peerUuid == null) {
                                         println("⚠️ Process $processKey with event $input doesn't have peer uuid ")
                                     } else {
+                                        process.peerUuid = input.peerUuid
                                         rtcPeerManager.registerPeerGroup(
                                             docId = processKey.docId,
                                             peerUuid = input.peerUuid,
@@ -171,6 +172,18 @@ fun Route.documentWebSocketRoutes() {
                                     .execute(pullStreamContext)
                                 sendSerialized(response)
                                 println("✅ PullStreamInput is executed. Id:${response}")
+                            }
+
+                            is WebRTCSignalInput -> {
+                                if (process.peerUuid != null) {
+                                    rtcPeerManager.sendSignal(
+                                        docId = processKey.docId,
+                                        sourcePeerUuid = process.peerUuid!!,
+                                        signal = input
+                                    )
+                                } else {
+                                    println("⚠️ WebRTC Signal received but peerUuid is null for process $processKey")
+                                }
                             }
                         }
 
